@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "materials": [
+    {
+      "id": "brick-outer-leaf",
+      "name": "Brickwork, outer leaf (exposed)",
+      "category": "masonry",
+      "lambdaWPerMK": 0.77,
+      "densityKgPerM3": 1700,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 10,
+      "source": "TODO(verify)",
+      "notes": "Conventional UK design value for an exposed outer leaf. Check against BR 443 and CIBSE Guide A Table 3.49; ISO 10456 gives masonry by density band rather than by UK leaf convention."
+    },
+    {
+      "id": "brick-inner-leaf",
+      "name": "Brickwork, inner leaf (protected)",
+      "category": "masonry",
+      "lambdaWPerMK": 0.56,
+      "densityKgPerM3": 1700,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 10,
+      "source": "TODO(verify)",
+      "notes": "Conventional UK design value for a protected inner leaf. Check against BR 443 and CIBSE Guide A Table 3.49."
+    },
+    {
+      "id": "dense-concrete-block",
+      "name": "Dense aggregate concrete block",
+      "category": "masonry",
+      "lambdaWPerMK": 1.13,
+      "densityKgPerM3": 1900,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 60,
+      "source": "TODO(verify)",
+      "notes": "Generic UK dense aggregate block. Product values vary widely; check against BR 443 and manufacturer declared values, and confirm mu against ISO 10456 Table 3."
+    },
+    {
+      "id": "aircrete-block",
+      "name": "Aircrete (autoclaved aerated) block",
+      "category": "masonry",
+      "lambdaWPerMK": 0.15,
+      "densityKgPerM3": 600,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 6,
+      "source": "TODO(verify)",
+      "notes": "Generic UK aircrete block. UK products span roughly 0.11 to 0.20 W/(m*K) by density; check against BR 443 and manufacturer declared values."
+    },
+    {
+      "id": "concrete-medium-density",
+      "name": "Concrete, medium density",
+      "category": "concrete",
+      "lambdaWPerMK": 1.35,
+      "densityKgPerM3": 2000,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 100,
+      "source": "TODO(verify)",
+      "notes": "Check lambda, c and mu against BS EN ISO 10456:2007 Table 3, which tabulates concrete by density."
+    },
+    {
+      "id": "concrete-reinforced",
+      "name": "Concrete, reinforced (1 % steel)",
+      "category": "concrete",
+      "lambdaWPerMK": 2.3,
+      "densityKgPerM3": 2300,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 130,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3, which lists reinforced concrete separately by steel content."
+    },
+    {
+      "id": "gypsum-plasterboard",
+      "name": "Gypsum plasterboard",
+      "category": "plaster-and-render",
+      "lambdaWPerMK": 0.25,
+      "densityKgPerM3": 900,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 10,
+      "source": "TODO(verify)",
+      "notes": "Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (gypsum plasterboard, 900 kg/m3)."
+    },
+    {
+      "id": "gypsum-plaster",
+      "name": "Gypsum plaster, dense",
+      "category": "plaster-and-render",
+      "lambdaWPerMK": 0.57,
+      "densityKgPerM3": 1300,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 10,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density."
+    },
+    {
+      "id": "cement-sand-render",
+      "name": "Cement:sand render",
+      "category": "plaster-and-render",
+      "lambdaWPerMK": 1.0,
+      "densityKgPerM3": 1800,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 25,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (cement mortar / plaster) and BR 443."
+    },
+    {
+      "id": "sand-cement-screed",
+      "name": "Sand:cement screed",
+      "category": "screed",
+      "lambdaWPerMK": 1.15,
+      "densityKgPerM3": 2000,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 30,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 and BR 443."
+    },
+    {
+      "id": "softwood-structural",
+      "name": "Softwood, structural",
+      "category": "timber-and-board",
+      "lambdaWPerMK": 0.13,
+      "densityKgPerM3": 500,
+      "specificHeatCapacityJPerKgK": 1600,
+      "vapourResistanceFactorMu": 50,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (softwood, 500 kg/m3), including whether the dry (50) or wet (20) mu applies for the intended use."
+    },
+    {
+      "id": "osb-board",
+      "name": "Oriented strand board (OSB)",
+      "category": "timber-and-board",
+      "lambdaWPerMK": 0.13,
+      "densityKgPerM3": 650,
+      "specificHeatCapacityJPerKgK": 1700,
+      "vapourResistanceFactorMu": 50,
+      "source": "TODO(verify)",
+      "notes": "Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (OSB) and BS EN 13986."
+    },
+    {
+      "id": "plywood-board",
+      "name": "Plywood",
+      "category": "timber-and-board",
+      "lambdaWPerMK": 0.13,
+      "densityKgPerM3": 500,
+      "specificHeatCapacityJPerKgK": 1600,
+      "vapourResistanceFactorMu": 90,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (plywood by density) and BS EN 13986."
+    },
+    {
+      "id": "chipboard-flooring",
+      "name": "Chipboard flooring",
+      "category": "timber-and-board",
+      "lambdaWPerMK": 0.14,
+      "densityKgPerM3": 600,
+      "specificHeatCapacityJPerKgK": 1700,
+      "vapourResistanceFactorMu": 50,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (particleboard by density) and BS EN 13986."
+    },
+    {
+      "id": "mineral-wool-quilt",
+      "name": "Mineral wool quilt",
+      "category": "insulation",
+      "lambdaWPerMK": 0.035,
+      "densityKgPerM3": 20,
+      "specificHeatCapacityJPerKgK": 1030,
+      "vapourResistanceFactorMu": 1,
+      "source": "TODO(verify)",
+      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13162. Check c and mu against BS EN ISO 10456:2007 Table 3 (mineral wool)."
+    },
+    {
+      "id": "eps-board",
+      "name": "Expanded polystyrene (EPS) board",
+      "category": "insulation",
+      "lambdaWPerMK": 0.038,
+      "densityKgPerM3": 20,
+      "specificHeatCapacityJPerKgK": 1450,
+      "vapourResistanceFactorMu": 60,
+      "source": "TODO(verify)",
+      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13163. Check c and mu against BS EN ISO 10456:2007 Table 3 (EPS)."
+    },
+    {
+      "id": "pir-board",
+      "name": "Polyisocyanurate (PIR) board, foil faced",
+      "category": "insulation",
+      "lambdaWPerMK": 0.022,
+      "densityKgPerM3": 32,
+      "specificHeatCapacityJPerKgK": 1400,
+      "vapourResistanceFactorMu": 60,
+      "source": "TODO(verify)",
+      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13165. Facings dominate the vapour resistance, so mu of the core is not the whole story. Check against ISO 10456 and product declarations."
+    },
+    {
+      "id": "wood-fibre-board",
+      "name": "Wood fibre insulation board",
+      "category": "insulation",
+      "lambdaWPerMK": 0.04,
+      "densityKgPerM3": 140,
+      "specificHeatCapacityJPerKgK": 2100,
+      "vapourResistanceFactorMu": 5,
+      "source": "TODO(verify)",
+      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13171. Check c and mu against ISO 10456 and product declarations."
+    },
+    {
+      "id": "polyethylene-vcl",
+      "name": "Polyethylene vapour control layer",
+      "category": "membrane",
+      "lambdaWPerMK": 0.33,
+      "densityKgPerM3": 980,
+      "specificHeatCapacityJPerKgK": 1800,
+      "vapourResistanceFactorMu": 100000,
+      "source": "TODO(verify)",
+      "notes": "A thin membrane's contribution is its Sd, not its lambda. Check lambda, rho, c against ISO 10456 (polyethylene) and take Sd from the product declaration to BS EN ISO 12572."
+    },
+    {
+      "id": "bitumen-sheet",
+      "name": "Bitumen sheet membrane",
+      "category": "membrane",
+      "lambdaWPerMK": 0.23,
+      "densityKgPerM3": 1100,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 50000,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (bitumen / roofing felt) and take Sd from the product declaration."
+    },
+    {
+      "id": "concrete-roof-tile",
+      "name": "Concrete roof tile",
+      "category": "covering",
+      "lambdaWPerMK": 1.0,
+      "densityKgPerM3": 2100,
+      "specificHeatCapacityJPerKgK": 1000,
+      "vapourResistanceFactorMu": 100,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (tiles, concrete) and BR 443."
+    },
+    {
+      "id": "clay-roof-tile",
+      "name": "Clay roof tile",
+      "category": "covering",
+      "lambdaWPerMK": 1.0,
+      "densityKgPerM3": 2000,
+      "specificHeatCapacityJPerKgK": 800,
+      "vapourResistanceFactorMu": 40,
+      "source": "TODO(verify)",
+      "notes": "Check against BS EN ISO 10456:2007 Table 3 (tiles, clay) and BR 443."
+    }
+  ]
+}

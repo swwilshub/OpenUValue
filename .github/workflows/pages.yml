@@ -1,0 +1,78 @@
+# Checks on every push, and deploys the web app to GitHub Pages from whichever branch
+# is the repository default at the time.
+#
+# ONE-TIME REPOSITORY SETTING REQUIRED, which no workflow file can set for you:
+#   Settings -> Pages -> Build and deployment -> Source: "GitHub Actions"
+# Until that is set, the deploy job fails with a 404 from the Pages API.
+name: CI and GitHub Pages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Read-only by default. The deploy job widens this for itself alone.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Test, typecheck and build
+    # Same-repository pull requests are already covered by the push event, so running
+    # them again here would double every run. Fork pull requests get no push event in
+    # this repository, so they are the case this condition keeps.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm before Node, so setup-node's pnpm cache has a store to point at.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The repository rule is that neither of these may fail before a commit, so
+      # they gate the deploy rather than running alongside it.
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # Only the web app is needed to publish. vite.config.ts sets a relative base, so
+      # the output works under the /OpenUValue/ subpath without the repository name
+      # being hardcoded anywhere.
+      - name: Build the web app
+        run: pnpm --filter @openuvalue/web build
+
+      # Other branches stop after the checks above, which is what makes this file
+      # double as ordinary CI.
+      - name: Upload the Pages artifact
+        if: github.ref_name == github.event.repository.default_branch
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: check
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write # to publish
+      id-token: write # to let deploy-pages prove the artifact came from this run
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Queue deploys rather than cancelling them: a cancelled Pages deploy can leave the
+    # site on an older build with nothing to say why.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

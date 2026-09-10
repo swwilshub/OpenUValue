@@ -1,0 +1,246 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { EnvironmentConditions, HeatFlowDirection, ProfileSection } from '@openuvalue/engine';
+import { calculateTemperatureProfile, calculateUValue } from '@openuvalue/engine';
+import { BoundaryPanel } from './components/BoundaryPanel.js';
+import { CrossSection } from './components/CrossSection.js';
+import { LayerTable } from './components/LayerTable.js';
+import { ResultsPanel } from './components/ResultsPanel.js';
+import {
+  type UiLayer,
+  type UiState,
+  defaultState,
+  hasBridging,
+  timberFrameExample,
+  toBuildingElement,
+} from './state/model.js';
+import { decodeState, encodeState } from './url/codec.js';
+
+/**
+ * Linked from the footer and the phase banner so anyone landing on the published site
+ * can reach the caveats, not just people who cloned the repository.
+ */
+const REPOSITORY_URL = 'https://github.com/swwilshub/OpenUValue';
+
+const SECTION_LABELS: Record<ProfileSection, string> = {
+  combined: 'Combined (area weighted)',
+  unbridged: 'Unbridged section',
+  bridged: 'Bridging section',
+};
+
+export function App(): JSX.Element {
+  const initial = useMemo(() => decodeState(window.location.hash), []);
+  const [state, setState] = useState<UiState>(initial.state);
+  const [linkProblem, setLinkProblem] = useState<string | undefined>(initial.problem);
+  const [copied, setCopied] = useState(false);
+  /** The hash this component last wrote, so an incoming change can be told apart. */
+  const writtenHash = useRef<string>('');
+
+  // Keep the hash in step with the build-up, so the address bar is always shareable.
+  // replaceState rather than pushState: editing a thickness should not fill the
+  // browser's back stack with intermediate states.
+  useEffect(() => {
+    const encoded = `#${encodeState(state)}`;
+    writtenHash.current = encoded;
+    window.history.replaceState(null, '', encoded);
+  }, [state]);
+
+  // A hash change we did not write means someone navigated: pasted a share link into
+  // an open tab, followed one from another page, or used back/forward. Without this
+  // the app would keep showing the previous build-up, because changing only the hash
+  // does not reload the document.
+  useEffect(() => {
+    const onHashChange = (): void => {
+      if (window.location.hash === writtenHash.current) {
+        return;
+      }
+      const decoded = decodeState(window.location.hash);
+      setState(decoded.state);
+      setLinkProblem(decoded.problem);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const element = useMemo(() => toBuildingElement(state), [state]);
+
+  const { result, profile, engineError } = useMemo(() => {
+    try {
+      return {
+        result: calculateUValue(element),
+        profile: calculateTemperatureProfile(element, state.conditions, state.section),
+        engineError: undefined,
+      };
+    } catch (error) {
+      return {
+        result: undefined,
+        profile: undefined,
+        engineError: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }, [element, state.conditions, state.section]);
+
+  const setLayers = useCallback((layers: readonly UiLayer[]) => {
+    setState((current) => ({ ...current, layers }));
+  }, []);
+  const setDirection = useCallback((heatFlowDirection: HeatFlowDirection) => {
+    setState((current) => ({ ...current, heatFlowDirection }));
+  }, []);
+  const setConditions = useCallback((conditions: EnvironmentConditions) => {
+    setState((current) => ({ ...current, conditions }));
+  }, []);
+
+  const bridged = hasBridging(state);
+
+  const copyLink = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be refused; the URL is in the address bar regardless.
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div>
+          <h1>OpenUValue</h1>
+          <p className="tagline">
+            U-value, temperature profile and surface condensation, to BS EN ISO 6946
+            with BR 443 conventions.
+          </p>
+        </div>
+        <div className="header-actions">
+          <button type="button" onClick={() => setState(defaultState())}>
+            Masonry example
+          </button>
+          <button type="button" onClick={() => setState(timberFrameExample())}>
+            Timber frame example
+          </button>
+          <button type="button" className="primary" onClick={() => void copyLink()}>
+            {copied ? 'Link copied' : 'Copy share link'}
+          </button>
+        </div>
+      </header>
+
+      <p className="phase-banner">
+        <strong>Phase 1.</strong> Steady-state only. Material values and several clause
+        references still need checking against printed standards — see{' '}
+        <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. BR 443's
+        mechanical-fastener correction is not implemented, so a build-up with insulation
+        fixed through is under-reported.
+      </p>
+
+      {linkProblem !== undefined && (
+        <p className="link-problem">
+          {linkProblem} The default build-up is shown instead.{' '}
+          <button type="button" className="link-button" onClick={() => setLinkProblem(undefined)}>
+            dismiss
+          </button>
+        </p>
+      )}
+
+      <main className="layout">
+        <div className="column-left">
+          <section className="panel">
+            <h2>
+              <input
+                type="text"
+                aria-label="Element name"
+                className="element-name"
+                value={state.name}
+                onChange={(event) =>
+                  setState((current) => ({ ...current, name: event.target.value }))
+                }
+              />
+            </h2>
+            {result === undefined ? (
+              <p className="engine-error">{engineError}</p>
+            ) : (
+              <LayerTable layers={state.layers} result={result} onChange={setLayers} />
+            )}
+          </section>
+
+          <BoundaryPanel
+            heatFlowDirection={state.heatFlowDirection}
+            conditions={state.conditions}
+            onDirectionChange={setDirection}
+            onConditionsChange={setConditions}
+          />
+        </div>
+
+        <div className="column-right">
+          {result !== undefined && profile !== undefined ? (
+            <>
+              <ResultsPanel result={result} profile={profile} />
+
+              <section className="panel">
+                <div className="section-header">
+                  <h2>Cross-section and temperature</h2>
+                  <label className="inline-select">
+                    Show
+                    <select
+                      value={state.section}
+                      disabled={!bridged}
+                      onChange={(event) =>
+                        setState((current) => ({
+                          ...current,
+                          section: event.target.value as ProfileSection,
+                        }))
+                      }
+                    >
+                      {(Object.keys(SECTION_LABELS) as ProfileSection[]).map((section) => (
+                        <option key={section} value={section}>
+                          {SECTION_LABELS[section]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <CrossSection
+                  layers={state.layers}
+                  result={result}
+                  profile={profile}
+                  section={state.section}
+                />
+                {bridged && state.section === 'combined' && (
+                  <p className="footnote">
+                    The combined profile is an OpenUValue convention, not a method from
+                    BS EN ISO 6946, which defines no temperature profile through a bridged
+                    element. The area-weighted layer resistances are scaled by{' '}
+                    k = {(profile.combinedScalingFactor ?? 1).toFixed(4)} so the profile sums
+                    to the reported R<sub>T</sub> rather than to the lower limit R″
+                    <sub>T</sub>. Vapour thicknesses follow the unbridged path.
+                  </p>
+                )}
+              </section>
+            </>
+          ) : (
+            <section className="panel">
+              <h2>Result</h2>
+              <p className="engine-error">{engineError}</p>
+            </section>
+          )}
+        </div>
+      </main>
+
+      <footer className="app-footer">
+        <p>
+          Open source, MIT licensed. Runs entirely in your browser — the build-up is
+          encoded in the address bar and nothing is sent anywhere.
+        </p>
+        <p>
+          <a href={REPOSITORY_URL}>Source on GitHub</a>
+          {' · '}
+          <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>
+            What still needs checking (VERIFY.md)
+          </a>
+          {' · '}
+          <a href={`${REPOSITORY_URL}/blob/HEAD/ROADMAP.md`}>What is not built yet</a>
+        </p>
+      </footer>
+    </div>
+  );
+}

@@ -1,0 +1,127 @@
+# VERIFY.md
+
+Everything in OpenUValue that needs checking against a printed standard before the
+tool should be relied on for design work.
+
+This file is a deliverable, not a leftovers list. The repository rule (see
+`CLAUDE.md`) is that a guessed citation is worse than an admitted gap: where a value
+or a clause reference is not something we can attribute with confidence, the code
+carries a `TODO(verify)` and the item is recorded here rather than being dressed up
+with a plausible-looking reference.
+
+Two kinds of entry appear below:
+
+- **Values we believe are correct but cannot yet attribute to a clause.** The number
+  is used, the calculation works, and the citation is incomplete.
+- **Open questions where the standard may specify a different method.** These could
+  change results, not just references. They are marked **method risk**.
+
+Standards referenced: BS EN ISO 6946 (thermal resistance and transmittance),
+BR 443 *Conventions for U-value calculations*, BS EN ISO 13788 (surface humidity and
+interstitial condensation), BS EN ISO 10456 (declared and design thermal values),
+BS EN ISO 10211 (thermal bridges, numerical), BS 5250 (moisture control in
+buildings), DIN 4108-3 (Glaser, for a later phase).
+
+---
+
+## 1. Engine: clause references for values we are using
+
+| # | Item | Where | What to check | If wrong |
+|---|---|---|---|---|
+| V1 | Surface resistances Rsi 0.10 / 0.13 / 0.17 and Rse 0.04 m²K/W | `engine/src/constants.ts` `SURFACE_RESISTANCES_M2K_PER_W` | Table and clause number in BS EN ISO 6946:2017 (these appear as Table 1 in the 2007 edition and were renumbered), and the corresponding section of BR 443 (2019) | Citation only; the values are standard UK practice |
+| V2 | "Horizontal" means heat flow within ±30° of the horizontal plane | `engine/src/types.ts` `HeatFlowDirection` | The wording and clause in BS EN ISO 6946 | Affects which Rsi applies to a pitched roof |
+| V3 | Rounding: resistances to 3 dp, U-values to 2 dp | `engine/src/constants.ts` | The rounding clause in BS EN ISO 6946 and in BR 443, including whether BR 443 requires two significant figures for small U-values | Reported precision only |
+
+## 2. Engine: open method questions (**method risk**)
+
+| # | Item | Where | What to check | If wrong |
+|---|---|---|---|---|
+| V4 | **Unventilated air layer resistance table** — every value, for all three heat-flow directions | `engine/src/constants.ts` `UNVENTILATED_AIR_LAYER_TABLE` | All 27 tabulated values against a printed copy. Also: BS EN ISO 6946:2007 presents these as a table, while the 2017 edition moved to a calculation procedure for air layers in an annex. Confirm which basis BR 443 UK work should follow, and whether the tabulated values are reproduced unchanged in 2017 | Changes every build-up containing a cavity |
+| V5 | **Slightly ventilated air layers** — we interpolate the total resistance linearly on opening area between the unventilated and well-ventilated treatments | `engine/src/airLayer.ts` `slightlyVentilatedInterpolationWeight`, `engine/src/assembly.ts` | Whether BS EN ISO 6946 specifies this, or instead specifies **half the tabulated unventilated resistance with the resistance of the layers outboard of the cavity capped at 0.15 m²K/W**. These give different answers. Both candidates are implemented-or-noted; the standard's method must replace ours | Changes every slightly ventilated build-up |
+| V6 | Ventilation class thresholds, 500 and 1500 mm²/m | `engine/src/constants.ts` | Both thresholds and their clause, including whether the figures differ for walls (per metre of length) and roofs (per m² of area) | Misclassifies cavities between the two treatments |
+| V7 | Well-ventilated treatment: disregard the cavity and everything outboard of it, and substitute Rsi for Rse | `engine/src/assembly.ts` | The clause, and whether Rse should be the still-air Rsi for the same heat-flow direction or a fixed value | Changes rear-ventilated cladding and roofs |
+| V8 | Combined-method applicability limit R'T/R''T ≤ 1.5 | `engine/src/constants.ts` `COMBINED_METHOD_MAX_UPPER_TO_LOWER_RATIO` | The limit and its clause in BS EN ISO 6946. (We have confirmed internally that a ratio of 1.5 is algebraically the same rule as a 20 % error estimate, so only one figure needs checking) | Changes which build-ups get a U-value at all |
+| V9 | **Metal-bridging detection threshold, λ ≥ 5.0 W/(m·K)** | `engine/src/constants.ts` `METAL_DETECTION_MIN_LAMBDA_W_PER_MK` | How BS EN ISO 6946 words its exclusion of metal penetrating the insulation, and whether it gives any quantitative test. **The threshold is our own heuristic, not a figure from any standard.** It sits above dense concrete (~2.0) and granite (~3.5) and below stainless steel (~17) | Could wrongly admit or exclude a build-up from the combined method |
+| V10 | Interstitial condensation is assessed through the insulation path as well as the stud path, worst per interface | `engine/src/temperatureProfile.ts`, `engine/src/condensation/method.ts` | Whether BS 5250 assesses interstitial condensation through the insulation rather than the stud, as we believe. Our approach takes the worst of **all** section paths, so it is conservative either way — but the basis should be confirmed | Basis of the condensation verdict |
+| V11 | BS EN ISO 13788 Annex E equation numbers for the saturation-pressure and dew-point equations | `engine/src/psychrometrics.ts` | The equation numbers within Annex E of BS EN ISO 13788:2012. The equations themselves are reproduced in the code and tested against hand calculations | Citation only |
+
+## 3. In-house conventions (not standards — labelled as ours in code and UI)
+
+These are **not** verification items in the sense above: no standard defines them, and
+they cannot be "checked". They are listed so that nobody mistakes them for standard
+methods. See `CLAUDE.md`.
+
+| # | Convention | Where | Why |
+|---|---|---|---|
+| C1 | The `'combined'` temperature profile scales the parallel-combined layer resistances by `k = (RT − Rsi − Rse)/(R''T − Rsi − Rse)`, holding Rsi and Rse fixed | `engine/src/temperatureProfile.ts` `combinedScalingFactor` | BS EN ISO 6946 gives a U-value for a bridged element but defines no temperature profile through one. Without the scaling, the drawn profile sums to R''T and would imply a different heat flux from the U-value shown beside it |
+| C2 | Sd values in `'combined'` mode follow the unbridged path | `engine/src/temperatureProfile.ts` | Area-weighting μ·d across a stud layer has no clean physical meaning |
+| C3 | Where an element resolves into several weighted variants (a slightly ventilated cavity), the profile is drawn for the dominant variant | `engine/src/temperatureProfile.ts` | A single drawn profile cannot represent an interpolation between two different assemblies. Flagged in the result's warnings |
+
+## 4. Materials
+
+Every seeded material has `"source": "TODO(verify)"`. This is deliberate. The values
+are conventional UK figures that give sensible results, but we are not able to
+attribute specific numbers to specific table rows with confidence, and the repository
+rule forbids inventing a citation that looks authoritative. Each record's `notes`
+field names the authority to check it against.
+
+**No material value in this database should be used for a submitted calculation until
+its row here is closed.**
+
+The general checks that apply to the whole table:
+
+- λ, ρ, c and μ against **BS EN ISO 10456:2007 Table 3** where the material appears
+  there, noting that ISO 10456 tabulates masonry and concrete by density band rather
+  than by UK convention.
+- **BR 443** for UK-specific conventions (notably the outer/inner leaf brickwork
+  distinction, which is a UK convention rather than an ISO one).
+- **CIBSE Guide A** Table 3.49 for UK construction materials.
+- For insulation, λ is product-specific and declared under the relevant harmonised
+  standard (BS EN 13162 mineral wool, 13163 EPS, 13165 PIR, 13171 wood fibre). The
+  seeded values are generic placeholders only.
+- For membranes, the useful quantity is the declared Sd (BS EN ISO 12572), not λ.
+- Whether the dry or wet μ value applies for the intended use (ISO 10456 tabulates
+  both for many materials).
+
+### Individual records
+
+| id | name | λ W/(m·K) | ρ kg/m³ | c J/(kg·K) | μ | check against |
+|---|---|---|---|---|---|---|
+| `brick-outer-leaf` | Brickwork, outer leaf (exposed) | 0.77 | 1700 | 1000 | 10 | Conventional UK design value for an exposed outer leaf. Check against BR 443 and CIBSE Guide A Table 3.49; ISO 10456 gives masonry by density band rather than by UK leaf convention. |
+| `brick-inner-leaf` | Brickwork, inner leaf (protected) | 0.56 | 1700 | 1000 | 10 | Conventional UK design value for a protected inner leaf. Check against BR 443 and CIBSE Guide A Table 3.49. |
+| `dense-concrete-block` | Dense aggregate concrete block | 1.13 | 1900 | 1000 | 60 | Generic UK dense aggregate block. Product values vary widely; check against BR 443 and manufacturer declared values, and confirm mu against ISO 10456 Table 3. |
+| `aircrete-block` | Aircrete (autoclaved aerated) block | 0.15 | 600 | 1000 | 6 | Generic UK aircrete block. UK products span roughly 0.11 to 0.20 W/(m*K) by density; check against BR 443 and manufacturer declared values. |
+| `concrete-medium-density` | Concrete, medium density | 1.35 | 2000 | 1000 | 100 | Check lambda, c and mu against BS EN ISO 10456:2007 Table 3, which tabulates concrete by density. |
+| `concrete-reinforced` | Concrete, reinforced (1 % steel) | 2.3 | 2300 | 1000 | 130 | Check against BS EN ISO 10456:2007 Table 3, which lists reinforced concrete separately by steel content. |
+| `gypsum-plasterboard` | Gypsum plasterboard | 0.25 | 900 | 1000 | 10 | Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (gypsum plasterboard, 900 kg/m3). |
+| `gypsum-plaster` | Gypsum plaster, dense | 0.57 | 1300 | 1000 | 10 | Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density. |
+| `cement-sand-render` | Cement:sand render | 1.0 | 1800 | 1000 | 25 | Check against BS EN ISO 10456:2007 Table 3 (cement mortar / plaster) and BR 443. |
+| `sand-cement-screed` | Sand:cement screed | 1.15 | 2000 | 1000 | 30 | Check against BS EN ISO 10456:2007 Table 3 and BR 443. |
+| `softwood-structural` | Softwood, structural | 0.13 | 500 | 1600 | 50 | Check against BS EN ISO 10456:2007 Table 3 (softwood, 500 kg/m3), including whether the dry (50) or wet (20) mu applies for the intended use. |
+| `osb-board` | Oriented strand board (OSB) | 0.13 | 650 | 1700 | 50 | Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (OSB) and BS EN 13986. |
+| `plywood-board` | Plywood | 0.13 | 500 | 1600 | 90 | Check against BS EN ISO 10456:2007 Table 3 (plywood by density) and BS EN 13986. |
+| `chipboard-flooring` | Chipboard flooring | 0.14 | 600 | 1700 | 50 | Check against BS EN ISO 10456:2007 Table 3 (particleboard by density) and BS EN 13986. |
+| `mineral-wool-quilt` | Mineral wool quilt | 0.035 | 20 | 1030 | 1 | Generic value only; lambda is product-specific and declared to BS EN 13162. Check c and mu against BS EN ISO 10456:2007 Table 3 (mineral wool). |
+| `eps-board` | Expanded polystyrene (EPS) board | 0.038 | 20 | 1450 | 60 | Generic value only; lambda is product-specific and declared to BS EN 13163. Check c and mu against BS EN ISO 10456:2007 Table 3 (EPS). |
+| `pir-board` | Polyisocyanurate (PIR) board, foil faced | 0.022 | 32 | 1400 | 60 | Generic value only; lambda is product-specific and declared to BS EN 13165. Facings dominate the vapour resistance, so mu of the core is not the whole story. Check against ISO 10456 and product declarations. |
+| `wood-fibre-board` | Wood fibre insulation board | 0.04 | 140 | 2100 | 5 | Generic value only; lambda is product-specific and declared to BS EN 13171. Check c and mu against ISO 10456 and product declarations. |
+| `polyethylene-vcl` | Polyethylene vapour control layer | 0.33 | 980 | 1800 | 100000 | A thin membrane's contribution is its Sd, not its lambda. Check lambda, rho, c against ISO 10456 (polyethylene) and take Sd from the product declaration to BS EN ISO 12572. |
+| `bitumen-sheet` | Bitumen sheet membrane | 0.23 | 1100 | 1000 | 50000 | Check against BS EN ISO 10456:2007 Table 3 (bitumen / roofing felt) and take Sd from the product declaration. |
+| `concrete-roof-tile` | Concrete roof tile | 1.0 | 2100 | 1000 | 100 | Check against BS EN ISO 10456:2007 Table 3 (tiles, concrete) and BR 443. |
+| `clay-roof-tile` | Clay roof tile | 1.0 | 2000 | 800 | 40 | Check against BS EN ISO 10456:2007 Table 3 (tiles, clay) and BR 443. |
+
+---
+
+## 5. Out of scope in Phase 1, so not yet a verification item
+
+Listed here only so it is clear they are absent rather than assumed. See `ROADMAP.md`.
+
+- BS EN ISO 6946 ΔU corrections: air voids, mechanical fasteners, inverted roofs.
+  **BR 443 requires the fastener correction, so a UK U-value from this tool is
+  incomplete wherever insulation is mechanically fixed through.**
+- BS EN ISO 13788 monthly interstitial condensation and its climate data.
+- DIN 4108-3 Glaser as an alternative method.
+- BS EN ISO 13786 dynamic properties (areal heat capacity kappa, decrement factor,
+  time shift) needed by the SAP 10.3 tool.
+- BS EN ISO 10211 two-dimensional thermal bridges.
+- BS EN ISO 13370 ground floors.
