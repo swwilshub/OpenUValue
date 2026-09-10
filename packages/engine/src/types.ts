@@ -11,6 +11,7 @@ import type {
   WattsPerSquareMetre,
   WattsPerSquareMetreKelvin,
 } from './units.js';
+import type { ExternalEnvironmentKind, InternalSurfaceCondition } from './boundary.js';
 import type { Warning } from './warnings.js';
 
 /**
@@ -92,9 +93,22 @@ export interface BuildingElement {
   readonly heatFlowDirection: HeatFlowDirection;
   /** Ordered internal -> external. */
   readonly layers: readonly Layer[];
-  /** Overrides the tabulated Rsi, e.g. a BR 443 convention for a special case. */
+  /**
+   * How freely air moves across the internal surface. Defaults to
+   * 'normal-air-circulation', i.e. the BS EN ISO 6946 tabulated Rsi. See boundary.ts.
+   */
+  readonly internalSurfaceCondition?: InternalSurfaceCondition;
+  /**
+   * What the outer face faces: outside air, a ventilated cavity, an unheated space,
+   * another heated room. Defaults to 'outside-air'. See boundary.ts.
+   */
+  readonly externalEnvironment?: ExternalEnvironmentKind;
+  /**
+   * Overrides the Rsi that the internal surface condition would otherwise give, e.g.
+   * a BR 443 convention this engine does not model. Wins over everything.
+   */
   readonly rsiOverrideM2KPerW?: SquareMetreKelvinPerWatt;
-  /** Overrides the tabulated Rse. */
+  /** Overrides the Rse that the external environment would otherwise give. */
   readonly rseOverrideM2KPerW?: SquareMetreKelvinPerWatt;
 }
 

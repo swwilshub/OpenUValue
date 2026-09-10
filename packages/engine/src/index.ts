@@ -12,6 +12,7 @@ export * from './errors.js';
 export * from './warnings.js';
 export * from './types.js';
 export * from './constants.js';
+export * from './boundary.js';
 export * from './psychrometrics.js';
 export * from './rounding.js';
 export * from './surfaceResistance.js';

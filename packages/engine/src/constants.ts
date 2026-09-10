@@ -30,6 +30,25 @@ export const SURFACE_RESISTANCES_M2K_PER_W: {
   downward: { rsiM2KPerW: 0.17, rseM2KPerW: 0.04 },
 };
 
+/**
+ * Internal surface resistance for the "reduced air circulation" case, m^2*K/W.
+ *
+ * Furniture, curtains, decoration, corners and niches hinder air exchange at the
+ * internal surface, raising Rsi and so lowering the surface temperature. It is the
+ * unfavourable case for moisture protection and for panel heating, and is the value
+ * DIN 4108-3 uses for its Glaser assessment.
+ *
+ * This is deliberately NOT the BS EN ISO 6946 tabulated Rsi. Applying it changes the
+ * U-value as well as the surface temperature, so the UI labels which case is in use.
+ *
+ * TODO(verify): the value 0.25 m^2*K/W and its clause in DIN 4108-3 (and in
+ * DIN 4108-2, where the same figure is understood to be used for the mould-growth
+ * check), and whether it applies to all three heat-flow directions or only to
+ * horizontal heat flow. Also whether BR 443 or BS 5250 give a UK equivalent, since
+ * this is a German convention being offered in a UK-first tool.
+ */
+export const REDUCED_AIR_CIRCULATION_RSI_M2K_PER_W: SquareMetreKelvinPerWatt = 0.25;
+
 /* -------------------------------------------------------------- air layers ---- */
 
 /**
