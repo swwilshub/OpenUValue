@@ -2,10 +2,13 @@ import type {
   AirLayerVentilation,
   BuildingElement,
   EnvironmentConditions,
+  ExternalEnvironmentKind,
   HeatFlowDirection,
+  InternalSurfaceCondition,
   Layer,
   ProfileSection,
 } from '@openuvalue/engine';
+import { externalEnvironment, externalEnvironmentsForDirection } from '@openuvalue/engine';
 import { millimetresToMetres, percentToFraction } from '@openuvalue/engine';
 import type { MaterialCategory } from '@openuvalue/materials';
 import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
@@ -40,6 +43,119 @@ export interface UiState {
   readonly layers: readonly UiLayer[];
   readonly conditions: EnvironmentConditions;
   readonly section: ProfileSection;
+  /** Free or reduced air circulation at the internal surface. */
+  readonly internalSurfaceCondition: InternalSurfaceCondition;
+  /** What the outer face faces: outside air, a loft, another heated room, ... */
+  readonly externalEnvironment: ExternalEnvironmentKind;
+}
+
+
+/* --------------------------------------------------- typical starting points --- */
+
+/**
+ * Typical conditions to start from, offered behind the "Common defaults" button and
+ * applied when the external environment is changed.
+ *
+ * **These are starting points, not standard values.** No standard fixes the
+ * temperature of a particular garage or loft, and a real assessment states its own
+ * conditions. They are here so that a homeowner gets a sensible answer without having
+ * to know what to type, and every one of them is listed in VERIFY.md.
+ *
+ * TODO(verify): the internal 20 degC / 50 % RH pair against the humidity classes in
+ * BS EN ISO 13788 Annex A and the guidance in BS 5250, which classify internal
+ * humidity by occupancy rather than fixing one figure; and whether BR 443 or BS 5250
+ * give UK figures for unheated spaces and lofts to replace the estimates below.
+ */
+export interface ConditionPreset {
+  readonly airTemperatureC: number;
+  readonly relativeHumidityPercent: number;
+  /** Shown next to the figures so nobody mistakes an estimate for a standard value. */
+  readonly note: string;
+}
+
+export const INTERNAL_CONDITION_PRESET: ConditionPreset = {
+  airTemperatureC: 20,
+  relativeHumidityPercent: 50,
+  note: 'A commonly used UK assessment pair for a normally occupied dwelling.',
+};
+
+export const EXTERNAL_CONDITION_PRESETS: Record<ExternalEnvironmentKind, ConditionPreset> = {
+  'outside-air': {
+    airTemperatureC: 0,
+    relativeHumidityPercent: 90,
+    note: 'A cold UK winter day. Outside air is damp when it is cold.',
+  },
+  'rear-ventilated-cladding': {
+    airTemperatureC: 0,
+    relativeHumidityPercent: 90,
+    note: 'The ventilated cavity is effectively at outside conditions.',
+  },
+  'rear-ventilated-roofing': {
+    airTemperatureC: 0,
+    relativeHumidityPercent: 90,
+    note: 'The ventilated cavity is effectively at outside conditions.',
+  },
+  'unheated-room': {
+    airTemperatureC: 10,
+    relativeHumidityPercent: 80,
+    note: 'An estimate for a garage or store: warmer than outside, colder than inside.',
+  },
+  'unheated-roof-space': {
+    airTemperatureC: 2,
+    relativeHumidityPercent: 90,
+    note: 'An estimate for a ventilated cold loft, close to outside conditions.',
+  },
+  'heated-room': {
+    airTemperatureC: 20,
+    relativeHumidityPercent: 50,
+    note: 'The same as inside, so there is no heat flow and no condensation risk.',
+  },
+  ground: {
+    airTemperatureC: 10,
+    relativeHumidityPercent: 100,
+    note: 'Not used: ground heat loss is BS EN ISO 13370 and is not implemented.',
+  },
+};
+
+/** Conditions for an external environment, with the internal pair kept as it is. */
+export function conditionsForEnvironment(
+  kind: ExternalEnvironmentKind,
+  current: EnvironmentConditions,
+): EnvironmentConditions {
+  const preset = EXTERNAL_CONDITION_PRESETS[kind];
+  return {
+    ...current,
+    externalAirTemperatureC: preset.airTemperatureC,
+    externalRelativeHumidityPercent: preset.relativeHumidityPercent,
+  };
+}
+
+/** Both sides reset to their typical starting points. */
+export function commonDefaultConditions(
+  kind: ExternalEnvironmentKind,
+): EnvironmentConditions {
+  const external = EXTERNAL_CONDITION_PRESETS[kind];
+  return {
+    internalAirTemperatureC: INTERNAL_CONDITION_PRESET.airTemperatureC,
+    internalRelativeHumidityPercent: INTERNAL_CONDITION_PRESET.relativeHumidityPercent,
+    externalAirTemperatureC: external.airTemperatureC,
+    externalRelativeHumidityPercent: external.relativeHumidityPercent,
+  };
+}
+
+/**
+ * Keep the external environment consistent with the direction of heat flow. Changing
+ * a wall into a roof would otherwise leave "rear ventilated cladding" selected, which
+ * the engine refuses outright.
+ */
+export function environmentForDirection(
+  kind: ExternalEnvironmentKind,
+  direction: HeatFlowDirection,
+): ExternalEnvironmentKind {
+  if (externalEnvironment(kind).applicableDirections.includes(direction)) {
+    return kind;
+  }
+  return externalEnvironmentsForDirection(direction)[0]?.kind ?? 'outside-air';
 }
 
 let nextId = 0;
@@ -101,13 +217,10 @@ export function defaultState(): UiState {
       layerFromMaterial('mineral-wool-quilt', 100),
       layerFromMaterial('brick-outer-leaf', 102.5),
     ],
-    conditions: {
-      internalAirTemperatureC: 20,
-      internalRelativeHumidityPercent: 50,
-      externalAirTemperatureC: 0,
-      externalRelativeHumidityPercent: 90,
-    },
+    conditions: commonDefaultConditions('outside-air'),
     section: 'combined',
+    internalSurfaceCondition: 'normal-air-circulation',
+    externalEnvironment: 'outside-air',
   };
 }
 
@@ -129,13 +242,10 @@ export function timberFrameExample(): UiState {
       { ...blankAirLayer(), thicknessMm: 25, ventilation: 'well-ventilated' },
       layerFromMaterial('brick-outer-leaf', 102.5),
     ],
-    conditions: {
-      internalAirTemperatureC: 20,
-      internalRelativeHumidityPercent: 50,
-      externalAirTemperatureC: 0,
-      externalRelativeHumidityPercent: 90,
-    },
+    conditions: commonDefaultConditions('outside-air'),
     section: 'combined',
+    internalSurfaceCondition: 'normal-air-circulation',
+    externalEnvironment: 'outside-air',
   };
 }
 
@@ -182,6 +292,13 @@ export function toBuildingElement(state: UiState): BuildingElement {
     name: state.name,
     heatFlowDirection: state.heatFlowDirection,
     layers,
+    internalSurfaceCondition: state.internalSurfaceCondition,
+    // Guarded so a direction change can never hand the engine an environment it
+    // refuses; the panel keeps the two in step, and this is the belt to that braces.
+    externalEnvironment: environmentForDirection(
+      state.externalEnvironment,
+      state.heatFlowDirection,
+    ),
   };
 }
 

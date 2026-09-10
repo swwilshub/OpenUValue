@@ -1,4 +1,11 @@
-import type { AirLayerVentilation, HeatFlowDirection, ProfileSection } from '@openuvalue/engine';
+import type {
+  AirLayerVentilation,
+  ExternalEnvironmentKind,
+  HeatFlowDirection,
+  InternalSurfaceCondition,
+  ProfileSection,
+} from '@openuvalue/engine';
+import { EXTERNAL_ENVIRONMENTS, INTERNAL_SURFACE_CONDITIONS } from '@openuvalue/engine';
 import { type UiLayer, type UiState, blankSolidLayer, defaultState, makeLayerId } from '../state/model.js';
 
 /**
@@ -32,6 +39,10 @@ interface EncodedState {
   readonly s: ProfileSection;
   readonly c: readonly [number, number, number, number];
   readonly ls: readonly EncodedLayer[];
+  /** Internal surface condition. Absent in links written before it existed. */
+  readonly i?: InternalSurfaceCondition;
+  /** External environment. Absent in links written before it existed. */
+  readonly e?: ExternalEnvironmentKind;
 }
 
 function toBase64Url(text: string): string {
@@ -61,6 +72,8 @@ export function encodeState(state: UiState): string {
       state.conditions.externalAirTemperatureC,
       state.conditions.externalRelativeHumidityPercent,
     ],
+    i: state.internalSurfaceCondition,
+    e: state.externalEnvironment,
     ls: state.layers.map((layer) => {
       const base: EncodedLayer = {
         k: layer.kind === 'air' ? 'a' : 's',
@@ -95,6 +108,14 @@ const VENTILATION_CLASSES: readonly AirLayerVentilation[] = [
   'slightly-ventilated',
   'well-ventilated',
 ];
+// Taken from the engine's own listings, so a case added there cannot be silently
+// dropped when decoding a link.
+const INTERNAL_CONDITION_KINDS: readonly InternalSurfaceCondition[] =
+  INTERNAL_SURFACE_CONDITIONS.map((condition) => condition.kind);
+const EXTERNAL_ENVIRONMENT_KINDS: readonly ExternalEnvironmentKind[] =
+  EXTERNAL_ENVIRONMENTS.filter((environment) => environment.supported).map(
+    (environment) => environment.kind,
+  );
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -179,6 +200,18 @@ export function decodeState(hash: string): DecodeResult {
             ? (section as ProfileSection)
             : 'combined',
         layers: parsed['ls'].map(decodeLayer),
+        // A link from before these existed decodes to the ISO 6946 defaults, which is
+        // what such a link meant when it was written.
+        internalSurfaceCondition:
+          typeof parsed['i'] === 'string' &&
+          INTERNAL_CONDITION_KINDS.includes(parsed['i'] as InternalSurfaceCondition)
+            ? (parsed['i'] as InternalSurfaceCondition)
+            : 'normal-air-circulation',
+        externalEnvironment:
+          typeof parsed['e'] === 'string' &&
+          EXTERNAL_ENVIRONMENT_KINDS.includes(parsed['e'] as ExternalEnvironmentKind)
+            ? (parsed['e'] as ExternalEnvironmentKind)
+            : 'outside-air',
         conditions: {
           internalAirTemperatureC: finiteNumber(conditions[0], 20),
           internalRelativeHumidityPercent: Math.min(

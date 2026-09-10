@@ -706,6 +706,25 @@ button.danger:hover {
 }
 
 /*
+ * Decoration drawn over the layers must not swallow clicks: the layer boxes beneath
+ * are the click target that selects a layer, and the dew-point band in particular
+ * covers the whole lower part of the drawing.
+ */
+.dew-point-band,
+.dew-point-line,
+.dew-point-label,
+.temperature-line,
+.temperature-line-shadow,
+.grid-line,
+.axis-label,
+.axis-title,
+.layer-caption,
+.layer-name,
+.side-label {
+  pointer-events: none;
+}
+
+/*
  * The line is drawn twice: a pale wide stroke underneath so it stays readable over
  * dark hatching, then the gradient stroke itself.
  */
@@ -758,6 +777,214 @@ button.danger:hover {
   font-size: 11.5px;
   color: var(--ink-faint);
   max-width: 80ch;
+}
+
+
+/* ------------------------------------------------- boundary and drag/drop ---- */
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ghost-button {
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.ghost-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.boundary-sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.boundary-side {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.boundary-side h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.side-chip {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.side-chip-inside {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.side-chip-outside {
+  background: #e6ecf2;
+  color: var(--temp-cold);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.field select,
+.field input {
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.choice-group {
+  border: 0;
+  padding: 0;
+  margin: 0 0 10px;
+}
+
+.choice-group legend {
+  padding: 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.choice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 7px 8px;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.choice input {
+  margin-top: 3px;
+}
+
+/* .choice is a <label>, which the base rule sets in small caps. Undo that here. */
+.choice,
+.choice strong,
+.choice em {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.choice strong {
+  display: block;
+  font-size: 13px;
+}
+
+.choice em {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-style: normal;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+
+.explain {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.explain summary {
+  cursor: pointer;
+  color: var(--accent);
+  list-style-position: outside;
+}
+
+.explain p {
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+/* The handle is the only draggable part, so a text field can still be selected. */
+.drag-handle {
+  cursor: grab;
+  padding: 0 6px 0 0;
+  color: var(--ink-faint);
+  font-size: 15px;
+  line-height: 1;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.layer-row {
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.layer-row-dragging {
+  opacity: 0.45;
+}
+
+.layer-row-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* The gap a dragged layer would drop into. */
+.layer-row-drop-before {
+  box-shadow: 0 -3px 0 -1px var(--accent);
+}
+
+.layer-row-drop-after {
+  box-shadow: 0 3px 0 -1px var(--accent);
+}
+
+.layer-box {
+  cursor: pointer;
+}
+
+.layer-selection {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------------------- footer ---- */

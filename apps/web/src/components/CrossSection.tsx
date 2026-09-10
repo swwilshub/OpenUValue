@@ -74,9 +74,18 @@ export interface CrossSectionProps {
   readonly result: UValueResult;
   readonly profile: TemperatureProfile;
   readonly section: ProfileSection;
+  /** Layer highlighted in the layer table, so the drawing and the table agree. */
+  readonly selectedLayerId?: string | undefined;
+  readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
 }
 
-export function CrossSection({ layers, result, profile }: CrossSectionProps): JSX.Element {
+export function CrossSection({
+  layers,
+  result,
+  profile,
+  selectedLayerId,
+  onSelectLayer,
+}: CrossSectionProps): JSX.Element {
   const totalThicknessMm = layers.reduce((total, layer) => total + layer.thicknessMm, 0);
   if (layers.length === 0 || totalThicknessMm <= 0) {
     return (
@@ -298,8 +307,19 @@ export function CrossSection({ layers, result, profile }: CrossSectionProps): JS
         {boxes.map((box) => {
           const style = CATEGORY_STYLE[box.category];
           const bridgedPercent = box.layer.kind === 'solid' ? box.layer.bridgedPercent : 0;
+          const isSelected = box.layer.id === selectedLayerId;
           return (
-            <g key={box.layer.id}>
+            <g
+              key={box.layer.id}
+              className={isSelected ? 'layer-box layer-box-selected' : 'layer-box'}
+              onClick={() => onSelectLayer?.(isSelected ? undefined : box.layer.id)}
+            >
+              <title>
+                {`${box.layer.label} — ${box.layer.thicknessMm} mm`}
+                {box.layer.kind === 'solid'
+                  ? `, \u03bb ${box.layer.lambdaWPerMK} W/(m\u00b7K)`
+                  : ''}
+              </title>
               {box.included ? (
                 <>
                   <rect
@@ -338,6 +358,15 @@ export function CrossSection({ layers, result, profile }: CrossSectionProps): JS
                 strokeWidth={0.75}
                 className={bridgedPercent > 0 ? 'layer-outline layer-outline-bridged' : 'layer-outline'}
               />
+              {isSelected && (
+                <rect
+                  x={box.x}
+                  y={TOP_PAD}
+                  width={box.width}
+                  height={PLOT_HEIGHT}
+                  className="layer-selection"
+                />
+              )}
               {box.width >= MIN_WIDTH_FOR_NAME && (
                 <text
                   className="layer-name"

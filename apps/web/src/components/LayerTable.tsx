@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { UValueResult } from '@openuvalue/engine';
 import { roundResistanceForReporting } from '@openuvalue/engine';
 import { MATERIALS, findMaterialById, toEngineMaterial } from '@openuvalue/materials';
@@ -7,6 +8,9 @@ export interface LayerTableProps {
   readonly layers: readonly UiLayer[];
   readonly result: UValueResult;
   readonly onChange: (layers: readonly UiLayer[]) => void;
+  /** Layer highlighted from the cross-section, so the two views stay in step. */
+  readonly selectedLayerId?: string | undefined;
+  readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
 }
 
 const VENTILATION_LABELS = {
@@ -15,7 +19,17 @@ const VENTILATION_LABELS = {
   'well-ventilated': 'Well ventilated',
 } as const;
 
-export function LayerTable({ layers, result, onChange }: LayerTableProps): JSX.Element {
+export function LayerTable({
+  layers,
+  result,
+  onChange,
+  selectedLayerId,
+  onSelectLayer,
+}: LayerTableProps): JSX.Element {
+  /** Index being dragged, and the gap it would drop into. Null when not dragging. */
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+
   const update = (index: number, patch: Partial<UiLayer>): void => {
     onChange(layers.map((layer, i) => (i === index ? { ...layer, ...patch } : layer)));
   };
@@ -49,6 +63,26 @@ export function LayerTable({ layers, result, onChange }: LayerTableProps): JSX.E
       bridgeLabel: material.name,
       bridgeLambdaWPerMK: material.lambdaWPerMK,
     });
+  };
+
+  /**
+   * Move a layer from one position to another. Drag-and-drop and the arrow buttons
+   * both come through here, so a dragged reorder and a keyboard reorder can never
+   * disagree about what the ordering means.
+   */
+  const reorder = (from: number, to: number): void => {
+    if (from === to || from < 0 || from >= layers.length || to < 0 || to > layers.length) {
+      return;
+    }
+    const next = [...layers];
+    const [moved] = next.splice(from, 1);
+    if (moved === undefined) {
+      return;
+    }
+    // Removing the dragged layer shifts everything after it down by one, so a drop
+    // position taken from the original list has to be corrected before inserting.
+    next.splice(from < to ? to - 1 : to, 0, moved);
+    onChange(next);
   };
 
   const move = (index: number, delta: number): void => {
@@ -98,12 +132,71 @@ export function LayerTable({ layers, result, onChange }: LayerTableProps): JSX.E
       {layers.map((layer, index) => {
         const reported = result.layers[index];
         const isDisregarded = reported !== undefined && !reported.includedInCalculation;
+        const classes = ['layer-row'];
+        if (isDisregarded) {
+          classes.push('layer-row-disregarded');
+        }
+        if (dragIndex === index) {
+          classes.push('layer-row-dragging');
+        }
+        if (layer.id === selectedLayerId) {
+          classes.push('layer-row-selected');
+        }
+        // The gap this layer would drop into: above it, or below the last one.
+        if (dropIndex === index) {
+          classes.push('layer-row-drop-before');
+        } else if (dropIndex === layers.length && index === layers.length - 1) {
+          classes.push('layer-row-drop-after');
+        }
         return (
           <fieldset
             key={layer.id}
-            className={isDisregarded ? 'layer-row layer-row-disregarded' : 'layer-row'}
+            className={classes.join(' ')}
+            onClick={() => onSelectLayer?.(layer.id)}
+            onDragOver={(event) => {
+              if (dragIndex === null) {
+                return;
+              }
+              // Without preventDefault the browser refuses the drop outright.
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              // Drop above or below this layer depending on which half is hovered, so
+              // the last position in the list stays reachable.
+              const box = event.currentTarget.getBoundingClientRect();
+              const below = event.clientY > box.top + box.height / 2;
+              setDropIndex(below ? index + 1 : index);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              if (dragIndex !== null && dropIndex !== null) {
+                reorder(dragIndex, dropIndex);
+              }
+              setDragIndex(null);
+              setDropIndex(null);
+            }}
           >
             <legend>
+              <span
+                className="drag-handle"
+                draggable
+                role="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                title="Drag to reorder"
+                onDragStart={(event) => {
+                  setDragIndex(index);
+                  setDropIndex(index);
+                  event.dataTransfer.effectAllowed = 'move';
+                  // Firefox ignores a drag that carries no data.
+                  event.dataTransfer.setData('text/plain', layer.id);
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setDropIndex(null);
+                }}
+              >
+                ⠿
+              </span>
               <span className="layer-index">{index + 1}</span>
               <input
                 type="text"

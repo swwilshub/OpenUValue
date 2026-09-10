@@ -31,6 +31,9 @@ export type InternalSurfaceCondition = 'normal-air-circulation' | 'reduced-air-c
 export interface InternalSurfaceConditionDefinition {
   readonly kind: InternalSurfaceCondition;
   readonly label: string;
+  /** One line, for the control itself. Plain language, no clause numbers. */
+  readonly summary: string;
+  /** The full reasoning, for a consumer that offers somewhere to put it. */
   readonly description: string;
   /**
    * A fixed Rsi that replaces the tabulated value, or undefined to use the tabulated
@@ -45,6 +48,7 @@ export const INTERNAL_SURFACE_CONDITIONS: readonly InternalSurfaceConditionDefin
   {
     kind: 'normal-air-circulation',
     label: 'Free air circulation',
+    summary: 'Nothing against the wall. The normal case for a U-value.',
     description:
       'An unobstructed internal surface. Uses the BS EN ISO 6946 surface resistance ' +
       'for the direction of heat flow, as BR 443 requires for a UK U-value.',
@@ -53,6 +57,9 @@ export const INTERNAL_SURFACE_CONDITIONS: readonly InternalSurfaceConditionDefin
   {
     kind: 'reduced-air-circulation',
     label: 'Reduced air circulation',
+    summary:
+      'Furniture, curtains, a corner or a niche against the surface. The cautious ' +
+      'case for damp and mould.',
     description:
       'Furniture, decoration, corners and niches hinder air exchange at the internal ' +
       'surface. The most unfavourable case for panel heating and for moisture ' +
@@ -108,6 +115,9 @@ export type RseTreatment = 'tabulated' | 'still-air-equal-to-rsi';
 export interface ExternalEnvironmentDefinition {
   readonly kind: ExternalEnvironmentKind;
   readonly label: string;
+  /** One line, for the control itself. Plain language, no clause numbers. */
+  readonly summary: string;
+  /** The full reasoning, for a consumer that offers somewhere to put it. */
   readonly description: string;
   readonly rseTreatment: RseTreatment;
   /**
@@ -133,6 +143,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'outside-air',
     label: 'Direct contact to outside air',
+    summary: 'Open air on the far side, as on a normal external wall or roof.',
     description:
       'The outer surface is exposed to moving outside air. BS EN ISO 6946 Rse for ' +
       'the direction of heat flow.',
@@ -144,6 +155,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'rear-ventilated-cladding',
     label: 'Rear ventilated cladding',
+    summary: 'Cladding on battens with an open cavity behind it.',
     description:
       'A ventilated cavity behind a cladding. The cavity and everything outboard of ' +
       'it are disregarded and the outer face sees still air, so Rse takes the ' +
@@ -156,6 +168,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'rear-ventilated-roofing',
     label: 'Rear ventilated roofing',
+    summary: 'Tiles or sheeting with a ventilated space beneath.',
     description:
       'A ventilated cavity beneath a roof covering. Treated as for rear ventilated ' +
       'cladding, with the covering and the cavity disregarded.',
@@ -167,6 +180,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'unheated-room',
     label: 'Non-heated room',
+    summary: 'A garage, porch or store that is not heated.',
     description:
       'An unheated space such as a garage or store. Still air on the outer face, so ' +
       'Rse takes the internal-surface value. The space is warmer than outside, and ' +
@@ -179,6 +193,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'unheated-roof-space',
     label: 'Unheated roof space',
+    summary: 'A cold loft above the insulation.',
     description:
       'A cold loft above the insulated ceiling. Still air on the outer face, so Rse ' +
       'takes the internal-surface value, and the loft temperature has to be supplied.',
@@ -190,6 +205,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'heated-room',
     label: 'Heated room',
+    summary: 'Another heated room: an internal wall or an intermediate floor.',
     description:
       'An internal partition or intermediate floor between two heated rooms. Still ' +
       'air on both faces. With equal temperatures either side there is no heat flow ' +
@@ -202,6 +218,7 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
   {
     kind: 'ground',
     label: 'Ground',
+    summary: 'A floor on the ground, or a basement wall.',
     description:
       'A ground-bearing floor or basement wall. Heat loss to the ground depends on ' +
       'the floor area, exposed perimeter and wall thickness, not on the build-up ' +

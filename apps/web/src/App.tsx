@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { EnvironmentConditions, HeatFlowDirection, ProfileSection } from '@openuvalue/engine';
+import type {
+  EnvironmentConditions,
+  ExternalEnvironmentKind,
+  HeatFlowDirection,
+  InternalSurfaceCondition,
+  ProfileSection,
+} from '@openuvalue/engine';
 import { calculateTemperatureProfile, calculateUValue } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { CrossSection } from './components/CrossSection.js';
@@ -8,7 +14,9 @@ import { ResultsPanel } from './components/ResultsPanel.js';
 import {
   type UiLayer,
   type UiState,
+  conditionsForEnvironment,
   defaultState,
+  environmentForDirection,
   hasBridging,
   timberFrameExample,
   toBuildingElement,
@@ -32,6 +40,8 @@ export function App(): JSX.Element {
   const [state, setState] = useState<UiState>(initial.state);
   const [linkProblem, setLinkProblem] = useState<string | undefined>(initial.problem);
   const [copied, setCopied] = useState(false);
+  /** Layer picked in either the table or the drawing; the other view follows. */
+  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
   /** The hash this component last wrote, so an incoming change can be told apart. */
   const writtenHash = useRef<string>('');
 
@@ -83,11 +93,43 @@ export function App(): JSX.Element {
     setState((current) => ({ ...current, layers }));
   }, []);
   const setDirection = useCallback((heatFlowDirection: HeatFlowDirection) => {
-    setState((current) => ({ ...current, heatFlowDirection }));
+    setState((current) => {
+      // Turning a wall into a roof leaves "rear ventilated cladding" selected, which
+      // the engine refuses outright, so the environment moves with the direction.
+      const externalEnvironmentKind = environmentForDirection(
+        current.externalEnvironment,
+        heatFlowDirection,
+      );
+      return {
+        ...current,
+        heatFlowDirection,
+        externalEnvironment: externalEnvironmentKind,
+        conditions:
+          externalEnvironmentKind === current.externalEnvironment
+            ? current.conditions
+            : conditionsForEnvironment(externalEnvironmentKind, current.conditions),
+      };
+    });
   }, []);
   const setConditions = useCallback((conditions: EnvironmentConditions) => {
     setState((current) => ({ ...current, conditions }));
   }, []);
+  const setInternalSurfaceCondition = useCallback(
+    (internalSurfaceCondition: InternalSurfaceCondition) => {
+      setState((current) => ({ ...current, internalSurfaceCondition }));
+    },
+    [],
+  );
+  const setExternalEnvironment = useCallback(
+    (externalEnvironmentKind: ExternalEnvironmentKind, conditions: EnvironmentConditions) => {
+      setState((current) => ({
+        ...current,
+        externalEnvironment: externalEnvironmentKind,
+        conditions,
+      }));
+    },
+    [],
+  );
 
   const bridged = hasBridging(state);
 
@@ -159,16 +201,29 @@ export function App(): JSX.Element {
             {result === undefined ? (
               <p className="engine-error">{engineError}</p>
             ) : (
-              <LayerTable layers={state.layers} result={result} onChange={setLayers} />
+              <LayerTable
+                layers={state.layers}
+                result={result}
+                onChange={setLayers}
+                selectedLayerId={selectedLayerId}
+                onSelectLayer={setSelectedLayerId}
+              />
             )}
           </section>
 
-          <BoundaryPanel
-            heatFlowDirection={state.heatFlowDirection}
-            conditions={state.conditions}
-            onDirectionChange={setDirection}
-            onConditionsChange={setConditions}
-          />
+          {result !== undefined && (
+            <BoundaryPanel
+              heatFlowDirection={state.heatFlowDirection}
+              conditions={state.conditions}
+              internalSurfaceCondition={state.internalSurfaceCondition}
+              externalEnvironmentKind={state.externalEnvironment}
+              result={result}
+              onDirectionChange={setDirection}
+              onConditionsChange={setConditions}
+              onInternalSurfaceConditionChange={setInternalSurfaceCondition}
+              onExternalEnvironmentChange={setExternalEnvironment}
+            />
+          )}
         </div>
 
         <div className="column-right">
@@ -204,6 +259,8 @@ export function App(): JSX.Element {
                   result={result}
                   profile={profile}
                   section={state.section}
+                  selectedLayerId={selectedLayerId}
+                  onSelectLayer={setSelectedLayerId}
                 />
                 {bridged && state.section === 'combined' && (
                   <p className="footnote">
