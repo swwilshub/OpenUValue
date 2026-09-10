@@ -7,6 +7,7 @@ import type {
   ProfileSection,
 } from '@openuvalue/engine';
 import { millimetresToMetres, percentToFraction } from '@openuvalue/engine';
+import type { MaterialCategory } from '@openuvalue/materials';
 import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
 
 /**
@@ -182,6 +183,24 @@ export function toBuildingElement(state: UiState): BuildingElement {
     heatFlowDirection: state.heatFlowDirection,
     layers,
   };
+}
+
+/**
+ * How a layer is drawn in the cross-section. The catalogue's own category drives it,
+ * so a layer looks like what it is made of; 'air' and 'custom' cover the two cases the
+ * catalogue cannot answer for - a cavity, and a layer whose lambda was typed in
+ * directly. Purely presentational: nothing in the calculation reads it.
+ */
+export type LayerDrawCategory = MaterialCategory | 'air' | 'custom';
+
+export function layerDrawCategory(materialId: string | null, kind: 'solid' | 'air'): LayerDrawCategory {
+  if (kind === 'air') {
+    return 'air';
+  }
+  if (materialId === null) {
+    return 'custom';
+  }
+  return findMaterialById(materialId)?.category ?? 'custom';
 }
 
 /** True when any layer is genuinely bridged, i.e. the section toggle is meaningful. */
