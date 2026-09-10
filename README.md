@@ -57,9 +57,9 @@ pnpm build       # production build
 ## Deploying
 
 `.github/workflows/pages.yml` builds the app and publishes `apps/web/dist` to GitHub
-Pages on every push to the **default branch**. `pnpm typecheck` and `pnpm test` gate
-the deploy, so a failing suite never reaches the site. Pushes to other branches, and
-pull requests from forks, run the same checks without publishing.
+Pages on every push to **`main`**. `pnpm typecheck` and `pnpm test` gate the deploy, so
+a failing suite never reaches the site. Pushes to other branches, and pull requests
+from forks, run the same checks without publishing.
 
 One repository setting is needed once, and no workflow file can set it for itself:
 
@@ -69,9 +69,18 @@ Until that is set, the deploy job fails with a 404 from the Pages API. After tha
 site is at `https://<owner>.github.io/<repository>/` — for this repository,
 <https://swwilshub.github.io/OpenUValue/>.
 
-The workflow deploys from whichever branch is the default at the time, rather than a
-hardcoded branch name, so renaming the default branch or adding a `main` does not
-break it.
+The publishing branch is named in the workflow rather than read from the repository's
+default-branch setting. Two things have to agree before a deploy runs, and naming the
+branch is what keeps them in agreement:
+
+- the workflow's own condition, and
+- the `github-pages` deployment environment, whose protection rules GitHub seeds to
+  allow `main`.
+
+A branch that is merely the repository default is still refused by the second with
+*"not allowed to deploy to github-pages due to environment protection rules"*. To
+publish from a different branch, change both: the `if:` conditions here, and
+**Settings → Environments → github-pages → Deployment branches and tags**.
 
 `vite.config.ts` sets `base: './'`, so the build works under the `/OpenUValue/`
 subpath, from a different repository name, or opened straight off disk — the
