@@ -171,7 +171,8 @@ describe('toEngineMaterial', () => {
     expect(toEngineMaterial(material)).toEqual({
       lambdaWPerMK: 0.035,
       densityKgPerM3: 20,
-      specificHeatCapacityJPerKgK: 1030,
+      // BR 443 (2019) 16, "Mineral wool, expanded and extruded polystyrene".
+      specificHeatCapacityJPerKgK: 1450,
       vapourResistanceFactorMu: 1,
     });
   });

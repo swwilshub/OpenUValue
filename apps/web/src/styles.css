@@ -1301,6 +1301,27 @@ button.danger:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* Provenance of a material's values, at a glance. */
+.source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.source-cited {
+  background: var(--ok);
+}
+
+.source-partial {
+  background: var(--warn);
+}
+
+.source-open {
+  background: transparent;
+  border: 1.5px dashed var(--ink-faint);
+}
+
 .picker-empty {
   padding: 10px;
   font-size: 12.5px;

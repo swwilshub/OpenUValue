@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MaterialCategory, MaterialRecord } from '@openuvalue/materials';
-import { MATERIALS, findMaterialById } from '@openuvalue/materials';
+import { MATERIALS, findMaterialById, sourceStatus } from '@openuvalue/materials';
 import { type LayerDrawCategory, layerDrawCategory } from '../state/model.js';
 import { CATEGORY_STYLE, MaterialSwatch } from './hatches.js';
 
@@ -199,6 +199,16 @@ export function MaterialPicker({
                             <span title="Water vapour resistance factor: how many times harder than still air this is to get vapour through">
                               μ {material.vapourResistanceFactorMu}
                             </span>
+                            {/*
+                              Whether the values have been traced to a published clause.
+                              The database records that honestly; showing it here is what
+                              stops an unattributed figure passing for a checked one.
+                            */}
+                            <span
+                              className={`source-dot source-${sourceStatus(material)}`}
+                              title={`Source — ${material.source}`}
+                              aria-label={`Source: ${material.source}`}
+                            />
                           </span>
                         </button>
                       </li>

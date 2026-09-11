@@ -7,10 +7,10 @@
       "category": "masonry",
       "lambdaWPerMK": 0.77,
       "densityKgPerM3": 1700,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "TODO(verify)",
-      "notes": "Conventional UK design value for an exposed outer leaf. Check against BR 443 and CIBSE Guide A Table 3.49; ISO 10456 gives masonry by density band rather than by UK leaf convention."
+      "source": "BR 443 (2019) 3.6 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.77 W/(m·K) is BR 443 3.6: \"Unless otherwise specified, brick thermal conductivity should be taken as: Outer leaves (of a cavity wall) 0.77\". c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". ρ and μ are not given by BR 443 and still need BS EN ISO 10456 Table 3."
     },
     {
       "id": "brick-inner-leaf",
@@ -18,10 +18,10 @@
       "category": "masonry",
       "lambdaWPerMK": 0.56,
       "densityKgPerM3": 1700,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "TODO(verify)",
-      "notes": "Conventional UK design value for a protected inner leaf. Check against BR 443 and CIBSE Guide A Table 3.49."
+      "source": "BR 443 (2019) 3.6 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.56 W/(m·K) is BR 443 3.6, inner leaves of a cavity wall. c 840 J/(kg·K) is BR 443 16. ρ and μ still need BS EN ISO 10456 Table 3."
     },
     {
       "id": "dense-concrete-block",
@@ -29,10 +29,10 @@
       "category": "masonry",
       "lambdaWPerMK": 1.13,
       "densityKgPerM3": 1900,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 60,
-      "source": "TODO(verify)",
-      "notes": "Generic UK dense aggregate block. Product values vary widely; check against BR 443 and manufacturer declared values, and confirm mu against ISO 10456 Table 3."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Generic UK dense aggregate block. Product values vary widely; check against BR 443 and manufacturer declared values, and confirm mu against ISO 10456 Table 3."
     },
     {
       "id": "aircrete-block",
@@ -40,10 +40,10 @@
       "category": "masonry",
       "lambdaWPerMK": 0.15,
       "densityKgPerM3": 600,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 6,
-      "source": "TODO(verify)",
-      "notes": "Generic UK aircrete block. UK products span roughly 0.11 to 0.20 W/(m*K) by density; check against BR 443 and manufacturer declared values."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Generic UK aircrete block. UK products span roughly 0.11 to 0.20 W/(m*K) by density; check against BR 443 and manufacturer declared values."
     },
     {
       "id": "concrete-medium-density",
@@ -51,10 +51,10 @@
       "category": "concrete",
       "lambdaWPerMK": 1.35,
       "densityKgPerM3": 2000,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 100,
-      "source": "TODO(verify)",
-      "notes": "Check lambda, c and mu against BS EN ISO 10456:2007 Table 3, which tabulates concrete by density."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Check lambda, c and mu against BS EN ISO 10456:2007 Table 3, which tabulates concrete by density."
     },
     {
       "id": "concrete-reinforced",
@@ -62,21 +62,32 @@
       "category": "concrete",
       "lambdaWPerMK": 2.3,
       "densityKgPerM3": 2300,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 130,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3, which lists reinforced concrete separately by steel content."
+      "source": "BR 443 (2019) 3.7 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 2.30 W/(m·K) is BR 443 3.7, \"Reinforced concrete beam (1% steel)\". c 840 J/(kg·K) is BR 443 16. ρ and μ still need BS EN ISO 10456 Table 3."
     },
     {
       "id": "gypsum-plasterboard",
-      "name": "Gypsum plasterboard",
+      "name": "Gypsum plasterboard, standard wallboard",
+      "category": "plaster-and-render",
+      "lambdaWPerMK": 0.21,
+      "densityKgPerM3": 700,
+      "specificHeatCapacityJPerKgK": 840,
+      "vapourResistanceFactorMu": 10,
+      "source": "BR 443 (2019) 3.8 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.21 W/(m·K) is BR 443 3.8, \"Standard wallboard (density up to 700 kg/m³)\". This entry was previously 0.25 at 900 kg/m³, which BR 443 gives for the higher-density grade — now a separate entry. c 840 J/(kg·K) is BR 443 16. μ still needs BS EN ISO 10456 Table 3."
+    },
+    {
+      "id": "gypsum-plasterboard-dense",
+      "name": "Gypsum plasterboard, acoustic or fire resistant",
       "category": "plaster-and-render",
       "lambdaWPerMK": 0.25,
       "densityKgPerM3": 900,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "TODO(verify)",
-      "notes": "Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (gypsum plasterboard, 900 kg/m3)."
+      "source": "BR 443 (2019) 3.8 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.25 W/(m·K) is BR 443 3.8, \"Higher density (up to 900 kg/m³), e.g. acoustic or fire resistant board\". c 840 J/(kg·K) is BR 443 16. μ still needs BS EN ISO 10456 Table 3."
     },
     {
       "id": "gypsum-plaster",
@@ -84,10 +95,10 @@
       "category": "plaster-and-render",
       "lambdaWPerMK": 0.57,
       "densityKgPerM3": 1300,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Gypsum, plasters and renders, plasterboard\". Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density."
     },
     {
       "id": "cement-sand-render",
@@ -95,21 +106,21 @@
       "category": "plaster-and-render",
       "lambdaWPerMK": 1.0,
       "densityKgPerM3": 1800,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 25,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 (cement mortar / plaster) and BR 443."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Gypsum, plasters and renders, plasterboard\". Check against BS EN ISO 10456:2007 Table 3 (cement mortar / plaster) and BR 443."
     },
     {
       "id": "sand-cement-screed",
       "name": "Sand:cement screed",
       "category": "screed",
       "lambdaWPerMK": 1.15,
-      "densityKgPerM3": 2000,
-      "specificHeatCapacityJPerKgK": 1000,
+      "densityKgPerM3": 1800,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 30,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 and BR 443."
+      "source": "BR 443 (2019) 3.7 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 1.15 W/(m·K) at ρ 1800 kg/m³ is BR 443 3.7, \"Concrete screed\". The density was 2000 here before and is corrected to the one BR 443 states the λ against. μ still needs BS EN ISO 10456 Table 3."
     },
     {
       "id": "softwood-structural",
@@ -119,8 +130,8 @@
       "densityKgPerM3": 500,
       "specificHeatCapacityJPerKgK": 1600,
       "vapourResistanceFactorMu": 50,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 (softwood, 500 kg/m3), including whether the dry (50) or wet (20) mu applies for the intended use."
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.13 W/(m·K) at a typical density of 500 kg/m³ is BR 443 3.9, \"Timber/softwood, e.g. joists, window frames\". c 1600 J/(kg·K) is BR 443 16, \"Timber\". μ still needs BS EN ISO 10456 Table 3, including whether the dry or wet value applies."
     },
     {
       "id": "osb-board",
@@ -130,8 +141,8 @@
       "densityKgPerM3": 650,
       "specificHeatCapacityJPerKgK": 1700,
       "vapourResistanceFactorMu": 50,
-      "source": "TODO(verify)",
-      "notes": "Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (OSB) and BS EN 13986."
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.13 W/(m·K) at a typical density of 650 kg/m³ is BR 443 3.9. c 1700 J/(kg·K) is BR 443 16, \"Plywood\", which is the nearest board it lists. μ still needs BS EN ISO 10456 Table 3."
     },
     {
       "id": "plywood-board",
@@ -139,10 +150,10 @@
       "category": "timber-and-board",
       "lambdaWPerMK": 0.13,
       "densityKgPerM3": 500,
-      "specificHeatCapacityJPerKgK": 1600,
+      "specificHeatCapacityJPerKgK": 1700,
       "vapourResistanceFactorMu": 90,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 (plywood by density) and BS EN 13986."
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "notes": "λ 0.13 W/(m·K) at a typical density of 500 kg/m³ is BR 443 3.9. c 1700 J/(kg·K) is BR 443 16, \"Plywood\". μ still needs BS EN ISO 10456 Table 3."
     },
     {
       "id": "chipboard-flooring",
@@ -152,8 +163,8 @@
       "densityKgPerM3": 600,
       "specificHeatCapacityJPerKgK": 1700,
       "vapourResistanceFactorMu": 50,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 (particleboard by density) and BS EN 13986."
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density)",
+      "notes": "λ 0.14 W/(m·K) at a typical density of 600 kg/m³ is BR 443 3.9, \"Particleboards, fibreboard\". c and μ still need BS EN ISO 10456 Table 3."
     },
     {
       "id": "mineral-wool-quilt",
@@ -161,10 +172,10 @@
       "category": "insulation",
       "lambdaWPerMK": 0.035,
       "densityKgPerM3": 20,
-      "specificHeatCapacityJPerKgK": 1030,
+      "specificHeatCapacityJPerKgK": 1450,
       "vapourResistanceFactorMu": 1,
-      "source": "TODO(verify)",
-      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13162. Check c and mu against BS EN ISO 10456:2007 Table 3 (mineral wool)."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene)",
+      "notes": "c 1450 J/(kg·K) is BR 443 16, \"Mineral wool, expanded and extruded polystyrene\". Generic value only; lambda is product-specific and declared to BS EN 13162. Check c and mu against BS EN ISO 10456:2007 Table 3 (mineral wool)."
     },
     {
       "id": "eps-board",
@@ -174,8 +185,8 @@
       "densityKgPerM3": 20,
       "specificHeatCapacityJPerKgK": 1450,
       "vapourResistanceFactorMu": 60,
-      "source": "TODO(verify)",
-      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13163. Check c and mu against BS EN ISO 10456:2007 Table 3 (EPS)."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene)",
+      "notes": "c 1450 J/(kg·K) is BR 443 16, \"Mineral wool, expanded and extruded polystyrene\". Generic value only; lambda is product-specific and declared to BS EN 13163. Check c and mu against BS EN ISO 10456:2007 Table 3 (EPS)."
     },
     {
       "id": "pir-board",
@@ -183,10 +194,10 @@
       "category": "insulation",
       "lambdaWPerMK": 0.022,
       "densityKgPerM3": 32,
-      "specificHeatCapacityJPerKgK": 1400,
+      "specificHeatCapacityJPerKgK": 1800,
       "vapourResistanceFactorMu": 60,
-      "source": "TODO(verify)",
-      "notes": "Generic value only; lambda is product-specific and declared to BS EN 13165. Facings dominate the vapour resistance, so mu of the core is not the whole story. Check against ISO 10456 and product declarations."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (PU foam, rigid)",
+      "notes": "c 1800 J/(kg·K) is BR 443 16, \"PU foam, rigid\"; PIR is a polyurethane variant and BR 443 lists no separate figure for it. Generic value only; lambda is product-specific and declared to BS EN 13165. Facings dominate the vapour resistance, so mu of the core is not the whole story. Check against ISO 10456 and product declarations."
     },
     {
       "id": "wood-fibre-board",
@@ -227,10 +238,10 @@
       "category": "covering",
       "lambdaWPerMK": 1.0,
       "densityKgPerM3": 2100,
-      "specificHeatCapacityJPerKgK": 1000,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 100,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 (tiles, concrete) and BR 443."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Check against BS EN ISO 10456:2007 Table 3 (tiles, concrete) and BR 443."
     },
     {
       "id": "clay-roof-tile",
@@ -238,10 +249,10 @@
       "category": "covering",
       "lambdaWPerMK": 1.0,
       "densityKgPerM3": 2000,
-      "specificHeatCapacityJPerKgK": 800,
+      "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 40,
-      "source": "TODO(verify)",
-      "notes": "Check against BS EN ISO 10456:2007 Table 3 (tiles, clay) and BR 443."
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Check against BS EN ISO 10456:2007 Table 3 (tiles, clay) and BR 443."
     }
   ]
 }

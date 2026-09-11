@@ -46,3 +46,24 @@ export function toEngineMaterial(material: MaterialRecord): EngineMaterialProper
     vapourResistanceFactorMu: material.vapourResistanceFactorMu,
   };
 }
+
+/**
+ * How far a material's values have been traced to a published source.
+ *
+ * The database rule (see CLAUDE.md) is that an unattributable value carries
+ * "TODO(verify)" rather than a plausible-looking reference. That honesty is only
+ * useful if it reaches the screen, so this classifies each record for the UI:
+ *
+ *   'cited'   every value in the record names the clause it came from
+ *   'partial' some values are cited and some are still open, with the source string
+ *             saying which
+ *   'open'    nothing is attributed yet
+ */
+export type SourceStatus = 'cited' | 'partial' | 'open';
+
+export function sourceStatus(material: MaterialRecord): SourceStatus {
+  if (material.source === 'TODO(verify)') {
+    return 'open';
+  }
+  return material.source.includes('TODO(verify)') ? 'partial' : 'cited';
+}

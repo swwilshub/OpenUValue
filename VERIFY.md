@@ -70,31 +70,45 @@ methods. See `CLAUDE.md`.
 
 ## 4. Materials
 
-Every seeded material has `"source": "TODO(verify)"`. This is deliberate. The values
-are conventional UK figures that give sensible results, but we are not able to
-attribute specific numbers to specific table rows with confidence, and the repository
-rule forbids inventing a citation that looks authoritative. Each record's `notes`
-field names the authority to check it against.
+**10 of 23 records now have their thermal conductivity traced to a clause**, and 10
+more have their specific heat capacity cited with λ still open. Three are entirely
+unattributed. The picker shows this per material as a coloured dot — filled green for
+cited, amber for partial, dashed outline for open — so an unchecked figure cannot pass
+for a checked one on screen.
 
-**No material value in this database should be used for a submitted calculation until
-its row here is closed.**
+What closed them was **BR 443 (2019)**, which BRE publishes and CIBSE hosts openly. It
+states outright:
 
-The general checks that apply to the whole table:
+- brick, outer leaf of a cavity wall λ 0.77, inner leaf λ 0.56 (§3.6)
+- reinforced concrete, 1 % steel, λ 2.30; concrete screed λ 1.15 at ρ 1800 (§3.7)
+- gypsum plasterboard λ 0.21 standard wallboard to 700 kg/m³, λ 0.25 higher density to
+  900 kg/m³ for acoustic or fire-resistant board (§3.8) — the database now carries both
+  grades, where it previously had one entry mislabelled as generic
+- softwood λ 0.13 at 500 kg/m³, plywood λ 0.13 at 500, OSB λ 0.13 at 650,
+  particleboard and fibreboard λ 0.14 at 600 (§3.9)
+- specific heat capacities: brick, concrete and stone 840; gypsum, plasters, renders
+  and plasterboard 840; timber 1600; plywood 1700; mineral wool, EPS and XPS 1450;
+  rigid PU foam 1800 (§16)
 
-- λ, ρ, c and μ against **BS EN ISO 10456:2007 Table 3** where the material appears
-  there, noting that ISO 10456 tabulates masonry and concrete by density band rather
-  than by UK convention.
-- **BR 443** for UK-specific conventions (notably the outer/inner leaf brickwork
-  distinction, which is a UK convention rather than an ISO one).
-- **CIBSE Guide A** Table 3.49 for UK construction materials.
-- For insulation, λ is product-specific and declared under the relevant harmonised
-  standard (BS EN 13162 mineral wool, 13163 EPS, 13165 PIR, 13171 wood fibre). The
-  seeded values are generic placeholders only.
-- For membranes, the useful quantity is the declared Sd (BS EN ISO 12572), not λ.
-- Whether the dry or wet μ value applies for the intended use (ISO 10456 tabulates
-  both for many materials).
+**Still open, and what would close it:**
 
-### Individual records
+- **λ for the blocks, plasters, renders, tiles and insulation.** BR 443 defers to
+  BS EN ISO 10456 tabulated values and to manufacturers' declared values. ISO 10456's
+  Clause 8 (Tables 3, 4 and 5) is the source; the free preview stops at page 6, so a
+  licensed copy is needed. Insulation λ is product-specific and declared under the
+  relevant harmonised standard in any case (BS EN 13162 mineral wool, 13163 EPS, 13165
+  PIR, 13171 wood fibre), so a generic figure can only ever be a placeholder.
+- **μ for everything.** Neither BR 443 nor anything else consulted gives vapour
+  resistance factors; ISO 10456 Table 3 does, including whether the dry or wet value
+  applies. **This matters more than it used to**: μ now drives the interstitial
+  condensation verdict, not just a displayed number.
+- **ρ for most records**, which BR 443 gives only where it states a λ against a density.
+- For membranes the useful quantity is the declared S_d to BS EN ISO 12572, not λ.
+
+**No material value here should be used for a submitted calculation until its row is
+closed.**
+
+### Individual records### Individual records
 
 | id | name | λ W/(m·K) | ρ kg/m³ | c J/(kg·K) | μ | check against |
 |---|---|---|---|---|---|---|
