@@ -80,6 +80,12 @@ and `iso13788.ts`, and the diagram in the results.
 9. **Summer performance** reporting built on the above: temperature amplitude damping
    and phase shift.
 
+This is now the largest visible gap rather than a future nicety. The summary strip
+carries the build-up's other headline figures and names these three as absent, so the
+page itself advertises what is missing. The strip already shows a *total* heat capacity
+(the plain sum of ρ·c·d), explicitly labelled as not being κ; ISO 13786 is what turns
+that into κ, and κ is what SAP 10.3 asks for.
+
 ## Phase 5 — beyond the plane element
 
 10. **BS EN ISO 13370 ground floors**, which need perimeter/area ratio and soil
