@@ -1057,6 +1057,30 @@ button.danger:hover {
   max-height: 62vh;
 }
 
+/* The gap the dragged layer will drop into. */
+.drop-slot {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+  opacity: 0.85;
+}
+
+/*
+ * While a drag is in progress the result has not been recalculated, so the temperature
+ * overlay is still describing the old order. Fading it says the figures are about to
+ * follow rather than that they already have.
+ */
+.is-restating {
+  opacity: 0.22;
+}
+
+/* The layer in hand: lifted off the drawing, still its own real width. */
+.layer-box-dragging {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.28));
+  cursor: grabbing;
+}
+
 .drop-indicator {
   stroke: var(--accent);
   stroke-width: 3;
@@ -1073,9 +1097,6 @@ button.danger:hover {
   cursor: grabbing;
 }
 
-.layer-box-dragging {
-  opacity: 0.4;
-}
 
 /* ------------------------------------------------------ layer readouts etc ---- */
 
@@ -2820,3 +2841,32 @@ body.is-dragging * {
   pointer-events: none;
 }
 
+
+/* ------------------------------------------------------------- callouts ---
+ * Layer names above the drawing with a leader line to the layer. Set outside because a
+ * name inside a layer has to be rotated, gets cut short by anything narrow, and competes
+ * with the temperature line for the same space.
+ */
+.callout-name {
+  font-size: 10.5px;
+  fill: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.callout-detail {
+  font-size: 9px;
+  fill: var(--accent);
+}
+
+.callout-leader {
+  stroke: var(--ink-faint);
+  stroke-width: 0.7;
+}
+
+.callout-dot {
+  fill: var(--ink-faint);
+}
+
+.callouts {
+  pointer-events: none;
+}

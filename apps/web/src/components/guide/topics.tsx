@@ -70,6 +70,12 @@ export const CHAPTERS: readonly GuideChapter[] = [
               quilt insulation, a wood grain for timber. The same hatch appears beside the
               material in the picker, so the list and the drawing read as one thing.
             </p>
+            <p>
+              Names sit <strong>above</strong> the drawing with a line down to the layer
+              each belongs to, rather than inside it. A name set inside a layer has to be
+              rotated, gets cut short by anything narrow, and competes with the
+              temperature line for the same space.
+            </p>
           </>
         ),
       },
@@ -100,9 +106,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Pick up any layer in the drawing and drop it somewhere else. A line shows where it
-              will land. The same thing works from the handle in the layer list, if you would
-              rather work there.
+              Pick up any layer in the drawing and it comes with you — at its real
+              thickness, so you are moving the material rather than a marker for it. The
+              rest of the build-up opens a gap where it will land. The same thing works
+              from the handle in the layer list, if you would rather work there.
+            </p>
+            <p>
+              The temperature line fades while you drag. Nothing has been recalculated
+              yet: the figures follow when you let go, and fading them is the drawing
+              saying so rather than showing you a line that belongs to the old order.
             </p>
             <p>
               This is the fastest way to answer the question that matters most in a retrofit:{' '}

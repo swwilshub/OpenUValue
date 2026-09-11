@@ -33,8 +33,15 @@ const AXIS_WIDTH = 46;
  */
 const VIEWBOX_MIN_X = -7;
 
-/** Minimum drawn width before a layer can carry a rotated name label. */
-const MIN_WIDTH_FOR_NAME = 20;
+/**
+ * Callout labels above the drawing: row pitch, the gap kept between two labels sharing a
+ * row, and the widest a single label may grow before it is trimmed.
+ */
+const CALLOUT_ROW_HEIGHT = 14;
+const CALLOUT_GAP = 12;
+const CALLOUT_MAX_WIDTH = 210;
+/** Approximate advance width of one character at the callout's 10.5px size. */
+const CALLOUT_CHAR_WIDTH = 5.6;
 /** Minimum drawn width before a layer can carry its thickness caption. */
 const MIN_WIDTH_FOR_CAPTION = 26;
 /**
@@ -45,9 +52,6 @@ const MIN_WIDTH_FOR_CAPTION = 26;
  * run out of the drawing.
  */
 const LABEL_CHAR_WIDTH = 6.9;
-/** Gap between a layer's name and the bridging line drawn beside it. */
-const BRIDGING_LINE_OFFSET = 14;
-
 /**
  * How much wall the drawing's height represents, as a multiple of the widest member
  * pitch in the build-up.
@@ -59,9 +63,34 @@ const BRIDGING_LINE_OFFSET = 14;
 const STUD_BAYS_SHOWN = 1.8;
 
 
+/**
+ * The order the layers would be in if the drag were dropped now.
+ *
+ * Lifting the layer out shifts everything after it down by one, so a drop index taken
+ * from the original list has to be corrected once it has been removed — the same
+ * correction the reorder itself makes, which is why the preview and the result agree.
+ */
+function reorderPreview(
+  items: readonly UiLayer[],
+  from: number,
+  to: number,
+): readonly UiLayer[] {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  if (moved === undefined) {
+    return items;
+  }
+  next.splice(from < to ? to - 1 : to, 0, moved);
+  return next;
+}
+
 /** Trim a label to what will fit along the height of the plot, with an ellipsis. */
-function fitLabel(text: string, availableLength: number): string {
-  const maxCharacters = Math.floor(availableLength / LABEL_CHAR_WIDTH);
+function fitLabel(
+  text: string,
+  availableLength: number,
+  charWidth: number = LABEL_CHAR_WIDTH,
+): string {
+  const maxCharacters = Math.floor(availableLength / charWidth);
   if (maxCharacters <= 1 || text.length <= maxCharacters) {
     return text;
   }
@@ -107,6 +136,10 @@ export function CrossSection({
     readonly to: number;
     readonly startClientX: number;
     readonly moved: boolean;
+    /** Pointer position in the drawing's own coordinates, for placing the layer. */
+    readonly pointerUserX: number;
+    /** How far into the layer it was picked up, so it does not jump under the cursor. */
+    readonly grabOffsetX: number;
   } | null>(null);
   const totalThicknessMm = layers.reduce((total, layer) => total + layer.thicknessMm, 0);
   if (layers.length === 0 || totalThicknessMm <= 0) {
@@ -121,28 +154,140 @@ export function CrossSection({
   const lastIncludedIndex = includedFlags.lastIndexOf(true);
   const scale = DRAW_WIDTH / totalThicknessMm;
 
-  const boxes: LayerBox[] = [];
-  let cursor = FILM_WIDTH;
-  layers.forEach((layer, index) => {
-    const width = Math.max(1, layer.thicknessMm * scale);
-    boxes.push({
-      layer,
-      category: layerDrawCategory(layer.materialId, layer.kind),
-      x: cursor,
-      width,
-      included: includedFlags[index] ?? true,
+  /**
+   * Whether a drag has passed the threshold that tells it apart from a click. Until it
+   * has, nothing moves.
+   */
+  const dragging = drag?.moved === true;
+
+  const includedById = new Map(
+    layers.map((layer, index) => [layer.id, includedFlags[index] ?? true] as const),
+  );
+
+  /**
+   * The order to draw in. While dragging this is the order the build-up *would* be in,
+   * so the other layers slide aside and leave a hole exactly the width of the layer in
+   * hand — the layer itself is then drawn at the pointer rather than in that hole.
+   */
+  const orderedLayers = dragging
+    ? reorderPreview(layers, drag.from, drag.to)
+    : layers;
+
+  const layOut = (source: readonly UiLayer[]): { boxes: LayerBox[]; totalWidth: number } => {
+    const out: LayerBox[] = [];
+    const lastIncluded = source.reduce(
+      (last, layer, index) => (includedById.get(layer.id) === false ? last : index),
+      -1,
+    );
+    let x = FILM_WIDTH;
+    source.forEach((layer, index) => {
+      const width = Math.max(1, layer.thicknessMm * scale);
+      out.push({
+        layer,
+        category: layerDrawCategory(layer.materialId, layer.kind),
+        x,
+        width,
+        included: includedById.get(layer.id) ?? true,
+      });
+      x += width;
+      if (index === lastIncluded) {
+        x += FILM_WIDTH;
+      }
     });
-    cursor += width;
-    if (index === lastIncludedIndex) {
-      cursor += FILM_WIDTH;
-    }
-  });
-  const totalWidth = cursor;
+    return { boxes: out, totalWidth: x };
+  };
+
+  /*
+   * Hit-testing uses the *undragged* layout on purpose. Testing against the preview
+   * would feed the hole's own movement back into the calculation that positions it, and
+   * the drop target would flicker between two answers at every boundary.
+   */
+  const base = layOut(layers);
+  const preview = dragging ? layOut(orderedLayers) : base;
+  const boxes = preview.boxes;
+  const totalWidth = Math.max(base.totalWidth, preview.totalWidth);
 
   const includedThicknessMm = layers
     .filter((_layer, index) => includedFlags[index] ?? true)
     .reduce((total, layer) => total + layer.thicknessMm, 0);
   const externalFilmX = FILM_WIDTH + includedThicknessMm * scale;
+
+  /** The layer in hand, drawn at the pointer instead of in the flow. */
+  const draggedLayerId = dragging ? layers[drag.from]?.id : undefined;
+  const draggedBox = boxes.find((box) => box.layer.id === draggedLayerId);
+  const floatingX =
+    drag === null || draggedBox === undefined
+      ? 0
+      : Math.min(
+          Math.max(0, drag.pointerUserX - drag.grabOffsetX),
+          totalWidth - draggedBox.width,
+        );
+
+  const drawXOf = (box: LayerBox): number => (box === draggedBox ? floatingX : box.x);
+
+  /*
+   * Callout labels, stacked above the drawing with a leader line down to the layer each
+   * names.
+   *
+   * Laid out greedily, left to right: a label wants to sit centred over its layer, and
+   * takes the lowest row where it does not run into the label already there. That keeps
+   * the common case — a few wide layers — on a single row just above the drawing, and
+   * only pushes upward where names genuinely collide.
+   */
+  const callouts = (() => {
+    const rowRightEdge: number[] = [];
+    return boxes.map((box) => {
+      const bridged = box.layer.kind === 'solid' ? box.layer.bridgedPercent : 0;
+      const text = fitLabel(box.layer.label, CALLOUT_MAX_WIDTH, CALLOUT_CHAR_WIDTH);
+      const detail =
+        bridged > 0
+          ? box.layer.kind === 'solid' &&
+            box.layer.bridgeSizing === 'dimensions' &&
+            box.layer.bridgeWidthMm > 0
+            ? `${box.layer.bridgeWidthMm} @ ${bridgePitchMm(
+                box.layer.bridgeWidthMm,
+                box.layer.bridgeSpacingMm,
+                box.layer.bridgeDistanceBasis,
+              ).toFixed(0)} crs · ${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
+            : `${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
+          : undefined;
+      const width =
+        Math.max(text.length, detail === undefined ? 0 : detail.length * 0.88) *
+        CALLOUT_CHAR_WIDTH;
+      const anchorX = drawXOf(box) + box.width / 2;
+      const left = Math.min(
+        Math.max(0, anchorX - width / 2),
+        totalWidth + AXIS_WIDTH - width,
+      );
+      let row = 0;
+      while ((rowRightEdge[row] ?? -Infinity) + CALLOUT_GAP > left) {
+        row += 1;
+      }
+      rowRightEdge[row] = left + width;
+      // A bridged layer's callout carries a second line, so it needs the room of two.
+      return { box, text, detail, left, width, row, anchorX };
+    });
+  })();
+
+  const calloutRows = callouts.reduce((most, callout) => Math.max(most, callout.row), 0) + 1;
+  /** Top of the callout block. Rows stack upward from just above the drawing. */
+  const calloutTop = TOP_PAD - 14 - (calloutRows - 1) * CALLOUT_ROW_HEIGHT;
+  const calloutY = (row: number): number =>
+    TOP_PAD - 14 - (calloutRows - 1 - row) * CALLOUT_ROW_HEIGHT;
+  /*
+   * The labels live above y = 0, so the viewBox is extended upward rather than every
+   * coordinate in the drawing being pushed down by a block whose height is not known
+   * until the labels have been laid out.
+   */
+  const viewBoxMinY = Math.min(0, calloutTop - 12);
+
+  /*
+   * SVG has no z-index, so the layer in hand is simply drawn last. Everything else keeps
+   * its order, which is what stops the drawing reshuffling for a reason the reader
+   * cannot see.
+   */
+  const drawOrder =
+    draggedBox === undefined ? boxes : [...boxes.filter((box) => box !== draggedBox), draggedBox];
 
   // Temperature axis, padded so the dew-point line is never clipped.
   const temperatures = [
@@ -288,7 +433,9 @@ export function CrossSection({
     <figure className="cross-section">
       <svg
         ref={svgRef}
-        viewBox={`${VIEWBOX_MIN_X} 0 ${viewBoxWidth} ${viewBoxHeight}`}
+        viewBox={`${VIEWBOX_MIN_X} ${viewBoxMinY} ${viewBoxWidth} ${
+          viewBoxHeight - viewBoxMinY
+        }`}
         className={drag?.moved === true ? 'is-dragging' : undefined}
         onPointerMove={(event) => {
           if (drag === null) {
@@ -296,7 +443,12 @@ export function CrossSection({
           }
           const moved =
             drag.moved || Math.abs(event.clientX - drag.startClientX) > DRAG_THRESHOLD_PX;
-          setDrag({ ...drag, moved, to: dropIndexAt(event.clientX) });
+          setDrag({
+            ...drag,
+            moved,
+            to: dropIndexAt(event.clientX),
+            pointerUserX: toUserX(event.clientX),
+          });
         }}
         onPointerUp={(event) => {
           if (drag === null) {
@@ -372,20 +524,24 @@ export function CrossSection({
         />
 
         {/* Layers, strictly to scale. */}
-        {boxes.map((box, index) => {
+        {drawOrder.map((box) => {
           const style = CATEGORY_STYLE[box.category];
           const bridgedPercent = box.layer.kind === 'solid' ? box.layer.bridgedPercent : 0;
           const isSelected = box.layer.id === selectedLayerId;
-          // Two rotated lines only fit on a layer drawn wide enough for both.
-          const showBridgingLine =
-            bridgedPercent > 0 && box.width >= MIN_WIDTH_FOR_NAME + BRIDGING_LINE_OFFSET;
+          /*
+           * The layer's position in the build-up, not in the draw order: the two differ
+           * while dragging, and every handler below means the former.
+           */
+          const index = layers.findIndex((layer) => layer.id === box.layer.id);
+          const isDragged = box === draggedBox;
+          const drawX = isDragged ? floatingX : box.x;
           return (
             <g
               key={box.layer.id}
               className={[
                 'layer-box',
                 isSelected ? 'layer-box-selected' : '',
-                drag?.moved === true && drag.from === index ? 'layer-box-dragging' : '',
+                isDragged ? 'layer-box-dragging' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -401,7 +557,17 @@ export function CrossSection({
                 // Capture on the SVG, so a fast drag that outruns the pointer keeps
                 // sending moves instead of stranding the drag mid-gesture.
                 event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId);
-                setDrag({ from: index, to: index, startClientX: event.clientX, moved: false });
+                const pointerUserX = toUserX(event.clientX);
+                setDrag({
+                  from: index,
+                  to: index,
+                  startClientX: event.clientX,
+                  moved: false,
+                  pointerUserX,
+                  // Grab offset comes from the undragged layout, which is where the
+                  // layer actually was at the moment it was picked up.
+                  grabOffsetX: pointerUserX - (base.boxes[index]?.x ?? 0),
+                });
               }}
             >
               <title>
@@ -413,7 +579,7 @@ export function CrossSection({
               {box.included ? (
                 <>
                   <rect
-                    x={box.x}
+                    x={drawX}
                     y={TOP_PAD}
                     width={box.width}
                     height={PLOT_HEIGHT}
@@ -421,7 +587,7 @@ export function CrossSection({
                   />
                   {style.hatch !== undefined && (
                     <rect
-                      x={box.x}
+                      x={drawX}
                       y={TOP_PAD}
                       width={box.width}
                       height={PLOT_HEIGHT}
@@ -442,21 +608,21 @@ export function CrossSection({
                     return studRects(column.widthMm, column.pitchMm).map((rect, memberIndex) => (
                       <g key={`member-${memberIndex}`} className="stud-group">
                         <rect
-                          x={box.x}
+                          x={drawX}
                           y={rect.y}
                           width={box.width}
                           height={rect.h}
                           fill={CATEGORY_STYLE['timber-and-board'].fill}
                         />
                         <rect
-                          x={box.x}
+                          x={drawX}
                           y={rect.y}
                           width={box.width}
                           height={rect.h}
                           fill={`url(#${CATEGORY_STYLE['timber-and-board'].hatch ?? ''})`}
                         />
                         <rect
-                          x={box.x}
+                          x={drawX}
                           y={rect.y}
                           width={box.width}
                           height={rect.h}
@@ -468,7 +634,7 @@ export function CrossSection({
                 </>
               ) : (
                 <rect
-                  x={box.x}
+                  x={drawX}
                   y={TOP_PAD}
                   width={box.width}
                   height={PLOT_HEIGHT}
@@ -476,7 +642,7 @@ export function CrossSection({
                 />
               )}
               <rect
-                x={box.x}
+                x={drawX}
                 y={TOP_PAD}
                 width={box.width}
                 height={PLOT_HEIGHT}
@@ -487,63 +653,16 @@ export function CrossSection({
               />
               {isSelected && (
                 <rect
-                  x={box.x}
+                  x={drawX}
                   y={TOP_PAD}
                   width={box.width}
                   height={PLOT_HEIGHT}
                   className="layer-selection"
                 />
               )}
-              {box.width >= MIN_WIDTH_FOR_NAME && (
-                <text
-                  className="layer-name"
-                  transform={`translate(${(
-                    box.x +
-                    box.width / 2 -
-                    // Shift left to leave room for the bridging line beside it, so the
-                    // pair still reads as centred on the layer.
-                    (showBridgingLine ? BRIDGING_LINE_OFFSET / 2 : 0)
-                  ).toFixed(2)}, ${TOP_PAD + PLOT_HEIGHT - 8}) rotate(-90)`}
-                >
-                  {fitLabel(box.layer.label, PLOT_HEIGHT - 24)}
-                </text>
-              )}
-              {/*
-                The bridging goes on its own line rather than being appended to the
-                name: one long string gets trimmed mid-word, and the member is a
-                different kind of fact from what the layer is made of.
-              */}
-              {showBridgingLine && (
-                <text
-                  className="layer-name layer-name-bridging"
-                  transform={`translate(${(
-                    box.x +
-                    box.width / 2 +
-                    BRIDGING_LINE_OFFSET / 2
-                  ).toFixed(2)}, ${TOP_PAD + PLOT_HEIGHT - 8}) rotate(-90)`}
-                >
-                  {/*
-                    When the members are drawn, their size and pitch belong on this label
-                    rather than in a caption somewhere else: it is the line that already
-                    names what is bridging the layer.
-                  */}
-                  {fitLabel(
-                    box.layer.kind === 'solid' &&
-                      box.layer.bridgeSizing === 'dimensions' &&
-                      box.layer.bridgeWidthMm > 0
-                      ? `${box.layer.bridgeWidthMm} @ ${bridgePitchMm(
-                          box.layer.bridgeWidthMm,
-                          box.layer.bridgeSpacingMm,
-                          box.layer.bridgeDistanceBasis,
-                        ).toFixed(0)} crs · ${bridgedPercent.toFixed(1)}% ${box.layer.bridgeLabel}`
-                      : `${bridgedPercent.toFixed(1)}% ${box.layer.bridgeLabel}`,
-                    PLOT_HEIGHT - 24,
-                  )}
-                </text>
-              )}
               {box.width >= MIN_WIDTH_FOR_CAPTION && (
                 <text
-                  x={box.x + box.width / 2}
+                  x={drawX + box.width / 2}
                   y={PLOT_HEIGHT + TOP_PAD + 16}
                   className="layer-caption"
                   textAnchor="middle"
@@ -555,14 +674,49 @@ export function CrossSection({
           );
         })}
 
-        {/* Where the dragged layer would land. */}
-        {drag?.moved === true && (
-          <line
-            x1={boxes[drag.to]?.x ?? externalFilmX}
-            y1={TOP_PAD - 6}
-            x2={boxes[drag.to]?.x ?? externalFilmX}
-            y2={TOP_PAD + PLOT_HEIGHT + 6}
-            className="drop-indicator"
+        {/*
+          Layer names, outside the drawing with a leader line to the layer each names.
+          Outside because a name set inside a layer has to be rotated, is cut short by
+          anything narrow, and competes with the temperature line for the same space.
+        */}
+        <g className="callouts">
+          {callouts.map((callout) => {
+            const y = calloutY(callout.row);
+            const labelCentreX = callout.left + callout.width / 2;
+            return (
+              <g key={callout.box.layer.id}>
+                <line
+                  x1={labelCentreX}
+                  y1={y + 3}
+                  x2={callout.anchorX}
+                  y2={TOP_PAD - 1}
+                  className="callout-leader"
+                />
+                <circle cx={callout.anchorX} cy={TOP_PAD - 1} r={1.7} className="callout-dot" />
+                <text x={callout.left} y={y} className="callout-name">
+                  {callout.text}
+                </text>
+                {callout.detail !== undefined && (
+                  <text x={callout.left} y={y + 9} className="callout-detail">
+                    {callout.detail}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+
+        {/*
+          Where it will land. The gap the other layers have opened already shows this, so
+          the outline confirms the target rather than being the only cue for it.
+        */}
+        {dragging && draggedBox !== undefined && (
+          <rect
+            x={draggedBox.x}
+            y={TOP_PAD}
+            width={draggedBox.width}
+            height={PLOT_HEIGHT}
+            className="drop-slot"
           />
         )}
 
@@ -574,7 +728,7 @@ export function CrossSection({
             y={riskBandY}
             width={totalWidth}
             height={riskBandHeight}
-            className="dew-point-band"
+            className={`dew-point-band${dragging ? ' is-restating' : ''}`}
           />
         )}
 
@@ -591,8 +745,8 @@ export function CrossSection({
         </text>
 
         {/* The temperature line for the displayed section. */}
-        <polyline points={linePoints} className="temperature-line-shadow" />
-        <polyline points={linePoints} className="temperature-line" />
+        <polyline points={linePoints} className={`temperature-line-shadow${dragging ? ' is-restating' : ''}`} />
+        <polyline points={linePoints} className={`temperature-line${dragging ? ' is-restating' : ''}`} />
 
         {profile.nodes.map((node, index) => (
           <g key={`${node.kind}-${index}`}>
@@ -626,11 +780,13 @@ export function CrossSection({
       <figcaption>
         Layer widths are to scale and captioned in millimetres; the two hatched bands
         are the internal and external surface resistances, which have no thickness and
-        are drawn at a fixed width. The hatching shows what each layer is made of and
-        the tinted band is everything at or below the internal dew point. Drag a layer
-        sideways to reorder it, or click one to pick it out in the layer list.
+        are drawn at a fixed width. Names sit above the drawing with a line to the layer
+        each one belongs to, the hatching shows what a layer is made of, and the tinted
+        band is everything at or below the internal dew point. Drag a layer sideways to
+        reorder it — it comes with you at its real width while the rest open a gap — or
+        click one to pick it out in the layer list.
         {hasBridgedLayer &&
-          ' A bridged layer is outlined in the accent colour and labelled with its bridged percentage.' +
+          ' A bridged layer is outlined in the accent colour, and its callout carries the bridged percentage.' +
           (hasDrawableStuds
             ? ` Its height is ${wallLengthShownMm.toFixed(0)} mm of wall, so studs and rafters appear inside the layers they bridge at their true width and pitch. The temperature line is an overlay on that section, read against the degrees axis on the right — a member drawn level with a temperature does not mean anything by it.`
             : ' Height carries no quantity where nothing is bridged by measured members.')}
