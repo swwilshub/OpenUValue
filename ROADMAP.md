@@ -71,20 +71,27 @@ and `iso13788.ts`, and the diagram in the results.
 
 ## Phase 4 — dynamic properties (needed by the SAP 10.3 calculator)
 
-8. **BS EN ISO 13786 dynamic thermal characteristics**:
-   - areal heat capacity κ (kappa), which SAP 10.3 needs for thermal mass;
-   - periodic thermal transmittance;
-   - decrement factor and time shift, for summer overheating.
-   The engine already stores ρ and c on every material for this, and the materials
-   database already carries them.
-9. **Summer performance** reporting built on the above: temperature amplitude damping
-   and phase shift.
+8. ~~**BS EN ISO 13786 dynamic thermal characteristics**~~ — **DONE.** `engine/src/dynamic.ts`
+   gives the periodic thermal transmittance Y<sub>ie</sub>, the decrement factor, the time
+   shift and the areal heat capacity κ on both faces, for any excitation period (24 hours
+   by default). The layer transfer matrix is derived from the heat equation rather than
+   transcribed, and checked against the massless limit, ρ·c·d/2 for a thin slab and
+   ρ·c·δ/√2 for a semi-infinite one. Surfaced in the summary strip and the Summer
+   performance panel.
+9. ~~**Summer performance** reporting~~ — **DONE**, same commit.
 
-This is now the largest visible gap rather than a future nicety. The summary strip
-carries the build-up's other headline figures and names these three as absent, so the
-page itself advertises what is missing. The strip already shows a *total* heat capacity
-(the plain sum of ρ·c·d), explicitly labelled as not being κ; ISO 13786 is what turns
-that into κ, and κ is what SAP 10.3 asks for.
+Still open in this area:
+
+- **VERIFY V23**: the clause, equation and table numbers in BS EN ISO 13786, and the
+  standard's own sign convention for the time shift. The physics is verified; the
+  citation is not.
+- **Bridged elements** (VERIFY C7) are reported per section rather than combined,
+  because area-weighting complex transfer matrices is not something the standard
+  defines. If it does define a treatment, adopt it.
+- **κ for SAP 10.3** specifically: confirm which face SAP wants, at which period, and
+  with which rounding, before the SAP calculator consumes this.
+- **Overheating** proper (BS EN ISO 52016 / Part O) needs solar gain, ventilation and a
+  room model. These element-level figures are an input to that, not a substitute.
 
 ## Phase 5 — beyond the plane element
 
