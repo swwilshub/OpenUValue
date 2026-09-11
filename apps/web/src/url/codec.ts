@@ -29,6 +29,9 @@ interface EncodedLayer {
   readonly bn?: string;
   readonly bm?: string | null;
   readonly bl?: number;
+  readonly bz?: 'dimensions' | 'fraction';
+  readonly bw?: number;
+  readonly bsp?: number;
   readonly v?: AirLayerVentilation;
   readonly o?: number;
 }
@@ -93,6 +96,9 @@ export function encodeState(state: UiState): string {
           bn: layer.bridgeLabel,
           bm: layer.bridgeMaterialId,
           bl: layer.bridgeLambdaWPerMK,
+          bz: layer.bridgeSizing,
+          bw: layer.bridgeWidthMm,
+          bsp: layer.bridgeSpacingMm,
         };
       }
       return base;
@@ -144,6 +150,10 @@ function decodeLayer(raw: unknown): UiLayer {
     bridgeLabel: typeof raw['bn'] === 'string' ? raw['bn'] : base.bridgeLabel,
     bridgeMaterialId: typeof raw['bm'] === 'string' ? raw['bm'] : null,
     bridgeLambdaWPerMK: Math.max(1e-6, finiteNumber(raw['bl'], base.bridgeLambdaWPerMK)),
+    // A link written before studs had dimensions keeps its typed percentage.
+    bridgeSizing: raw['bz'] === 'dimensions' ? 'dimensions' : 'fraction',
+    bridgeWidthMm: Math.max(0, finiteNumber(raw['bw'], base.bridgeWidthMm)),
+    bridgeSpacingMm: Math.max(1, finiteNumber(raw['bsp'], base.bridgeSpacingMm)),
     ventilation:
       typeof ventilation === 'string' &&
       VENTILATION_CLASSES.includes(ventilation as AirLayerVentilation)

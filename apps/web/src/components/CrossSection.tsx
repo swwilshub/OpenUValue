@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import type { ProfileSection, TemperatureProfile, UValueResult } from '@openuvalue/engine';
 import type { LayerDrawCategory, UiLayer } from '../state/model.js';
 import { layerDrawCategory } from '../state/model.js';
@@ -21,6 +22,11 @@ const DRAW_WIDTH = 660;
 const PLOT_HEIGHT = 260;
 const TOP_PAD = 18;
 const AXIS_WIDTH = 46;
+/**
+ * The drawing starts slightly left of zero so the internal-air node, which sits at
+ * x = 0, is not cut in half by the edge.
+ */
+const VIEWBOX_MIN_X = -7;
 
 /** Minimum drawn width before a layer can carry a rotated name label. */
 const MIN_WIDTH_FOR_NAME = 20;
@@ -34,6 +40,8 @@ const MIN_WIDTH_FOR_CAPTION = 26;
  * run out of the drawing.
  */
 const LABEL_CHAR_WIDTH = 6.9;
+/** Gap between a layer's name and the bridging line drawn beside it. */
+const BRIDGING_LINE_OFFSET = 14;
 
 /** Trim a label to what will fit along the height of the plot, with an ellipsis. */
 function fitLabel(text: string, availableLength: number): string {
@@ -77,6 +85,8 @@ export interface CrossSectionProps {
   /** Layer highlighted in the layer table, so the drawing and the table agree. */
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
+  /** Reorder by dragging a layer along the drawing. Same contract as the table's. */
+  readonly onReorder?: ((from: number, to: number) => void) | undefined;
 }
 
 export function CrossSection({
@@ -85,7 +95,20 @@ export function CrossSection({
   profile,
   selectedLayerId,
   onSelectLayer,
+  onReorder,
 }: CrossSectionProps): JSX.Element {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  /**
+   * Dragging a layer along the drawing. `from` is the layer picked up, `to` the gap it
+   * would drop into, and `moved` distinguishes a drag from a click: without it, every
+   * attempt to select a layer would also count as a reorder to where it already is.
+   */
+  const [drag, setDrag] = useState<{
+    readonly from: number;
+    readonly to: number;
+    readonly startClientX: number;
+    readonly moved: boolean;
+  } | null>(null);
   const totalThicknessMm = layers.reduce((total, layer) => total + layer.thicknessMm, 0);
   if (layers.length === 0 || totalThicknessMm <= 0) {
     return (
@@ -164,6 +187,8 @@ export function CrossSection({
     gridTemperatures.push(Number(value.toFixed(6)));
   }
 
+  const viewBoxWidth = totalWidth + AXIS_WIDTH - VIEWBOX_MIN_X;
+
   const hasThinLayer = layers.some((layer) => layer.thicknessMm * scale < 2);
   const hasBridgedLayer = boxes.some(
     (box) => box.layer.kind === 'solid' && box.layer.bridgedPercent > 0,
@@ -176,10 +201,67 @@ export function CrossSection({
   const riskBandY = Math.min(Math.max(dewPointY, TOP_PAD), TOP_PAD + PLOT_HEIGHT);
   const riskBandHeight = TOP_PAD + PLOT_HEIGHT - riskBandY;
 
+  /**
+   * Client x to the SVG's own coordinates. The viewBox is uniformly scaled (the SVG is
+   * width:100%, height:auto with the default preserveAspectRatio), so one ratio does
+   * it; getScreenCTM would need a DOMPoint and buys nothing here.
+   */
+  const toUserX = (clientX: number): number => {
+    const svg = svgRef.current;
+    if (svg === null) {
+      return 0;
+    }
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0) {
+      return 0;
+    }
+    return VIEWBOX_MIN_X + ((clientX - rect.left) / rect.width) * viewBoxWidth;
+  };
+
+  /** The gap between layers that a pointer at this position would drop into. */
+  const dropIndexAt = (clientX: number): number => {
+    const userX = toUserX(clientX);
+    for (const [index, box] of boxes.entries()) {
+      if (userX < box.x + box.width / 2) {
+        return index;
+      }
+    }
+    return boxes.length;
+  };
+
+  /** How far the pointer must travel before a press counts as a drag, not a click. */
+  const DRAG_THRESHOLD_PX = 4;
+
   return (
     <figure className="cross-section">
       <svg
-        viewBox={`-7 0 ${totalWidth + AXIS_WIDTH + 7} ${PLOT_HEIGHT + TOP_PAD + 66}`}
+        ref={svgRef}
+        viewBox={`${VIEWBOX_MIN_X} 0 ${viewBoxWidth} ${PLOT_HEIGHT + TOP_PAD + 66}`}
+        className={drag?.moved === true ? 'is-dragging' : undefined}
+        onPointerMove={(event) => {
+          if (drag === null) {
+            return;
+          }
+          const moved =
+            drag.moved || Math.abs(event.clientX - drag.startClientX) > DRAG_THRESHOLD_PX;
+          setDrag({ ...drag, moved, to: dropIndexAt(event.clientX) });
+        }}
+        onPointerUp={(event) => {
+          if (drag === null) {
+            return;
+          }
+          if (drag.moved) {
+            onReorder?.(drag.from, dropIndexAt(event.clientX));
+          } else {
+            // A press that never moved is a click: select, or clear the selection.
+            const layer = layers[drag.from];
+            onSelectLayer?.(
+              layer !== undefined && layer.id === selectedLayerId ? undefined : layer?.id,
+            );
+          }
+          setDrag(null);
+        }}
+        onPointerLeave={() => setDrag(null)}
         role="img"
         aria-label={`Cross-section of ${layers.length} layers with the temperature profile overlaid`}
       >
@@ -304,15 +386,32 @@ export function CrossSection({
         />
 
         {/* Layers, strictly to scale. */}
-        {boxes.map((box) => {
+        {boxes.map((box, index) => {
           const style = CATEGORY_STYLE[box.category];
           const bridgedPercent = box.layer.kind === 'solid' ? box.layer.bridgedPercent : 0;
           const isSelected = box.layer.id === selectedLayerId;
+          // Two rotated lines only fit on a layer drawn wide enough for both.
+          const showBridgingLine =
+            bridgedPercent > 0 && box.width >= MIN_WIDTH_FOR_NAME + BRIDGING_LINE_OFFSET;
           return (
             <g
               key={box.layer.id}
-              className={isSelected ? 'layer-box layer-box-selected' : 'layer-box'}
-              onClick={() => onSelectLayer?.(isSelected ? undefined : box.layer.id)}
+              className={[
+                'layer-box',
+                isSelected ? 'layer-box-selected' : '',
+                drag?.moved === true && drag.from === index ? 'layer-box-dragging' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onPointerDown={(event) => {
+                if (onReorder === undefined && onSelectLayer === undefined) {
+                  return;
+                }
+                // Capture on the SVG, so a fast drag that outruns the pointer keeps
+                // sending moves instead of stranding the drag mid-gesture.
+                event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId);
+                setDrag({ from: index, to: index, startClientX: event.clientX, moved: false });
+              }}
             >
               <title>
                 {`${box.layer.label} — ${box.layer.thicknessMm} mm`}
@@ -370,14 +469,33 @@ export function CrossSection({
               {box.width >= MIN_WIDTH_FOR_NAME && (
                 <text
                   className="layer-name"
-                  transform={`translate(${(box.x + box.width / 2).toFixed(2)}, ${
-                    TOP_PAD + PLOT_HEIGHT - 8
-                  }) rotate(-90)`}
+                  transform={`translate(${(
+                    box.x +
+                    box.width / 2 -
+                    // Shift left to leave room for the bridging line beside it, so the
+                    // pair still reads as centred on the layer.
+                    (showBridgingLine ? BRIDGING_LINE_OFFSET / 2 : 0)
+                  ).toFixed(2)}, ${TOP_PAD + PLOT_HEIGHT - 8}) rotate(-90)`}
+                >
+                  {fitLabel(box.layer.label, PLOT_HEIGHT - 24)}
+                </text>
+              )}
+              {/*
+                The bridging goes on its own line rather than being appended to the
+                name: one long string gets trimmed mid-word, and the member is a
+                different kind of fact from what the layer is made of.
+              */}
+              {showBridgingLine && (
+                <text
+                  className="layer-name layer-name-bridging"
+                  transform={`translate(${(
+                    box.x +
+                    box.width / 2 +
+                    BRIDGING_LINE_OFFSET / 2
+                  ).toFixed(2)}, ${TOP_PAD + PLOT_HEIGHT - 8}) rotate(-90)`}
                 >
                   {fitLabel(
-                    bridgedPercent > 0
-                      ? `${box.layer.label} · ${bridgedPercent}% ${box.layer.bridgeLabel}`
-                      : box.layer.label,
+                    `${bridgedPercent.toFixed(1)}% ${box.layer.bridgeLabel}`,
                     PLOT_HEIGHT - 24,
                   )}
                 </text>
@@ -395,6 +513,17 @@ export function CrossSection({
             </g>
           );
         })}
+
+        {/* Where the dragged layer would land. */}
+        {drag?.moved === true && (
+          <line
+            x1={boxes[drag.to]?.x ?? externalFilmX}
+            y1={TOP_PAD - 6}
+            x2={boxes[drag.to]?.x ?? externalFilmX}
+            y2={TOP_PAD + PLOT_HEIGHT + 6}
+            className="drop-indicator"
+          />
+        )}
 
         {/* Everything below the internal dew point, tinted. */}
         {riskBandHeight > 0 && (
@@ -456,7 +585,8 @@ export function CrossSection({
         are the internal and external surface resistances, which have no thickness and
         are drawn at a fixed width. Height means temperature only — the hatching shows
         what each layer is made of and the tinted band is everything at or below the
-        internal dew point.
+        internal dew point. Drag a layer sideways to reorder it, or click one to pick
+        it out in the layer list.
         {hasBridgedLayer &&
           ' A bridged layer is outlined in the accent colour and labelled with its bridged percentage, which is an area fraction and so cannot be drawn in section.'}
         {lastIncludedIndex < layers.length - 1 &&

@@ -32,6 +32,16 @@ export interface UiLayer {
   readonly bridgeLabel: string;
   readonly bridgeMaterialId: string | null;
   readonly bridgeLambdaWPerMK: number;
+  /**
+   * How the bridged percentage is arrived at. Studs and rafters are repeating members
+   * at a spacing, so their width and centres are what a person actually knows;
+   * 'fraction' is the escape hatch for a conventional whole-wall allowance.
+   */
+  readonly bridgeSizing: 'dimensions' | 'fraction';
+  /** Width of one member across the face, mm. Used when bridgeSizing is 'dimensions'. */
+  readonly bridgeWidthMm: number;
+  /** Spacing of the members, centre to centre, mm. */
+  readonly bridgeSpacingMm: number;
   /** Air layers only. */
   readonly ventilation: AirLayerVentilation;
   readonly openingAreaMm2PerM: number;
@@ -164,6 +174,34 @@ export function makeLayerId(): string {
   return `layer-${nextId}`;
 }
 
+
+/* --------------------------------------------------------- studs and rafters --- */
+
+/**
+ * A repeating member's share of the element face is simply its width divided by its
+ * spacing: 38 mm members at 400 mm centres occupy 9.5 % of the wall. That is plain
+ * arithmetic and needs no standard behind it.
+ *
+ * What it does NOT include is the rest of the timber in a real wall - sole plates,
+ * head plates, noggins, lintels and studs doubled at openings - which is why a
+ * conventional whole-element allowance is usually larger than this figure. Typing the
+ * percentage directly is the way to use such an allowance instead.
+ *
+ * TODO(verify): whether BR 443 prescribes how the bridged fraction for a timber-frame
+ * wall is to be derived, and whether it gives a standard allowance to use in place of
+ * a measured width and spacing.
+ */
+export function bridgedPercentFromDimensions(widthMm: number, spacingMm: number): number {
+  if (!Number.isFinite(widthMm) || !Number.isFinite(spacingMm) || spacingMm <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.max(0, (widthMm / spacingMm) * 100));
+}
+
+/** A common UK stud size and spacing, used when studs are first added to a layer. */
+export const DEFAULT_STUD_WIDTH_MM = 38;
+export const DEFAULT_STUD_SPACING_MM = 400;
+
 export function blankSolidLayer(): UiLayer {
   return {
     id: makeLayerId(),
@@ -177,6 +215,9 @@ export function blankSolidLayer(): UiLayer {
     bridgeLabel: 'Timber stud',
     bridgeMaterialId: 'softwood-structural',
     bridgeLambdaWPerMK: 0.13,
+    bridgeSizing: 'dimensions',
+    bridgeWidthMm: DEFAULT_STUD_WIDTH_MM,
+    bridgeSpacingMm: DEFAULT_STUD_SPACING_MM,
     ventilation: 'unventilated',
     openingAreaMm2PerM: 0,
   };
@@ -233,10 +274,14 @@ export function timberFrameExample(): UiState {
       layerFromMaterial('gypsum-plasterboard', 12.5),
       {
         ...insulation,
-        bridgedPercent: 15,
+        // 38 mm studs at 400 mm centres: 38/400 = 9.5 % of the wall face.
+        bridgedPercent: bridgedPercentFromDimensions(38, 400),
         bridgeLabel: 'Softwood stud',
         bridgeMaterialId: 'softwood-structural',
         bridgeLambdaWPerMK: 0.13,
+        bridgeSizing: 'dimensions',
+        bridgeWidthMm: 38,
+        bridgeSpacingMm: 400,
       },
       layerFromMaterial('osb-board', 9),
       { ...blankAirLayer(), thicknessMm: 25, ventilation: 'well-ventilated' },

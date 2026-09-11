@@ -2,7 +2,14 @@ import { useState } from 'react';
 import type { UValueResult } from '@openuvalue/engine';
 import { roundResistanceForReporting } from '@openuvalue/engine';
 import { MATERIALS, findMaterialById, toEngineMaterial } from '@openuvalue/materials';
-import { type UiLayer, blankAirLayer, blankSolidLayer } from '../state/model.js';
+import {
+  DEFAULT_STUD_SPACING_MM,
+  DEFAULT_STUD_WIDTH_MM,
+  type UiLayer,
+  blankAirLayer,
+  blankSolidLayer,
+  bridgedPercentFromDimensions,
+} from '../state/model.js';
 
 export interface LayerTableProps {
   readonly layers: readonly UiLayer[];
@@ -99,6 +106,59 @@ export function LayerTable({
     next[index] = displaced;
     next[target] = moved;
     onChange(next);
+  };
+
+  /** Start bridging a layer, at a common stud size and spacing. */
+  const addStuds = (index: number): void => {
+    update(index, {
+      bridgeSizing: 'dimensions',
+      bridgeWidthMm: DEFAULT_STUD_WIDTH_MM,
+      bridgeSpacingMm: DEFAULT_STUD_SPACING_MM,
+      bridgedPercent: bridgedPercentFromDimensions(
+        DEFAULT_STUD_WIDTH_MM,
+        DEFAULT_STUD_SPACING_MM,
+      ),
+    });
+  };
+
+  /**
+   * Change a member's width or spacing, keeping the bridged percentage derived from
+   * them. Passing null leaves that dimension alone.
+   */
+  const setDimensions = (index: number, widthMm: number | null, spacingMm: number | null): void => {
+    const layer = layers[index];
+    if (layer === undefined) {
+      return;
+    }
+    const width = widthMm ?? layer.bridgeWidthMm;
+    const spacing = spacingMm ?? layer.bridgeSpacingMm;
+    update(index, {
+      bridgeWidthMm: width,
+      bridgeSpacingMm: spacing,
+      bridgedPercent: bridgedPercentFromDimensions(width, spacing),
+    });
+  };
+
+  /**
+   * Switching to width-and-spacing recomputes the percentage from the dimensions, so
+   * the figure on screen always matches the inputs that are visible beside it.
+   */
+  const setSizing = (index: number, sizing: UiLayer['bridgeSizing']): void => {
+    const layer = layers[index];
+    if (layer === undefined) {
+      return;
+    }
+    update(index, {
+      bridgeSizing: sizing,
+      ...(sizing === 'dimensions'
+        ? {
+            bridgedPercent: bridgedPercentFromDimensions(
+              layer.bridgeWidthMm,
+              layer.bridgeSpacingMm,
+            ),
+          }
+        : {}),
+    });
   };
 
   const remove = (index: number): void => {
@@ -292,74 +352,193 @@ export function LayerTable({
               )}
 
               {layer.kind === 'solid' && (
-                <label>
-                  Bridged, %
+                <label title="Water vapour resistance factor, dimensionless">
+                  μ
                   <input
                     type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={layer.bridgedPercent}
+                    min={1}
+                    step={1}
+                    value={layer.vapourResistanceFactorMu}
                     onChange={(event) =>
                       update(index, {
-                        bridgedPercent: Math.min(100, Math.max(0, Number(event.target.value))),
+                        vapourResistanceFactorMu: Math.max(1, Number(event.target.value)),
+                        materialId: null,
                       })
                     }
                   />
                 </label>
               )}
 
-              <div className="layer-resistance">
-                <span className="resistance-label">R</span>
-                <span className="resistance-value">
-                  {reported === undefined
-                    ? '—'
-                    : roundResistanceForReporting(reported.combinedResistanceM2KPerW).toFixed(3)}
+              <div className="layer-readout">
+                <span className="readout">
+                  <span className="readout-label">R</span>
+                  <span className="readout-value">
+                    {reported === undefined
+                      ? '—'
+                      : roundResistanceForReporting(reported.combinedResistanceM2KPerW).toFixed(3)}
+                  </span>
+                  <span className="readout-unit">m²K/W</span>
                 </span>
-                <span className="resistance-unit">m²K/W</span>
+                {layer.kind === 'solid' && (
+                  <span className="readout" title="Equivalent air layer thickness, Sd = μ × d">
+                    <span className="readout-label">
+                      S<sub>d</sub>
+                    </span>
+                    <span className="readout-value">
+                      {reported === undefined
+                        ? '—'
+                        : reported.vapourDiffusionThicknessSdM.toFixed(2)}
+                    </span>
+                    <span className="readout-unit">m</span>
+                  </span>
+                )}
               </div>
             </div>
 
+            {layer.kind === 'solid' && layer.bridgedPercent <= 0 && (
+              <div className="layer-actions">
+                <button type="button" onClick={() => addStuds(index)}>
+                  + studs or rafters
+                </button>
+              </div>
+            )}
+
             {layer.kind === 'solid' && layer.bridgedPercent > 0 && (
-              <div className="layer-grid bridging-grid">
-                <label>
-                  Bridging material
-                  <select
-                    value={layer.bridgeMaterialId ?? ''}
-                    onChange={(event) => applyBridgeMaterial(index, event.target.value)}
-                  >
-                    <option value="">(λ typed in directly)</option>
-                    {MATERIALS.map((material) => (
-                      <option key={material.id} value={material.id}>
-                        {material.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Bridging λ, W/(m·K)
+              <div className="bridging-block">
+                <div className="bridging-head">
                   <input
-                    type="number"
-                    min={0.001}
-                    step={0.001}
-                    value={layer.bridgeLambdaWPerMK}
-                    onChange={(event) =>
-                      update(index, {
-                        bridgeLambdaWPerMK: Math.max(0.001, Number(event.target.value)),
-                        bridgeMaterialId: null,
-                      })
-                    }
+                    type="text"
+                    aria-label="Bridging member name"
+                    className="layer-name"
+                    value={layer.bridgeLabel}
+                    onChange={(event) => update(index, { bridgeLabel: event.target.value })}
                   />
-                </label>
-                <div className="layer-resistance">
-                  <span className="resistance-label">R bridge</span>
-                  <span className="resistance-value">
-                    {reported?.bridgingResistanceM2KPerW === undefined
-                      ? '—'
-                      : roundResistanceForReporting(reported.bridgingResistanceM2KPerW).toFixed(3)}
+                  <span className="bridged-share">
+                    {layer.bridgedPercent.toFixed(1)}% of the face
                   </span>
-                  <span className="resistance-unit">m²K/W</span>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => update(index, { bridgedPercent: 0 })}
+                  >
+                    remove
+                  </button>
                 </div>
+
+                <div className="layer-grid">
+                  <label>
+                    Member material
+                    <select
+                      value={layer.bridgeMaterialId ?? ''}
+                      onChange={(event) => applyBridgeMaterial(index, event.target.value)}
+                    >
+                      <option value="">(λ typed in directly)</option>
+                      {MATERIALS.map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Member λ, W/(m·K)
+                    <input
+                      type="number"
+                      min={0.001}
+                      step={0.001}
+                      value={layer.bridgeLambdaWPerMK}
+                      onChange={(event) =>
+                        update(index, {
+                          bridgeLambdaWPerMK: Math.max(0.001, Number(event.target.value)),
+                          bridgeMaterialId: null,
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Set by
+                    <select
+                      value={layer.bridgeSizing}
+                      onChange={(event) =>
+                        setSizing(index, event.target.value as UiLayer['bridgeSizing'])
+                      }
+                    >
+                      <option value="dimensions">Size &amp; spacing</option>
+                      <option value="fraction">Percentage</option>
+                    </select>
+                  </label>
+
+                  {layer.bridgeSizing === 'dimensions' ? (
+                    <>
+                      <label>
+                        Member width, mm
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={layer.bridgeWidthMm}
+                          onChange={(event) =>
+                            setDimensions(index, Math.max(0, Number(event.target.value)), null)
+                          }
+                        />
+                      </label>
+                      <label>
+                        Spacing, mm centres
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={layer.bridgeSpacingMm}
+                          onChange={(event) =>
+                            setDimensions(index, null, Math.max(1, Number(event.target.value)))
+                          }
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <label>
+                      Bridged, %
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={Number(layer.bridgedPercent.toFixed(2))}
+                        onChange={(event) =>
+                          update(index, {
+                            bridgedPercent: Math.min(
+                              100,
+                              Math.max(0, Number(event.target.value)),
+                            ),
+                          })
+                        }
+                      />
+                    </label>
+                  )}
+
+                  <div className="layer-readout">
+                    <span className="readout">
+                      <span className="readout-label">R through member</span>
+                      <span className="readout-value">
+                        {reported?.bridgingResistanceM2KPerW === undefined
+                          ? '—'
+                          : roundResistanceForReporting(
+                              reported.bridgingResistanceM2KPerW,
+                            ).toFixed(3)}
+                      </span>
+                      <span className="readout-unit">m²K/W</span>
+                    </span>
+                  </div>
+                </div>
+
+                {layer.bridgeSizing === 'dimensions' && (
+                  <p className="footnote">
+                    {layer.bridgeWidthMm} mm every {layer.bridgeSpacingMm} mm is{' '}
+                    {layer.bridgedPercent.toFixed(1)}% of the face. That is the repeating
+                    members only — plates, noggins and lintels are extra, so switch to a
+                    percentage to use a whole-element allowance instead.
+                  </p>
+                )}
               </div>
             )}
 

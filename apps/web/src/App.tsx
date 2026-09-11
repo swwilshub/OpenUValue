@@ -92,6 +92,25 @@ export function App(): JSX.Element {
   const setLayers = useCallback((layers: readonly UiLayer[]) => {
     setState((current) => ({ ...current, layers }));
   }, []);
+
+  /**
+   * Reorder from the drawing. Same rule as the layer table: the drop index is taken
+   * from the list before the layer is lifted out, so it is corrected once it has been.
+   */
+  const reorderLayers = useCallback((from: number, to: number) => {
+    setState((current) => {
+      if (from === to || from < 0 || from >= current.layers.length) {
+        return current;
+      }
+      const next = [...current.layers];
+      const [moved] = next.splice(from, 1);
+      if (moved === undefined) {
+        return current;
+      }
+      next.splice(from < to ? to - 1 : to, 0, moved);
+      return { ...current, layers: next };
+    });
+  }, []);
   const setDirection = useCallback((heatFlowDirection: HeatFlowDirection) => {
     setState((current) => {
       // Turning a wall into a roof leaves "rear ventilated cladding" selected, which
@@ -184,6 +203,52 @@ export function App(): JSX.Element {
         </p>
       )}
 
+      {result !== undefined && profile !== undefined && (
+        <section className="panel hero-panel">
+          <div className="section-header">
+            <h2>Cross-section and temperature</h2>
+            <label className="inline-select">
+              Show
+              <select
+                value={state.section}
+                disabled={!bridged}
+                onChange={(event) =>
+                  setState((current) => ({
+                    ...current,
+                    section: event.target.value as ProfileSection,
+                  }))
+                }
+              >
+                {(Object.keys(SECTION_LABELS) as ProfileSection[]).map((section) => (
+                  <option key={section} value={section}>
+                    {SECTION_LABELS[section]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <CrossSection
+            layers={state.layers}
+            result={result}
+            profile={profile}
+            section={state.section}
+            selectedLayerId={selectedLayerId}
+            onSelectLayer={setSelectedLayerId}
+            onReorder={reorderLayers}
+          />
+          {bridged && state.section === 'combined' && (
+            <p className="footnote">
+              The combined profile is an OpenUValue convention, not a method from
+              BS EN ISO 6946, which defines no temperature profile through a bridged
+              element. The area-weighted layer resistances are scaled by{' '}
+              k = {(profile.combinedScalingFactor ?? 1).toFixed(4)} so the profile sums
+              to the reported R<sub>T</sub> rather than to the lower limit R″
+              <sub>T</sub>. Vapour thicknesses follow the unbridged path.
+            </p>
+              )}
+        </section>
+      )}
+
       <main className="layout">
         <div className="column-left">
           <section className="panel">
@@ -228,52 +293,7 @@ export function App(): JSX.Element {
 
         <div className="column-right">
           {result !== undefined && profile !== undefined ? (
-            <>
-              <ResultsPanel result={result} profile={profile} />
-
-              <section className="panel">
-                <div className="section-header">
-                  <h2>Cross-section and temperature</h2>
-                  <label className="inline-select">
-                    Show
-                    <select
-                      value={state.section}
-                      disabled={!bridged}
-                      onChange={(event) =>
-                        setState((current) => ({
-                          ...current,
-                          section: event.target.value as ProfileSection,
-                        }))
-                      }
-                    >
-                      {(Object.keys(SECTION_LABELS) as ProfileSection[]).map((section) => (
-                        <option key={section} value={section}>
-                          {SECTION_LABELS[section]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <CrossSection
-                  layers={state.layers}
-                  result={result}
-                  profile={profile}
-                  section={state.section}
-                  selectedLayerId={selectedLayerId}
-                  onSelectLayer={setSelectedLayerId}
-                />
-                {bridged && state.section === 'combined' && (
-                  <p className="footnote">
-                    The combined profile is an OpenUValue convention, not a method from
-                    BS EN ISO 6946, which defines no temperature profile through a bridged
-                    element. The area-weighted layer resistances are scaled by{' '}
-                    k = {(profile.combinedScalingFactor ?? 1).toFixed(4)} so the profile sums
-                    to the reported R<sub>T</sub> rather than to the lower limit R″
-                    <sub>T</sub>. Vapour thicknesses follow the unbridged path.
-                  </p>
-                )}
-              </section>
-            </>
+            <ResultsPanel result={result} profile={profile} />
           ) : (
             <section className="panel">
               <h2>Result</h2>
