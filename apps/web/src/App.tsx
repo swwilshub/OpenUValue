@@ -9,7 +9,7 @@ import type {
 import { calculateTemperatureProfile, calculateUValue } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
-import { InterstitialPanel } from './components/InterstitialPanel.js';
+import { MoistureTab } from './components/MoistureTab.js';
 import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { LayerTable } from './components/LayerTable.js';
@@ -35,6 +35,17 @@ const REPOSITORY_URL = 'https://github.com/swwilshub/OpenUValue';
 /** Marks the walkthrough as seen, so it opens once rather than on every visit. */
 const TOUR_SEEN_KEY = 'openuvalue.tour.seen';
 
+/**
+ * The cross-section stays above the tabs, because it is the thing being worked on
+ * whichever analysis is open. The tabs switch what is said *about* it.
+ */
+type TabId = 'buildup' | 'moisture';
+
+const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
+  { id: 'buildup', label: 'Build-up and U-value' },
+  { id: 'moisture', label: 'Moisture' },
+];
+
 const SECTION_LABELS: Record<ProfileSection, string> = {
   combined: 'Combined (area weighted)',
   unbridged: 'Unbridged section',
@@ -48,6 +59,7 @@ export function App(): JSX.Element {
   const [copied, setCopied] = useState(false);
   /** Layer picked in either the table or the drawing; the other view follows. */
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
+  const [tab, setTab] = useState<TabId>('buildup');
   /**
    * The walkthrough opens by itself the first time, and not again. localStorage can
    * throw outright in a private window or with site data blocked, so a failure to read
@@ -296,7 +308,31 @@ export function App(): JSX.Element {
         </section>
       )}
 
-      <main className="layout">
+      <nav className="tab-bar" role="tablist" aria-label="Analysis">
+        {TABS.map((entry) => (
+          <button
+            key={entry.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === entry.id}
+            className={tab === entry.id ? 'tab is-current' : 'tab'}
+            onClick={() => setTab(entry.id)}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'moisture' && result !== undefined && profile !== undefined && (
+        <MoistureTab
+          element={element}
+          layers={state.layers}
+          conditions={state.conditions}
+          profile={profile}
+        />
+      )}
+
+      <main className="layout" hidden={tab !== 'buildup'}>
         <div className="column-left">
           <section className="panel">
             <h2>
@@ -340,10 +376,7 @@ export function App(): JSX.Element {
 
         <div className="column-right">
           {result !== undefined && profile !== undefined ? (
-            <>
-              <ResultsPanel result={result} profile={profile} />
-              <InterstitialPanel element={element} conditions={state.conditions} />
-            </>
+            <ResultsPanel result={result} profile={profile} />
           ) : (
             <section className="panel">
               <h2>Result</h2>

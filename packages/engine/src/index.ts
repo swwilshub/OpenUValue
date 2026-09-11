@@ -26,3 +26,4 @@ export * from './temperatureProfile.js';
 export * from './condensation/method.js';
 export * from './condensation/glaser.js';
 export * from './condensation/iso13788.js';
+export * from './condensation/periodAssessment.js';
