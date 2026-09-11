@@ -2870,3 +2870,170 @@ body.is-dragging * {
 .callouts {
   pointer-events: none;
 }
+
+/* --------------------------------------------------------- 3D layup view ---
+ * An axonometric indicator of the stack. Quieter than the section: it shows order and
+ * relative thickness, and is not a drawing anyone should measure.
+ */
+.view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 2px;
+  background: var(--ground);
+}
+
+.view-toggle button {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.view-toggle button.is-current {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.view-toggle .help-button {
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.layup-3d {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.layup-3d svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.layup-3d figcaption {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  line-height: 1.45;
+}
+
+/* The two cut faces are shaded so the slab reads as solid rather than as an outline. */
+.layup-top {
+  filter: brightness(1.06);
+}
+
+.layup-side {
+  filter: brightness(0.9);
+}
+
+.layup-edge {
+  stroke: var(--layer-edge);
+  stroke-width: 0.8;
+}
+
+.layup-member {
+  stroke: var(--cat-timber-ink);
+  stroke-width: 0.7;
+}
+
+.layup-slab {
+  cursor: pointer;
+}
+
+.layup-slab.is-selected .layup-edge {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.layup-badge {
+  fill: var(--surface);
+  stroke: var(--ink-faint);
+  stroke-width: 0.9;
+}
+
+.layup-badge-text {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.layup-leader {
+  stroke: var(--ink-faint);
+  stroke-width: 0.7;
+}
+
+.layup-side-label {
+  font-size: 9px;
+  fill: var(--ink-faint);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.layup-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layup-legend button {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: baseline;
+  padding: 3px 5px;
+  border-radius: 5px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.layup-legend button:hover,
+.layup-legend button.is-selected {
+  background: var(--accent-soft);
+}
+
+.layup-legend-number {
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.layup-legend-name {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layup-legend-thickness {
+  color: var(--ink-faint);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .layup-3d {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

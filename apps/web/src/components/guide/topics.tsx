@@ -100,6 +100,34 @@ export const CHAPTERS: readonly GuideChapter[] = [
         ),
       },
       {
+        id: 'layup-3d',
+        title: 'The 3D layup view',
+        figure: <LayersFigure />,
+        body: (
+          <>
+            <p>
+              The <strong>3D layup</strong> button swaps the section for an axonometric
+              view: the layers as slabs, pulled apart and stepped back so every one is
+              visible, numbered from the inside out to match the layer list. Studs and
+              rafters appear end-on in the cut along the top.
+            </p>
+            <p>
+              <strong>It is an indicator, not a drawing.</strong> There are no junctions,
+              fixings or detailing in it, and nothing in it feeds the calculation — the
+              U-value comes from the layer table either way. The gaps between layers are
+              there to make the order readable and mean nothing; thicknesses are to scale
+              against each other, except that the very thinnest are given a minimum depth
+              so a vapour barrier does not vanish.
+            </p>
+            <p>
+              Click a slab, or a line in the list beside it, to pick that layer out — the
+              selection carries back to the section and the layer table. Cross battens, a
+              second set of members running the other way, are not drawn yet.
+            </p>
+          </>
+        ),
+      },
+      {
         id: 'drag-reorder',
         title: 'Dragging layers around',
         figure: <DragFigure />,

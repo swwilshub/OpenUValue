@@ -95,6 +95,24 @@ Still open in this area:
 
 ## Phase 5 — beyond the plane element
 
+**Cross battens.** A second set of members running across the first — service battens
+over studs, counter-battens over rafters, a crossed-batten service void. Two things are
+needed and neither exists yet:
+
+- *The calculation.* Crossed members do not bridge a single layer; they form two
+  inhomogeneous layers whose members are at right angles, so the area fractions are not
+  simply additive where they cross. BS EN ISO 6946's combined method handles each layer
+  separately, and whether that is the right treatment for a crossed set, or whether the
+  overlap needs its own section path, has to be settled against the standard before
+  anything is implemented.
+- *The model and the drawing.* `UiLayer` carries one set of members per layer, with a
+  single width, spacing and distance basis. A crossed set needs a second, plus a
+  direction, and the cross-section and the 3D layup both assume members run one way.
+
+The 3D layup view says outright that cross battens are not drawn yet, so the gap is
+visible to a user rather than silently absent.
+
+
 10. **BS EN ISO 13370 ground floors**, which need perimeter/area ratio and soil
     properties rather than a simple layer stack.
 11. **BS EN ISO 10211 two-dimensional numerical calculation**, for the build-ups the

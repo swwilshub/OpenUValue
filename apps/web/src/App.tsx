@@ -20,6 +20,7 @@ import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { SummaryStrip } from './components/SummaryStrip.js';
 import { DynamicPanel } from './components/DynamicPanel.js';
+import { Layup3D } from './components/Layup3D.js';
 import { Guide, HelpButton } from './components/guide/Guide.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
@@ -75,6 +76,8 @@ export function App(): JSX.Element {
    * The feature guide. `guideTopic` is what a help button beside a box passes in, so the
    * guide opens at that box rather than at the beginning.
    */
+  /** Which view the hero panel shows: the section, or the axonometric indicator. */
+  const [heroView, setHeroView] = useState<'section' | 'layup'>('section');
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideTopic, setGuideTopic] = useState<string | undefined>(undefined);
   const openGuide = useCallback((topicId?: string) => {
@@ -363,7 +366,26 @@ export function App(): JSX.Element {
                 onOpen={openGuide}
               />
             </h2>
-            <label className="inline-select">
+            <div className="view-toggle" role="group" aria-label="Drawing">
+              <button
+                type="button"
+                className={heroView === 'section' ? 'is-current' : ''}
+                aria-pressed={heroView === 'section'}
+                onClick={() => setHeroView('section')}
+              >
+                Section
+              </button>
+              <button
+                type="button"
+                className={heroView === 'layup' ? 'is-current' : ''}
+                aria-pressed={heroView === 'layup'}
+                onClick={() => setHeroView('layup')}
+              >
+                3D layup
+              </button>
+              <HelpButton topicId="layup-3d" label="the 3D layup view" onOpen={openGuide} />
+            </div>
+            <label className="inline-select" hidden={heroView !== 'section'}>
               Show
               <HelpButton topicId="section-selector" label="the section selector" onOpen={openGuide} />
               <select
@@ -384,17 +406,26 @@ export function App(): JSX.Element {
               </select>
             </label>
           </div>
-          <CrossSection
-            layers={state.layers}
-            result={result}
-            profile={profile}
-            section={state.section}
-            selectedLayerId={selectedLayerId}
-            onSelectLayer={setSelectedLayerId}
-            onReorder={reorderLayers}
-          />
+          {heroView === 'section' ? (
+            <CrossSection
+              layers={state.layers}
+              result={result}
+              profile={profile}
+              section={state.section}
+              selectedLayerId={selectedLayerId}
+              onSelectLayer={setSelectedLayerId}
+              onReorder={reorderLayers}
+            />
+          ) : (
+            <Layup3D
+              layers={state.layers}
+              included={result.layers.map((layer) => layer.includedInCalculation)}
+              selectedLayerId={selectedLayerId}
+              onSelectLayer={setSelectedLayerId}
+            />
+          )}
 
-          <div className="section-legend">
+          <div className="section-legend" hidden={heroView !== 'section'}>
             <HatchLegend />
             <button type="button" className="link-button" onClick={() => setTourOpen(true)}>
               How to read this drawing
