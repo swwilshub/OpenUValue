@@ -22,6 +22,7 @@ export * from './resistance.js';
 export * from './assembly.js';
 export * from './inhomogeneous.js';
 export * from './uvalue.js';
+export * from './fasteners.js';
 export * from './corrections.js';
 export * from './areal.js';
 export * from './partL.js';

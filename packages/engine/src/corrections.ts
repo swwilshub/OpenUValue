@@ -1,3 +1,4 @@
+import { type FastenerAssessment, type FastenerInput, assessFasteners } from './fasteners.js';
 import type { SquareMetreKelvinPerWatt, WattsPerSquareMetreKelvin } from './units.js';
 import type { HeatFlowDirection } from './types.js';
 import { type Warning, warning } from './warnings.js';
@@ -15,14 +16,18 @@ import { type Warning, warning } from './warnings.js';
  * The U-value is calculated without them and the correction added afterwards, so this
  * module deliberately does not touch the resistance chain.
  *
- * **Not implemented, and why.** The fastener correction needs the approximate
- * procedure in BS EN ISO 6946 Annex F.3.2, which BR 443 4.8.3 points to without
- * reproducing. That annex is not in the freely published preview, so the formula
- * cannot be attributed and is therefore absent rather than guessed. BR 443 4.8.3 does
- * give one rule that stands on its own and is worth knowing:
- * no correction is needed for fixings in a flat roof where the metal part of a
- * composite fastener is recessed by at least 50 % of its length and there are no more
- * than 15 fixings per square metre.
+ * **Fasteners** are in fasteners.ts. BR 443 4.8.3 gives two routes and this engine
+ * implements the detailed one, ΔU_f = χ · n_f, which that clause specifies completely;
+ * the approximate route needs BS EN ISO 6946 Annex F.3.2, which BR 443 points at without
+ * reproducing, so it is absent rather than guessed.
+ *
+ * **Inverted roofs** — the precipitation correction ΔU_r — are still not implemented.
+ *
+ * The 3 % omission threshold applies to the **sum** of the corrections, which is why
+ * they are all totalled here rather than each deciding its own fate. BR 443 (2019) 4.8
+ * is explicit: "The 3% relates to the total corrections. For example, if there are both
+ * wall ties and air gaps, the 3% threshold applies to the sum of the ΔU values from each
+ * cause."
  */
 
 /**
@@ -108,11 +113,21 @@ export interface CorrectionInput {
   readonly totalResistanceM2KPerW: SquareMetreKelvinPerWatt;
   /** Resistance of the insulation layer the gaps are in. */
   readonly insulationResistanceM2KPerW?: SquareMetreKelvinPerWatt;
+  /**
+   * Mechanical fasteners through the insulation. Omit where there are none, or where
+   * the fixings are not known — a missing ΔU_f under-reports the U-value, so the UI
+   * should say so rather than letting absence read as zero.
+   */
+  readonly fasteners?: FastenerInput;
 }
 
 export interface CorrectionResult {
   /** ΔU for air gaps, W/(m²·K). */
   readonly airGapDeltaUWPerM2K: WattsPerSquareMetreKelvin;
+  /** ΔU for mechanical fasteners, W/(m²·K). Zero where none were given. */
+  readonly fastenerDeltaUWPerM2K: WattsPerSquareMetreKelvin;
+  /** The full fastener assessment, so a caller can say *why* ΔU_f came out as it did. */
+  readonly fasteners?: FastenerAssessment;
   /** Sum of every correction applied. */
   readonly totalDeltaUWPerM2K: WattsPerSquareMetreKelvin;
   /** True where the total is under 3 % of U and may be omitted. */
@@ -178,11 +193,20 @@ export function computeCorrections(input: CorrectionInput): CorrectionResult {
     }
   }
 
-  const total = airGapDeltaU;
+  const fasteners =
+    input.fasteners === undefined ? undefined : assessFasteners(input.fasteners);
+  if (fasteners !== undefined) {
+    warnings.push(...fasteners.warnings);
+  }
+  const fastenerDeltaU = fasteners?.deltaUWPerM2K ?? 0;
+
+  const total = airGapDeltaU + fastenerDeltaU;
   const isNegligible = total < DELTA_U_NEGLIGIBLE_FRACTION * input.uncorrectedUValueWPerM2K;
 
   return {
     airGapDeltaUWPerM2K: airGapDeltaU,
+    fastenerDeltaUWPerM2K: fastenerDeltaU,
+    ...(fasteners === undefined ? {} : { fasteners }),
     totalDeltaUWPerM2K: total,
     isNegligible,
     // The standard permits omitting a negligible total; it is still reported, so a
