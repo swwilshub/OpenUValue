@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { UValueResult } from '@openuvalue/engine';
 import {
   roundResistanceForReporting,
@@ -63,6 +63,48 @@ export function LayerTable({
   /** Index being dragged, and the gap it would drop into. Null when not dragging. */
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+
+  /*
+   * A drag that starts on the handle but is not picked up as a native drag — a slightly
+   * missed grab, a browser that decides the gesture was a selection — sweeps a text
+   * selection across everything the pointer passes over, which on this page is the whole
+   * layer list. Marking the document for the duration lets one CSS rule suppress that,
+   * without disabling selection at any other time.
+   */
+  /**
+   * Suppress selection from the moment the handle is pressed, not from dragstart.
+   *
+   * dragstart only fires once the browser has decided the gesture is a drag. If it
+   * decides otherwise — a slightly missed grab, a gesture it reads as a selection — the
+   * class would never go on and the sweep would happen anyway. Pressing the handle is
+   * the earliest honest signal, and the release is cleaned up globally because the
+   * pointer may well be somewhere else by then.
+   */
+  const guardSelection = (): void => {
+    document.body.classList.add('is-dragging');
+    const release = (): void => {
+      document.body.classList.remove('is-dragging');
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+  };
+
+  const beginDrag = (index: number): void => {
+    setDragIndex(index);
+    setDropIndex(index);
+    document.body.classList.add('is-dragging');
+  };
+
+  const endDrag = (): void => {
+    setDragIndex(null);
+    setDropIndex(null);
+    document.body.classList.remove('is-dragging');
+  };
+
+  // A drag interrupted by an unmount would otherwise leave the class behind for good.
+  useEffect(() => () => document.body.classList.remove('is-dragging'), []);
 
   const update = (index: number, patch: Partial<UiLayer>): void => {
     onChange(layers.map((layer, i) => (i === index ? { ...layer, ...patch } : layer)));
@@ -261,8 +303,7 @@ export function LayerTable({
               if (dragIndex !== null && dropIndex !== null) {
                 reorder(dragIndex, dropIndex);
               }
-              setDragIndex(null);
-              setDropIndex(null);
+              endDrag();
             }}
           >
             <legend>
@@ -273,17 +314,14 @@ export function LayerTable({
                 tabIndex={-1}
                 aria-hidden="true"
                 title="Drag to reorder"
+                onPointerDown={guardSelection}
                 onDragStart={(event) => {
-                  setDragIndex(index);
-                  setDropIndex(index);
+                  beginDrag(index);
                   event.dataTransfer.effectAllowed = 'move';
                   // Firefox ignores a drag that carries no data.
                   event.dataTransfer.setData('text/plain', layer.id);
                 }}
-                onDragEnd={() => {
-                  setDragIndex(null);
-                  setDropIndex(null);
-                }}
+                onDragEnd={endDrag}
               >
                 ⠿
               </span>

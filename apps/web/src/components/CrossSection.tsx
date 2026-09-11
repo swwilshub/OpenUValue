@@ -325,6 +325,11 @@ export function CrossSection({
                 if (onReorder === undefined && onSelectLayer === undefined) {
                   return;
                 }
+                // A pointerdown on an SVG element still begins a text selection, which
+                // then sweeps up every label the pointer crosses. Preventing the default
+                // stops the selection before it starts; the drag itself is driven from
+                // pointermove, so nothing is lost by it.
+                event.preventDefault();
                 // Capture on the SVG, so a fast drag that outruns the pointer keeps
                 // sending moves instead of stranding the drag mid-gesture.
                 event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId);

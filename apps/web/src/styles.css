@@ -2783,3 +2783,23 @@ a:hover {
 .corrections .field {
   margin-top: 0.7rem;
 }
+
+/*
+ * Dragging must not leave a trail of highlighted text.
+ *
+ * The drawing and the drag handles are never worth selecting, so they opt out for good.
+ * Everything else opts out only while a drag is actually in progress, so a reader can
+ * still select and copy a layer name or a calculated figure the rest of the time.
+ */
+.cross-section svg,
+.drag-handle {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+body.is-dragging,
+body.is-dragging * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
