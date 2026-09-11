@@ -1923,3 +1923,106 @@ a:hover {
 .phase-banner a {
   color: inherit;
 }
+
+/* ---------------------------------------------------------------- summary strip ---
+ * The build-up's headline figures, kept under the drawing and outside the tabs. Cards
+ * rather than a table, because the set of them changes with what can be calculated.
+ *
+ * Only two states are coloured: met and not met against something published. Every other
+ * metric is deliberately neutral — see VERIFY.md C6.
+ */
+.summary-strip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--ground);
+  /* The status colour arrives as a left edge, so a neutral metric is not a lesser one. */
+  border-left: 3px solid transparent;
+  min-width: 0;
+}
+
+.metric-ok {
+  border-left-color: var(--ok);
+}
+
+.metric-risk {
+  border-left-color: var(--risk);
+  background: var(--risk-soft);
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.metric-value {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ink);
+  /* Figures change as layers are dragged; tabular numerals stop the card twitching. */
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-unit {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-left: 0.3em;
+  white-space: nowrap;
+}
+
+.metric-note {
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+}
+
+.metric-risk .metric-note {
+  color: var(--risk);
+}
+
+.strip-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.strip-source {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.summary-strip .explain {
+  margin-top: 0.6rem;
+}
+
+.summary-strip .tour-caveat ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.summary-strip .tour-caveat li {
+  margin-bottom: 0.45rem;
+}

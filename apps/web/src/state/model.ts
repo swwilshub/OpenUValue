@@ -382,6 +382,40 @@ export function timberFrameExample(): UiState {
   };
 }
 
+
+/**
+ * Density and specific heat for a layer, taken from the catalogue record rather than
+ * carried in UiLayer.
+ *
+ * Neither value affects a U-value, so neither is editable and neither is encoded in the
+ * share link. They are needed for the build-up's mass and heat capacity, and they are a
+ * property of the material, so the material id is enough to recover them. Editing lambda
+ * or mu clears the id (see LayerTable), which is what makes this safe: an id that is
+ * still set means the layer is exactly the catalogue record.
+ *
+ * A layer with a typed-in lambda has no density, and gets none here. That is honest
+ * rather than unhelpful — the engine reports which layers it could not weigh.
+ */
+function massProperties(materialId: string | null): {
+  readonly densityKgPerM3?: number;
+  readonly specificHeatCapacityJPerKgK?: number;
+} {
+  if (materialId === null) {
+    return {};
+  }
+  const material = findMaterialById(materialId);
+  if (material === undefined) {
+    return {};
+  }
+  const { densityKgPerM3, specificHeatCapacityJPerKgK } = toEngineMaterial(material);
+  return {
+    ...(densityKgPerM3 === undefined ? {} : { densityKgPerM3 }),
+    ...(specificHeatCapacityJPerKgK === undefined
+      ? {}
+      : { specificHeatCapacityJPerKgK }),
+  };
+}
+
 /**
  * Convert the UI model to the engine's model. This is the single place where
  * millimetres become metres and percentages become fractions.
@@ -404,6 +438,7 @@ export function toBuildingElement(state: UiState): BuildingElement {
       label: layer.label,
       thicknessM: millimetresToMetres(layer.thicknessMm),
       material: {
+        ...massProperties(layer.materialId),
         lambdaWPerMK: layer.lambdaWPerMK,
         vapourResistanceFactorMu: layer.vapourResistanceFactorMu,
       },
@@ -416,7 +451,10 @@ export function toBuildingElement(state: UiState): BuildingElement {
       bridging: {
         label: layer.bridgeLabel,
         areaFraction: percentToFraction(layer.bridgedPercent),
-        material: { lambdaWPerMK: layer.bridgeLambdaWPerMK },
+        material: {
+          ...massProperties(layer.bridgeMaterialId),
+          lambdaWPerMK: layer.bridgeLambdaWPerMK,
+        },
       },
     };
   });

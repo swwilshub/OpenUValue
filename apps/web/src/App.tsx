@@ -17,6 +17,7 @@ import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
 import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
+import { SummaryStrip } from './components/SummaryStrip.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
 import {
@@ -340,6 +341,20 @@ export function App(): JSX.Element {
             </p>
               )}
         </section>
+      )}
+
+      {/*
+        Outside the tab panels on purpose: these are the figures you want in view
+        whichever tab you are reading, and they move as layers are dragged.
+      */}
+      {result !== undefined && profile !== undefined && (
+        <SummaryStrip
+          element={element}
+          result={result}
+          corrections={corrections}
+          profile={profile}
+          conditions={state.conditions}
+        />
       )}
 
       <nav className="tab-bar" role="tablist" aria-label="Analysis">
