@@ -11,6 +11,7 @@ import {
   roundUValueForReporting,
 } from '@openuvalue/engine';
 import { HelpButton } from './guide/Guide.js';
+import { type UiFasteners, defaultFasteners } from '../state/model.js';
 
 const WARNING_TITLES: Record<Warning['code'], string> = {
   'combined-method-ratio-exceeds-limit': 'Out of scope for this method',
@@ -30,6 +31,8 @@ export interface ResultsPanelProps {
   /** Undefined where the element has no U-value to correct. */
   readonly corrections?: CorrectionResult | undefined;
   readonly airGapLevel: AirGapLevel;
+  readonly fasteners: UiFasteners | undefined;
+  readonly onFastenersChange: (fasteners: UiFasteners | undefined) => void;
   readonly onAirGapLevelChange: (level: AirGapLevel) => void;
 }
 
@@ -39,6 +42,8 @@ export function ResultsPanel({
   corrections,
   airGapLevel,
   onAirGapLevelChange,
+  fasteners,
+  onFastenersChange,
   onOpenGuide,
 }: ResultsPanelProps): JSX.Element {
   /*
@@ -93,23 +98,137 @@ export function ResultsPanel({
               ))}
             </select>
           </label>
+          {/*
+            Now that there are two corrections, each is shown on its own line and the
+            total separately. The 3 % test is against the total, so reporting only a
+            combined figure would make it look as though one of them had been judged
+            against the threshold on its own.
+          */}
+          <p className="footnote">
+            ΔU<sub>g</sub> (air gaps) = {corrections.airGapDeltaUWPerM2K.toFixed(4)} W/(m²·K).
+            BR 443 4.8.1 makes level 1 the default unless the conditions for level 0 are met.
+          </p>
+
+          <label className="field">
+            {/* Caption and help share one flex row inside the column-flex label. */}
+            <span className="field-caption">
+              Mechanical fasteners through the insulation (BR 443 4.8.3)
+              <HelpButton
+                topicId="result-fasteners"
+                label="the mechanical fastener correction"
+                onOpen={onOpenGuide}
+              />
+            </span>
+            <select
+              value={fasteners === undefined ? 'none' : 'declared'}
+              onChange={(event) =>
+                onFastenersChange(
+                  event.target.value === 'none' ? undefined : defaultFasteners(),
+                )
+              }
+            >
+              <option value="none">Not entered</option>
+              <option value="declared">Enter a point thermal transmittance χ</option>
+            </select>
+          </label>
+
+          {fasteners === undefined ? (
+            <p className="footnote">
+              <strong>No fastener correction is being applied.</strong> That is not the
+              same as there being none: BR 443 4.8.3 requires ΔU<sub>f</sub> wherever
+              screws, ties or brackets pass through the insulation, so if this build-up
+              has any, the U-value above is better than the real one.
+            </p>
+          ) : (
+            <>
+              <div className="fastener-grid">
+                <label className="field">
+                  <span className="field-caption">
+                    <span className="symbol-label">χ</span> per fastener, W/K
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.001}
+                    value={fasteners.pointThermalTransmittanceWPerK}
+                    onChange={(event) =>
+                      onFastenersChange({
+                        ...fasteners,
+                        pointThermalTransmittanceWPerK: Math.max(0, Number(event.target.value)),
+                      })
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span className="field-caption">Fasteners per m²</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    value={fasteners.fastenersPerM2}
+                    onChange={(event) =>
+                      onFastenersChange({
+                        ...fasteners,
+                        fastenersPerM2: Math.max(0, Number(event.target.value)),
+                      })
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={fasteners.recessedFlatRoof}
+                  onChange={(event) =>
+                    onFastenersChange({ ...fasteners, recessedFlatRoof: event.target.checked })
+                  }
+                />
+                Flat roof, with the metal part recessed by at least half the fixing length
+              </label>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={fasteners.bothEndsInMetalSheets}
+                  onChange={(event) =>
+                    onFastenersChange({
+                      ...fasteners,
+                      bothEndsInMetalSheets: event.target.checked,
+                    })
+                  }
+                />
+                Both ends of the fixing in direct contact with metal sheets
+              </label>
+
+              {corrections.fasteners !== undefined && (
+                <p className="footnote">{corrections.fasteners.explanation}</p>
+              )}
+              <p className="footnote">
+                χ comes from a BS EN ISO 10211 model or from the fixing manufacturer,
+                often in a BBA certificate — it is the one figure here that cannot be
+                worked out from the build-up. The approximate route in BS EN ISO 6946
+                Annex F.3.2 is not implemented; see VERIFY.md.
+              </p>
+            </>
+          )}
+
           <p className="footnote">
             {corrections.totalDeltaUWPerM2K === 0 ? (
-              <>No correction for air gaps at this level.</>
+              <>No correction applies.</>
             ) : corrections.isNegligible ? (
               <>
-                ΔU<sub>g</sub> = {corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K), which is
+                Total ΔU = {corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K), which is
                 under 3% of the U-value, so BS EN ISO 6946 permits omitting it — and it has
                 been omitted. It is shown here rather than lost.
               </>
             ) : (
               <>
-                ΔU<sub>g</sub> = <strong>{corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K)</strong>{' '}
+                Total ΔU = <strong>{corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K)</strong>{' '}
                 added to an uncorrected {result.uValueWPerM2K?.toFixed(3)}.
               </>
             )}{' '}
-            BR 443 4.8.1 makes level 1 the default unless the conditions for level 0 are met.
-            The mechanical-fastener and inverted-roof corrections are not implemented.
+            BR 443 4.8 applies the 3% test to the sum of the corrections, not to each one.
+            The inverted-roof correction is not implemented.
           </p>
           {corrections.warnings.map((item) => (
             <p key={item.message} className="footnote">

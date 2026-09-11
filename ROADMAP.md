@@ -17,14 +17,14 @@ Without these, a U-value from this tool is not yet a BR 443 U-value.
    - `ΔU_g`, air voids in the insulation layer. **Delivered** — BR 443 (2019) 4.8.1
      gives the three levels (0.00, 0.01, 0.04) with level 1 as the default, and the
      3 % omission threshold. See `engine/src/corrections.ts`.
-   - `ΔU_f`, mechanical fasteners penetrating the insulation. **BR 443 requires
-     this**, so any build-up with insulation fixed through is still under-reported.
-     BR 443 4.8.3 points to BS EN ISO 6946 Annex F.3.2 for the approximate procedure
-     without reproducing it, and that annex is not in the free preview, so the formula
-     cannot yet be attributed. BR 443 does give one usable exemption: no correction is
-     needed for fixings in a flat roof where the metal part of a composite fastener is
-     recessed by at least 50 % of its length and there are no more than 15 fixings per
-     square metre.
+   - `ΔU_f`, mechanical fasteners penetrating an insulation layer. **Detailed route
+     delivered** — BR 443 (2019) 4.8.3(a) specifies it completely as ΔU_f = χ · n_f,
+     with both of its escape clauses (the recessed flat-roof exemption, and fixings with
+     both ends in metal sheets being outside the method). The **approximate** route in
+     BS EN ISO 6946 Annex F.3.2 remains unavailable: BR 443 points at it in both
+     editions without reproducing it, and it is not in either ISO 6946 published
+     preview. See VERIFY.md V24.
+
    - `ΔU_r`, inverted (upside-down) roofs, where rainwater drains over the insulation.
    - Wall ties, for which BR 443 4.8.2 gives the data needed (mild steel λ 50,
      stainless λ 17; double-triangle ties 12.5 mm², vertical twist 80 mm²; typically

@@ -623,10 +623,40 @@ export const CHAPTERS: readonly GuideChapter[] = [
               between the warm and cold sides. Each adds a correction to the U-value.
             </p>
             <p>
-              Level 1 is the default, because the standard says to assume it unless the conditions
-              for level 0 are met. If the total correction comes to under 3 % of the U-value it may
-              be left off — and it is, but the figure is still shown so you can see what was
-              dropped.
+              Level 1 is the default, because the standard says to assume it unless the
+              conditions for level 0 are met. If the corrections <em>together</em> come to
+              under 3 % of the U-value they may be left off — and they are, but the figures
+              are still shown so you can see what was dropped. The 3 % test is against the
+              sum, so air gaps and fasteners are judged jointly, never one at a time.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'result-fasteners',
+        title: 'Mechanical fasteners',
+        figure: <StudFigure />,
+        body: (
+          <>
+            <p>
+              Screws, wall ties and brackets through insulation are metal, and metal
+              through insulation is a short circuit. BR 443 requires a correction for
+              them, so a build-up with insulation fixed through and no ΔU<sub>f</sub> is
+              reporting a better U-value than it has.
+            </p>
+            <p>
+              The one figure you have to supply is <strong>χ</strong>, the point thermal
+              transmittance of a single fastener in W/K. It cannot be worked out from the
+              build-up — it comes from a BS EN ISO 10211 model or from the fixing
+              manufacturer, usually in a BBA certificate. Multiply it by the number of
+              fasteners per square metre and that is the correction.
+            </p>
+            <p>
+              Two cases need no correction, and they mean different things. A flat roof
+              whose composite fixings are recessed by at least half their length, at no
+              more than 15 per square metre, genuinely needs none. A fixing with both ends
+              against metal sheets is a different matter: the method does not apply at all
+              there, so the tool reports nothing rather than reporting zero.
             </p>
           </>
         ),
@@ -937,9 +967,11 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <CombinedFigure />,
         body: (
           <p>
-            Mechanical fasteners through insulation are not corrected for, so a build-up with
-            insulation screwed through is under-reported. Ground-bearing floors need a different
-            standard and are refused rather than approximated. Overheating proper needs solar gain
+            The fastener correction covers the detailed route, where you supply a point
+            thermal transmittance; the approximate route in BS EN ISO 6946 Annex F.3.2 is
+            not implemented, because that annex is not published free and the formula
+            would have to be guessed. Ground-bearing floors need a different standard and
+            are refused rather than approximated. Overheating proper needs solar gain
             and a room model, so the summer figures here are an input to that, not a substitute.
             ROADMAP.md in the footer keeps the current list.
           </p>

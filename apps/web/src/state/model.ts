@@ -67,6 +67,44 @@ export interface UiState {
    * element is built rather than of the weather, so it lives with the build-up.
    */
   readonly airGapLevel: AirGapLevel;
+  /**
+   * Mechanical fasteners through the insulation, BR 443 (2019) 4.8.3. Undefined means
+   * the user has not told us about any, which is **not** the same as "there are none":
+   * the UI has to say so, because a missing DeltaU_f under-reports the U-value.
+   */
+  readonly fasteners?: UiFasteners;
+}
+
+/**
+ * What the fastener correction needs from the user.
+ *
+ * chi is the one figure this tool cannot work out: it comes from an ISO 10211 model or
+ * from the fixing manufacturer, usually in a BBA certificate. The rest is counting.
+ *
+ * `recessedFlatRoof` carries both halves of BR 443's exemption condition, because
+ * neither half means anything alone: the exemption is for a flat roof *and* a fastener
+ * recessed by at least half its length (and, separately, a density at or under 15/m²,
+ * which is read off the density field rather than asked again).
+ */
+export interface UiFasteners {
+  readonly pointThermalTransmittanceWPerK: number;
+  readonly fastenersPerM2: number;
+  readonly recessedFlatRoof: boolean;
+  readonly bothEndsInMetalSheets: boolean;
+}
+
+/**
+ * A starting point for someone switching the correction on: a light-gauge fixing at a
+ * plausible density. Both figures are placeholders to be replaced with the real product
+ * data, which is why they are round rather than precise, and the UI says so.
+ */
+export function defaultFasteners(): UiFasteners {
+  return {
+    pointThermalTransmittanceWPerK: 0.004,
+    fastenersPerM2: 5,
+    recessedFlatRoof: false,
+    bothEndsInMetalSheets: false,
+  };
 }
 
 

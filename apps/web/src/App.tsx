@@ -24,6 +24,7 @@ import { Guide, HelpButton } from './components/guide/Guide.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
 import {
+  type UiFasteners,
   type UiLayer,
   type UiState,
   conditionsForEnvironment,
@@ -197,6 +198,15 @@ export function App(): JSX.Element {
   const setAirGapLevel = useCallback((airGapLevel: AirGapLevel) => {
     setState((current) => ({ ...current, airGapLevel }));
   }, []);
+  const setFasteners = useCallback((fasteners: UiFasteners | undefined) => {
+    setState((current) => {
+      if (fasteners === undefined) {
+        const { fasteners: _removed, ...rest } = current;
+        return rest;
+      }
+      return { ...current, fasteners };
+    });
+  }, []);
   const setConditions = useCallback((conditions: EnvironmentConditions) => {
     setState((current) => ({ ...current, conditions }));
   }, []);
@@ -239,8 +249,31 @@ export function App(): JSX.Element {
       airGapLevel: state.airGapLevel,
       totalResistanceM2KPerW: result.totalResistanceM2KPerW,
       ...(insulationResistanceM2KPerW > 0 ? { insulationResistanceM2KPerW } : {}),
+      /*
+       * BR 443 4.8.3's exemption is for a flat roof, so the UI asks about that directly
+       * rather than letting upward heat flow stand in for it — a ceiling under a loft
+       * also flows upward and is not a flat roof.
+       */
+      ...(state.fasteners === undefined
+        ? {}
+        : {
+            fasteners: {
+              pointThermalTransmittanceWPerK:
+                state.fasteners.pointThermalTransmittanceWPerK,
+              fastenersPerM2: state.fasteners.fastenersPerM2,
+              isFlatRoof: state.fasteners.recessedFlatRoof,
+              metalRecessedAtLeastHalf: state.fasteners.recessedFlatRoof,
+              bothEndsInMetalSheets: state.fasteners.bothEndsInMetalSheets,
+            },
+          }),
     });
-  }, [result, state.layers, state.heatFlowDirection, state.airGapLevel]);
+  }, [
+    result,
+    state.layers,
+    state.heatFlowDirection,
+    state.airGapLevel,
+    state.fasteners,
+  ]);
 
   /*
    * BS EN ISO 13786. Kept separate from the U-value memo because it is a different
@@ -305,9 +338,9 @@ export function App(): JSX.Element {
       <p className="phase-banner">
         <strong>Still being checked.</strong> Material values and several clause
         references still need checking against printed standards — see{' '}
-        <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. BR 443's
-        mechanical-fastener correction is not implemented, so a build-up with insulation
-        fixed through is under-reported.
+        <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. The mechanical
+        fastener correction covers BR 443's detailed route, where you supply a point
+        thermal transmittance; its approximate route is not implemented.
       </p>
 
       {linkProblem !== undefined && (
@@ -478,6 +511,8 @@ export function App(): JSX.Element {
               corrections={corrections}
               airGapLevel={state.airGapLevel}
               onAirGapLevelChange={setAirGapLevel}
+              fasteners={state.fasteners}
+              onFastenersChange={setFasteners}
             />
           ) : (
             <section className="panel">

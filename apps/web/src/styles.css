@@ -2731,3 +2731,55 @@ a:hover {
 .guide-figure .g-march {
   animation: g-march var(--g-speed, 2s) linear infinite;
 }
+
+/* The two fastener numbers sit side by side; the checkboxes below run full width. */
+.fastener-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+
+/*
+ * A checkbox label is a sentence, not a field caption: it must not inherit .field's
+ * uppercase column layout, so the row direction and casing are set explicitly.
+ */
+.checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink-soft);
+  line-height: 1.35;
+  margin-top: 0.45rem;
+}
+
+.checkbox input {
+  margin: 0.15rem 0 0;
+  flex: none;
+  width: auto;
+}
+
+/* Greek in an uppercased caption keeps its own case — see the note by .metric-label. */
+.field .symbol-label {
+  font-size: inherit;
+  text-transform: none;
+}
+
+/*
+ * .field is a flex column, so a help button placed directly in it would take a row of
+ * its own. The caption and the button share a row of their own instead.
+ */
+.field-caption {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  /* Keeps a caption on one line when part of it is wrapped in a span of its own. */
+  flex-wrap: wrap;
+}
+
+.corrections .field {
+  margin-top: 0.7rem;
+}

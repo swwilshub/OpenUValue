@@ -7,7 +7,14 @@ import type {
   ProfileSection,
 } from '@openuvalue/engine';
 import { EXTERNAL_ENVIRONMENTS, INTERNAL_SURFACE_CONDITIONS } from '@openuvalue/engine';
-import { type UiLayer, type UiState, blankSolidLayer, defaultState, makeLayerId } from '../state/model.js';
+import {
+  type UiFasteners,
+  type UiLayer,
+  type UiState,
+  blankSolidLayer,
+  defaultState,
+  makeLayerId,
+} from '../state/model.js';
 
 /**
  * The build-up is encoded into the URL hash so it can be shared by link, with no
@@ -49,6 +56,35 @@ interface EncodedState {
   readonly e?: ExternalEnvironmentKind;
   /** Air gap level. Absent in links written before it existed. */
   readonly g?: AirGapLevel;
+  /** Fasteners as [chi, per m², recessedFlatRoof, bothEndsInMetalSheets]. */
+  readonly f?: readonly [number, number, number, number];
+}
+
+/**
+ * Decode the fastener tuple, tolerating anything that is not one.
+ *
+ * A hash is user-editable text, so a malformed 'f' must not throw or produce a
+ * half-built object: it produces no fasteners, exactly as an old link does. Returning a
+ * spreadable partial keeps the "absent" and "present" cases one expression at the call
+ * site.
+ */
+function decodeFasteners(value: unknown): { fasteners?: UiFasteners } {
+  if (!Array.isArray(value) || value.length < 4) {
+    return {};
+  }
+  const chi = finiteNumber(value[0], Number.NaN);
+  const perM2 = finiteNumber(value[1], Number.NaN);
+  if (!Number.isFinite(chi) || !Number.isFinite(perM2) || chi < 0 || perM2 < 0) {
+    return {};
+  }
+  return {
+    fasteners: {
+      pointThermalTransmittanceWPerK: chi,
+      fastenersPerM2: perM2,
+      recessedFlatRoof: value[2] === 1,
+      bothEndsInMetalSheets: value[3] === 1,
+    },
+  };
 }
 
 function toBase64Url(text: string): string {
@@ -81,6 +117,18 @@ export function encodeState(state: UiState): string {
     i: state.internalSurfaceCondition,
     e: state.externalEnvironment,
     g: state.airGapLevel,
+    // Fasteners travel as a four-element tuple so the hash stays short: chi, per m²,
+    // and the two flags as 0/1. Absent entirely when the user has not entered any.
+    ...(state.fasteners === undefined
+      ? {}
+      : {
+          f: [
+            state.fasteners.pointThermalTransmittanceWPerK,
+            state.fasteners.fastenersPerM2,
+            state.fasteners.recessedFlatRoof ? 1 : 0,
+            state.fasteners.bothEndsInMetalSheets ? 1 : 0,
+          ] as const,
+        }),
     ls: state.layers.map((layer) => {
       const base: EncodedLayer = {
         k: layer.kind === 'air' ? 'a' : 's',
@@ -227,6 +275,10 @@ export function decodeState(hash: string): DecodeResult {
           parsed['g'] === 'level-0' || parsed['g'] === 'level-2'
             ? parsed['g']
             : 'level-1',
+        // A link written before the fastener correction existed carries no 'f', and
+        // decodes to no fasteners — which is what it meant, and what the UI then flags
+        // as an unanswered question rather than as a zero.
+        ...decodeFasteners(parsed['f']),
         externalEnvironment:
           typeof parsed['e'] === 'string' &&
           EXTERNAL_ENVIRONMENT_KINDS.includes(parsed['e'] as ExternalEnvironmentKind)
