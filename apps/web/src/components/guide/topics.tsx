@@ -464,10 +464,27 @@ export const CHAPTERS: readonly GuideChapter[] = [
               them can under-state a wall's U-value by a fifth.
             </p>
             <p>
-              Give the member's width and its spacing and the bridged fraction follows; or enter a
-              fraction directly if you are using a convention. BR 443 publishes defaults — 15 %
-              for a timber-framed wall — which is more than width ÷ spacing, because plates,
-              lintels and doubled studs at openings are timber too.
+              Give the member's width and the distance between members and the bridged
+              fraction follows. The distance can be either <strong>centre to
+              centre</strong>, which is how members are specified on a drawing, or the{' '}
+              <strong>clear gap</strong> between them, which is what a tape measure gives
+              on site. They are not interchangeable: 38 mm studs at 600 mm centres bridge
+              7.3 % of the wall, while the same studs with a 600 mm clear gap bridge 7.0 %,
+              because their centres are 638 mm apart.
+            </p>
+            <p>
+              Once a width and a spacing are set, the members are drawn in the band under
+              the cross-section, at their true width and pitch. That band looks{' '}
+              <em>along</em> the wall rather than through it, so its vertical scale is a
+              length — which is why it is a separate register rather than being drawn over
+              the temperature plot, where height already means degrees.
+            </p>
+            <p>
+              Or enter a fraction directly if you are using a convention. BR 443 publishes
+              defaults — 15 % for a timber-framed wall — which is more than width ÷ spacing,
+              because plates, lintels and doubled studs at openings are timber too. A layer
+              given that way has no geometry to draw, so its column in the band is marked
+              as having no spacing rather than left looking empty.
             </p>
           </>
         ),

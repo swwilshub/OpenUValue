@@ -40,6 +40,8 @@ interface EncodedLayer {
   readonly bz?: 'dimensions' | 'fraction';
   readonly bw?: number;
   readonly bsp?: number;
+  /** Whether bsp is centre-to-centre or a clear gap. Absent in older links. */
+  readonly bdb?: 'centres' | 'clear';
   readonly v?: AirLayerVentilation;
   readonly o?: number;
 }
@@ -151,6 +153,7 @@ export function encodeState(state: UiState): string {
           bz: layer.bridgeSizing,
           bw: layer.bridgeWidthMm,
           bsp: layer.bridgeSpacingMm,
+          bdb: layer.bridgeDistanceBasis,
         };
       }
       return base;
@@ -206,6 +209,9 @@ function decodeLayer(raw: unknown): UiLayer {
     bridgeSizing: raw['bz'] === 'dimensions' ? 'dimensions' : 'fraction',
     bridgeWidthMm: Math.max(0, finiteNumber(raw['bw'], base.bridgeWidthMm)),
     bridgeSpacingMm: Math.max(1, finiteNumber(raw['bsp'], base.bridgeSpacingMm)),
+    // A link written before the basis existed meant centres, which is what the field
+    // always was, so an absent value decodes to that rather than changing the geometry.
+    bridgeDistanceBasis: raw['bdb'] === 'clear' ? 'clear' : 'centres',
     ventilation:
       typeof ventilation === 'string' &&
       VENTILATION_CLASSES.includes(ventilation as AirLayerVentilation)

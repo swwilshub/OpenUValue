@@ -23,6 +23,9 @@ import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
  * because that is how people work; both are converted at the boundary in
  * toBuildingElement below, so the engine only ever sees SI.
  */
+/** Whether a member spacing is measured centre to centre, or as the clear gap. */
+export type BridgeDistanceBasis = 'centres' | 'clear';
+
 export interface UiLayer {
   readonly id: string;
   readonly kind: 'solid' | 'air';
@@ -45,8 +48,19 @@ export interface UiLayer {
   readonly bridgeSizing: 'dimensions' | 'fraction';
   /** Width of one member across the face, mm. Used when bridgeSizing is 'dimensions'. */
   readonly bridgeWidthMm: number;
-  /** Spacing of the members, centre to centre, mm. */
+  /**
+   * Spacing of the members, mm. What it measures depends on bridgeDistanceBasis: either
+   * centre to centre, or the clear opening between two members.
+   */
   readonly bridgeSpacingMm: number;
+  /**
+   * Which distance the spacing figure is. Both are in normal use — a drawing gives
+   * centres, a tape measure on site gives the clear gap — and they are not
+   * interchangeable: 40 mm members at 600 mm centres bridge 6.7 % of the face, while the
+   * same members with a 600 mm clear gap bridge 6.3 %, because their centres are 640 mm
+   * apart. Defaults to centres, which is how members are specified.
+   */
+  readonly bridgeDistanceBasis: BridgeDistanceBasis;
   /** Air layers only. */
   readonly ventilation: AirLayerVentilation;
   readonly openingAreaMm2PerM: number;
@@ -246,11 +260,33 @@ export function makeLayerId(): string {
  */
 export const BR443_ADDITIONAL_TIMBER_ALLOWANCE = 0.01;
 
-export function bridgedPercentFromDimensions(widthMm: number, spacingMm: number): number {
-  if (!Number.isFinite(widthMm) || !Number.isFinite(spacingMm) || spacingMm <= 0) {
+/**
+ * The centre-to-centre pitch of the members, whichever way the distance was given.
+ *
+ * The area fraction is always width over pitch: with a clear gap the pitch is the gap
+ * plus one member, since the next member starts a whole width later.
+ */
+export function bridgePitchMm(
+  widthMm: number,
+  distanceMm: number,
+  basis: BridgeDistanceBasis,
+): number {
+  return basis === 'centres' ? distanceMm : distanceMm + widthMm;
+}
+
+export function bridgedPercentFromDimensions(
+  widthMm: number,
+  distanceMm: number,
+  basis: BridgeDistanceBasis = 'centres',
+): number {
+  if (!Number.isFinite(widthMm) || !Number.isFinite(distanceMm) || widthMm < 0) {
     return 0;
   }
-  const fraction = widthMm / spacingMm + BR443_ADDITIONAL_TIMBER_ALLOWANCE;
+  const pitchMm = bridgePitchMm(widthMm, distanceMm, basis);
+  if (!(pitchMm > 0)) {
+    return 0;
+  }
+  const fraction = widthMm / pitchMm + BR443_ADDITIONAL_TIMBER_ALLOWANCE;
   return Math.min(100, Math.max(0, fraction * 100));
 }
 
@@ -335,6 +371,7 @@ export function blankSolidLayer(): UiLayer {
     bridgeSizing: 'dimensions',
     bridgeWidthMm: DEFAULT_STUD_WIDTH_MM,
     bridgeSpacingMm: DEFAULT_STUD_SPACING_MM,
+    bridgeDistanceBasis: 'centres',
     ventilation: 'unventilated',
     openingAreaMm2PerM: 0,
   };

@@ -2803,3 +2803,62 @@ body.is-dragging * {
   user-select: none !important;
   -webkit-user-select: none !important;
 }
+
+/* ------------------------------------------------------- stud register ---
+ * Members drawn at true width and pitch, beneath the section and on its x scale. Kept
+ * quieter than the plot above: the temperature line and the risk colours stay the
+ * loudest things in the drawing.
+ */
+.stud-band-layer {
+  fill: var(--ground);
+}
+
+.stud-band-frame {
+  fill: none;
+  stroke: var(--layer-edge);
+  stroke-width: 0.8;
+}
+
+/* A member is a thin band at true scale, so it needs a definite edge to read at all. */
+.stud-member {
+  fill: none;
+  stroke: var(--cat-timber-ink);
+  stroke-width: 0.9;
+}
+
+.stud-scale-line {
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+}
+
+.stud-scale-label,
+.stud-caption {
+  font-size: 9px;
+  fill: var(--ink-faint);
+}
+
+.stud-caption {
+  fill: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.stud-band-title {
+  font-size: 9px;
+  fill: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+
+/*
+ * A layer bridged by a flat percentage has no geometry to draw. The diagonal wash marks
+ * the column as "bridged, but not drawable" so an empty column is never read as "no
+ * members here".
+ */
+.stud-band-unknown {
+  fill: var(--excluded-hatch);
+  opacity: 0.7;
+}
+
+.stud-caption-unknown {
+  fill: var(--ink-faint);
+  font-style: italic;
+}

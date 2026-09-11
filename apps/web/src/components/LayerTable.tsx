@@ -10,6 +10,8 @@ import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
 import { MaterialPicker } from './MaterialPicker.js';
 import {
   BR443_TIMBER_FRACTION_DEFAULTS,
+  type BridgeDistanceBasis,
+  bridgePitchMm,
   DEFAULT_STUD_SPACING_MM,
   DEFAULT_STUD_WIDTH_MM,
   type UiLayer,
@@ -183,9 +185,11 @@ export function LayerTable({
       bridgeSizing: 'dimensions',
       bridgeWidthMm: DEFAULT_STUD_WIDTH_MM,
       bridgeSpacingMm: DEFAULT_STUD_SPACING_MM,
+      bridgeDistanceBasis: 'centres',
       bridgedPercent: bridgedPercentFromDimensions(
         DEFAULT_STUD_WIDTH_MM,
         DEFAULT_STUD_SPACING_MM,
+        'centres',
       ),
     });
   };
@@ -194,17 +198,24 @@ export function LayerTable({
    * Change a member's width or spacing, keeping the bridged percentage derived from
    * them. Passing null leaves that dimension alone.
    */
-  const setDimensions = (index: number, widthMm: number | null, spacingMm: number | null): void => {
+  const setDimensions = (
+    index: number,
+    widthMm: number | null,
+    spacingMm: number | null,
+    basis: BridgeDistanceBasis | null = null,
+  ): void => {
     const layer = layers[index];
     if (layer === undefined) {
       return;
     }
     const width = widthMm ?? layer.bridgeWidthMm;
     const spacing = spacingMm ?? layer.bridgeSpacingMm;
+    const distanceBasis = basis ?? layer.bridgeDistanceBasis;
     update(index, {
       bridgeWidthMm: width,
       bridgeSpacingMm: spacing,
-      bridgedPercent: bridgedPercentFromDimensions(width, spacing),
+      bridgeDistanceBasis: distanceBasis,
+      bridgedPercent: bridgedPercentFromDimensions(width, spacing, distanceBasis),
     });
   };
 
@@ -578,7 +589,9 @@ export function LayerTable({
                         />
                       </label>
                       <label>
-                        Spacing, mm centres
+                        {layer.bridgeDistanceBasis === 'centres'
+                          ? 'Centre distance, mm'
+                          : 'Clear distance, mm'}
                         <input
                           type="number"
                           min={1}
@@ -588,6 +601,23 @@ export function LayerTable({
                             setDimensions(index, null, Math.max(1, Number(event.target.value)))
                           }
                         />
+                      </label>
+                      <label>
+                        Measured
+                        <select
+                          value={layer.bridgeDistanceBasis}
+                          onChange={(event) =>
+                            setDimensions(
+                              index,
+                              null,
+                              null,
+                              event.target.value as BridgeDistanceBasis,
+                            )
+                          }
+                        >
+                          <option value="centres">Centre to centre</option>
+                          <option value="clear">Clear gap between</option>
+                        </select>
                       </label>
                     </>
                   ) : (
@@ -628,9 +658,28 @@ export function LayerTable({
 
                 {layer.bridgeSizing === 'dimensions' && (
                   <p className="footnote">
-                    {layer.bridgeWidthMm} mm every {layer.bridgeSpacingMm} mm is{' '}
-                    {((layer.bridgeWidthMm / layer.bridgeSpacingMm) * 100).toFixed(1)}%, plus
-                    the 1% BR 443 adds for additional timbers ={' '}
+                    {/*
+                      With a clear gap the pitch is the gap plus one member, so the
+                      arithmetic shown has to use the pitch rather than the number typed
+                      in, or it would not add up to the percentage beside it.
+                    */}
+                    {layer.bridgeWidthMm} mm every{' '}
+                    {bridgePitchMm(
+                      layer.bridgeWidthMm,
+                      layer.bridgeSpacingMm,
+                      layer.bridgeDistanceBasis,
+                    ).toFixed(0)}{' '}
+                    mm{layer.bridgeDistanceBasis === 'clear' ? ' of pitch' : ''} is{' '}
+                    {(
+                      (layer.bridgeWidthMm /
+                        bridgePitchMm(
+                          layer.bridgeWidthMm,
+                          layer.bridgeSpacingMm,
+                          layer.bridgeDistanceBasis,
+                        )) *
+                      100
+                    ).toFixed(1)}
+                    %, plus the 1% BR 443 adds for additional timbers ={' '}
                     <strong>{layer.bridgedPercent.toFixed(1)}%</strong> (BR 443 4.5). For a
                     whole timber-frame wall BR 443 gives a flat default instead — pick one
                     below, or switch to a percentage and type your own.

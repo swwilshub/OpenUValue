@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ProfileSection, TemperatureProfile, UValueResult } from '@openuvalue/engine';
 import type { LayerDrawCategory, UiLayer } from '../state/model.js';
-import { layerDrawCategory } from '../state/model.js';
+import { bridgePitchMm, layerDrawCategory } from '../state/model.js';
 import { CATEGORY_STYLE } from './hatches.js';
 
 /**
@@ -13,10 +13,15 @@ import { CATEGORY_STYLE } from './hatches.js';
  * labelled as not to scale - the temperature drop across them is real and worth
  * seeing, but their width on screen is a drawing device.
  *
- * Vertical position means temperature and nothing else. Layer hatching is decorative
- * and identifies the material; it never encodes a quantity, and in particular the
- * bridged area fraction is written on the layer as a percentage rather than drawn as
- * a band, which would make the vertical axis mean two things at once.
+ * Vertical position **in the plot** means temperature and nothing else. Layer hatching
+ * is decorative and identifies the material; it never encodes a quantity.
+ *
+ * Studs and rafters are therefore drawn in a register of their own, directly beneath the
+ * plot and on the same horizontal scale, where the vertical axis means length along the
+ * wall. That keeps the members at their true width and pitch — which is what you want to
+ * see, and what the percentage beside the layer cannot show — without the temperature
+ * axis having to mean two things at once. The two registers share x, so a stud column
+ * lines up with the layer it belongs to.
  */
 const FILM_WIDTH = 44;
 const DRAW_WIDTH = 660;
@@ -43,6 +48,21 @@ const MIN_WIDTH_FOR_CAPTION = 26;
 const LABEL_CHAR_WIDTH = 6.9;
 /** Gap between a layer's name and the bridging line drawn beside it. */
 const BRIDGING_LINE_OFFSET = 14;
+
+/** Height of the stud register, and the gap between it and the plot above. */
+const STUD_BAND_HEIGHT = 150;
+const STUD_BAND_GAP = 52;
+/**
+ * How much wall the register shows, as a multiple of the widest pitch.
+ *
+ * A member is only a few per cent of its pitch — 38 mm at 600 mm centres is 6 % — so on
+ * any faithful scale it is a thin band, and every extra bay makes it thinner. Just under
+ * two bays shows the rhythm while keeping the member thick enough to see; the register
+ * is to scale, so this is the only lever there is.
+ */
+const STUD_BAND_BAYS = 1.8;
+/** Minimum drawn width before a stud column can carry its own dimension caption. */
+const MIN_WIDTH_FOR_STUD_CAPTION = 58;
 
 /** Trim a label to what will fit along the height of the plot, with an ellipsis. */
 function fitLabel(text: string, availableLength: number): string {
@@ -173,6 +193,73 @@ export function CrossSection({
 
   const viewBoxWidth = totalWidth + AXIS_WIDTH - VIEWBOX_MIN_X;
 
+  /*
+   * The stud register. Only layers sized by width-and-spacing can be drawn: a layer
+   * given as a flat percentage (BR 443's whole-wall defaults, say) has no geometry to
+   * draw, and inventing a spacing for it would be a drawing that says more than is known.
+   */
+  const studColumns = boxes
+    .filter(
+      (box) =>
+        box.included &&
+        box.layer.kind === 'solid' &&
+        box.layer.bridgedPercent > 0 &&
+        box.layer.bridgeSizing === 'dimensions' &&
+        box.layer.bridgeWidthMm > 0,
+    )
+    .map((box) => ({
+      box,
+      widthMm: box.layer.bridgeWidthMm,
+      pitchMm: bridgePitchMm(
+        box.layer.bridgeWidthMm,
+        box.layer.bridgeSpacingMm,
+        box.layer.bridgeDistanceBasis,
+      ),
+    }))
+    .filter((column) => column.pitchMm > 0);
+
+  /*
+   * A layer bridged by a flat percentage — BR 443's whole-wall defaults, say — has a
+   * known area fraction but no geometry, so there is nothing to draw. It still gets a
+   * column in the register, captioned to say why it is empty, because silently omitting
+   * it would suggest the layer is not bridged at all.
+   */
+  const fractionColumns = boxes.filter(
+    (box) =>
+      box.included &&
+      box.layer.kind === 'solid' &&
+      box.layer.bridgedPercent > 0 &&
+      (box.layer.bridgeSizing !== 'dimensions' || box.layer.bridgeWidthMm <= 0),
+  );
+
+  const showStudBand = studColumns.length > 0 || fractionColumns.length > 0;
+  /*
+   * One length scale for the whole register, taken from the widest pitch, so two layers
+   * at different spacings are drawn against each other honestly — a 600 mm pitch really
+   * does look sparser than a 400 mm one.
+   */
+  const studBandLengthMm =
+    studColumns.length > 0
+      ? Math.max(...studColumns.map((column) => column.pitchMm)) * STUD_BAND_BAYS
+      : 0;
+  const studBandY = PLOT_HEIGHT + TOP_PAD + STUD_BAND_GAP;
+  const mmToBandY = studBandLengthMm > 0 ? STUD_BAND_HEIGHT / studBandLengthMm : 0;
+  const viewBoxHeight =
+    PLOT_HEIGHT + TOP_PAD + (showStudBand ? STUD_BAND_GAP + STUD_BAND_HEIGHT + 34 : 66);
+
+  /** Members at their true width and pitch, from the top of the register downwards. */
+  const studRects = (widthMm: number, pitchMm: number): readonly { y: number; h: number }[] => {
+    const out: { y: number; h: number }[] = [];
+    const height = Math.max(1, widthMm * mmToBandY);
+    // Centre the first member half a pitch in, so the pattern does not start flush
+    // against the edge and read as though a member sat exactly on the boundary.
+    for (let centreMm = pitchMm / 2; centreMm < studBandLengthMm; centreMm += pitchMm) {
+      const y = studBandY + (centreMm - widthMm / 2) * mmToBandY;
+      out.push({ y, h: height });
+    }
+    return out;
+  };
+
   const hasThinLayer = layers.some((layer) => layer.thicknessMm * scale < 2);
   const hasBridgedLayer = boxes.some(
     (box) => box.layer.kind === 'solid' && box.layer.bridgedPercent > 0,
@@ -220,7 +307,7 @@ export function CrossSection({
     <figure className="cross-section">
       <svg
         ref={svgRef}
-        viewBox={`${VIEWBOX_MIN_X} 0 ${viewBoxWidth} ${PLOT_HEIGHT + TOP_PAD + 66}`}
+        viewBox={`${VIEWBOX_MIN_X} 0 ${viewBoxWidth} ${viewBoxHeight}`}
         className={drag?.moved === true ? 'is-dragging' : undefined}
         onPointerMove={(event) => {
           if (drag === null) {
@@ -502,6 +589,159 @@ export function CrossSection({
         <text x={totalWidth} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label" textAnchor="end">
           outside
         </text>
+
+        {/* ------------------------------------------- studs and rafters, to scale --- */}
+        {showStudBand && (
+          <g className="stud-band">
+            {/*
+              The whole wall faintly behind, so the register reads as the same build-up
+              seen along its length rather than as a separate diagram.
+            */}
+            {boxes
+              .filter((box) => box.included)
+              .map((box) => (
+                <rect
+                  key={`stud-bg-${box.layer.id}`}
+                  x={box.x}
+                  y={studBandY}
+                  width={box.width}
+                  height={STUD_BAND_HEIGHT}
+                  className="stud-band-layer"
+                />
+              ))}
+
+            {studColumns.map((column) => (
+              <g key={`studs-${column.box.layer.id}`}>
+                {studRects(column.widthMm, column.pitchMm).map((rect, index) => (
+                  <g key={index}>
+                    <rect
+                      x={column.box.x}
+                      y={rect.y}
+                      width={column.box.width}
+                      height={rect.h}
+                      fill={CATEGORY_STYLE['timber-and-board'].fill}
+                    />
+                    <rect
+                      x={column.box.x}
+                      y={rect.y}
+                      width={column.box.width}
+                      height={rect.h}
+                      fill={`url(#${CATEGORY_STYLE['timber-and-board'].hatch ?? ''})`}
+                    />
+                    <rect
+                      x={column.box.x}
+                      y={rect.y}
+                      width={column.box.width}
+                      height={rect.h}
+                      className="stud-member"
+                    />
+                  </g>
+                ))}
+                <title>
+                  {`${column.box.layer.bridgeLabel}: ${column.widthMm} mm wide at ` +
+                    `${column.pitchMm.toFixed(0)} mm centres ` +
+                    `(${column.box.layer.bridgedPercent.toFixed(1)}% of the face)`}
+                </title>
+              </g>
+            ))}
+
+            {fractionColumns.map((box) => (
+              <g key={`stud-fraction-${box.layer.id}`}>
+                <rect
+                  x={box.x}
+                  y={studBandY}
+                  width={box.width}
+                  height={STUD_BAND_HEIGHT}
+                  className="stud-band-unknown"
+                />
+                <title>
+                  {`${box.layer.bridgeLabel}: ${box.layer.bridgedPercent.toFixed(1)}% of the ` +
+                    'face, given as a percentage. Set a member width and spacing to draw them.'}
+                </title>
+              </g>
+            ))}
+
+            {/* The register's own outline, so its edges are not mistaken for layers. */}
+            <rect
+              x={0}
+              y={studBandY}
+              width={totalWidth}
+              height={STUD_BAND_HEIGHT}
+              className="stud-band-frame"
+            />
+
+            {/* The length scale this register is drawn to. */}
+            {studColumns.length > 0 && (
+              <>
+                {/*
+                  On the right, where the temperature axis leaves room. On the left it
+                  would run past the edge of the viewBox and be clipped away.
+                */}
+                <line
+                  x1={totalWidth + 6}
+                  y1={studBandY}
+                  x2={totalWidth + 6}
+                  y2={studBandY + STUD_BAND_HEIGHT}
+                  className="stud-scale-line"
+                />
+                {/*
+                  Anchored to the right edge of the viewBox rather than to the scale
+                  line: "1080 mm" set leftwards from the line runs off the drawing.
+                */}
+                <text
+                  x={totalWidth + AXIS_WIDTH - 2}
+                  y={studBandY + 8}
+                  className="stud-scale-label"
+                  textAnchor="end"
+                >
+                  0
+                </text>
+                <text
+                  x={totalWidth + AXIS_WIDTH - 2}
+                  y={studBandY + STUD_BAND_HEIGHT}
+                  className="stud-scale-label"
+                  textAnchor="end"
+                >
+                  {studBandLengthMm.toFixed(0)} mm
+                </text>
+              </>
+            )}
+
+            {fractionColumns.map((box) =>
+              box.width >= MIN_WIDTH_FOR_STUD_CAPTION ? (
+                <text
+                  key={`stud-fraction-caption-${box.layer.id}`}
+                  x={box.x + box.width / 2}
+                  y={studBandY + STUD_BAND_HEIGHT + 13}
+                  className="stud-caption stud-caption-unknown"
+                  textAnchor="middle"
+                >
+                  {`${box.layer.bridgedPercent.toFixed(1)}%, no spacing given`}
+                </text>
+              ) : null,
+            )}
+
+            {studColumns.map((column) =>
+              column.box.width >= MIN_WIDTH_FOR_STUD_CAPTION ? (
+                <text
+                  key={`stud-caption-${column.box.layer.id}`}
+                  x={column.box.x + column.box.width / 2}
+                  y={studBandY + STUD_BAND_HEIGHT + 13}
+                  className="stud-caption"
+                  textAnchor="middle"
+                >
+                  {`${column.widthMm} @ ${column.pitchMm.toFixed(0)} crs`}
+                </text>
+              ) : null,
+            )}
+
+            <text x={0} y={studBandY + STUD_BAND_HEIGHT + 27} className="stud-band-title">
+              {studColumns.length > 0
+                ? 'along the wall — members at true width and pitch'
+                : 'along the wall — set a member width and spacing to draw the members'}
+            </text>
+          </g>
+        )}
       </svg>
       <figcaption>
         Layer widths are to scale and captioned in millimetres; the two hatched bands
@@ -511,7 +751,10 @@ export function CrossSection({
         internal dew point. Drag a layer sideways to reorder it, or click one to pick
         it out in the layer list.
         {hasBridgedLayer &&
-          ' A bridged layer is outlined in the accent colour and labelled with its bridged percentage, which is an area fraction and so cannot be drawn in section.'}
+          ' A bridged layer is outlined in the accent colour and labelled with its bridged percentage.' +
+          (showStudBand
+            ? ' The band underneath looks along the wall instead of through it, so studs and rafters appear at their true width and pitch; its vertical scale is a length, not a temperature.'
+            : '')}
         {lastIncludedIndex < layers.length - 1 &&
           ' The cross-hatched layers beyond the ventilated cavity are disregarded by the calculation.'}
         {hasThinLayer && ' Layers thinner than the line width are drawn as a single line.'}
