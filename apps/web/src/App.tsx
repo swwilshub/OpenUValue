@@ -8,6 +8,8 @@ import type {
 } from '@openuvalue/engine';
 import { calculateTemperatureProfile, calculateUValue } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
+import { HatchLegend, IntroTour } from './components/IntroTour.js';
+import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
@@ -29,6 +31,9 @@ import { decodeState, encodeState } from './url/codec.js';
  */
 const REPOSITORY_URL = 'https://github.com/swwilshub/OpenUValue';
 
+/** Marks the walkthrough as seen, so it opens once rather than on every visit. */
+const TOUR_SEEN_KEY = 'openuvalue.tour.seen';
+
 const SECTION_LABELS: Record<ProfileSection, string> = {
   combined: 'Combined (area weighted)',
   unbridged: 'Unbridged section',
@@ -42,6 +47,32 @@ export function App(): JSX.Element {
   const [copied, setCopied] = useState(false);
   /** Layer picked in either the table or the drawing; the other view follows. */
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
+  /**
+   * The walkthrough opens by itself the first time, and not again. localStorage can
+   * throw outright in a private window or with site data blocked, so a failure to read
+   * it means "show the tour" and a failure to write it means the tour opens again next
+   * time — annoying, but never a blank page.
+   */
+  const [tourOpen, setTourOpen] = useState<boolean>(() => {
+    if (window.location.hash !== '') {
+      // Someone arriving on a shared link came to see that build-up, not a tutorial.
+      return false;
+    }
+    try {
+      return window.localStorage.getItem(TOUR_SEEN_KEY) === null;
+    } catch {
+      return true;
+    }
+  });
+
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    try {
+      window.localStorage.setItem(TOUR_SEEN_KEY, '1');
+    } catch {
+      // Nothing to do: the tour is dismissed for this visit either way.
+    }
+  }, []);
   /** The hash this component last wrote, so an incoming change can be told apart. */
   const writtenHash = useRef<string>('');
 
@@ -165,6 +196,10 @@ export function App(): JSX.Element {
 
   return (
     <div className="app">
+      {/* Mounted once: every material hatch in the page resolves to these. */}
+      <HatchDefs />
+      <IntroTour open={tourOpen} onClose={closeTour} />
+
       <header className="app-header">
         <div>
           <h1>OpenUValue</h1>
@@ -174,6 +209,9 @@ export function App(): JSX.Element {
           </p>
         </div>
         <div className="header-actions">
+          <button type="button" onClick={() => setTourOpen(true)}>
+            How to read this
+          </button>
           <button type="button" onClick={() => setState(defaultState())}>
             Masonry example
           </button>
@@ -236,6 +274,14 @@ export function App(): JSX.Element {
             onSelectLayer={setSelectedLayerId}
             onReorder={reorderLayers}
           />
+
+          <div className="section-legend">
+            <HatchLegend />
+            <button type="button" className="link-button" onClick={() => setTourOpen(true)}>
+              How to read this drawing
+            </button>
+          </div>
+
           {bridged && state.section === 'combined' && (
             <p className="footnote">
               The combined profile is an OpenUValue convention, not a method from

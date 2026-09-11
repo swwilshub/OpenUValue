@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { UValueResult } from '@openuvalue/engine';
 import { roundResistanceForReporting } from '@openuvalue/engine';
-import { MATERIALS, findMaterialById, toEngineMaterial } from '@openuvalue/materials';
+import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
+import { MaterialPicker } from './MaterialPicker.js';
 import {
   DEFAULT_STUD_SPACING_MM,
   DEFAULT_STUD_WIDTH_MM,
@@ -270,20 +271,12 @@ export function LayerTable({
 
             <div className="layer-grid">
               {layer.kind === 'solid' ? (
-                <label>
-                  Material
-                  <select
-                    value={layer.materialId ?? ''}
-                    onChange={(event) => applyMaterial(index, event.target.value)}
-                  >
-                    <option value="">(λ typed in directly)</option>
-                    {MATERIALS.map((material) => (
-                      <option key={material.id} value={material.id}>
-                        {material.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <MaterialPicker
+                  label="Material"
+                  materialId={layer.materialId}
+                  fallbackLabel="λ typed in directly"
+                  onSelect={(id) => applyMaterial(index, id)}
+                />
               ) : (
                 <label>
                   Ventilation
@@ -426,20 +419,12 @@ export function LayerTable({
                 </div>
 
                 <div className="layer-grid">
-                  <label>
-                    Member material
-                    <select
-                      value={layer.bridgeMaterialId ?? ''}
-                      onChange={(event) => applyBridgeMaterial(index, event.target.value)}
-                    >
-                      <option value="">(λ typed in directly)</option>
-                      {MATERIALS.map((material) => (
-                        <option key={material.id} value={material.id}>
-                          {material.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <MaterialPicker
+                    label="Member material"
+                    materialId={layer.bridgeMaterialId}
+                    fallbackLabel="λ typed in directly"
+                    onSelect={(id) => applyBridgeMaterial(index, id)}
+                  />
                   <label>
                     Member λ, W/(m·K)
                     <input
