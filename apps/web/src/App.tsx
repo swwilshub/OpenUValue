@@ -8,6 +8,7 @@ import type {
   ProfileSection,
 } from '@openuvalue/engine';
 import {
+  calculateDynamicProperties,
   calculateTemperatureProfile,
   calculateUValue,
   computeCorrections,
@@ -18,6 +19,7 @@ import { MoistureTab } from './components/MoistureTab.js';
 import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { SummaryStrip } from './components/SummaryStrip.js';
+import { DynamicPanel } from './components/DynamicPanel.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
 import {
@@ -229,6 +231,19 @@ export function App(): JSX.Element {
     });
   }, [result, state.layers, state.heatFlowDirection, state.airGapLevel]);
 
+  /*
+   * BS EN ISO 13786. Kept separate from the U-value memo because it is a different
+   * question about the same element, and because it can fail on its own (an unsupported
+   * external environment) without taking the thermal result down with it.
+   */
+  const dynamic = useMemo(() => {
+    try {
+      return calculateDynamicProperties(element);
+    } catch {
+      return undefined;
+    }
+  }, [element]);
+
   const bridged = hasBridging(state);
 
   const copyLink = async (): Promise<void> => {
@@ -354,6 +369,7 @@ export function App(): JSX.Element {
           corrections={corrections}
           profile={profile}
           conditions={state.conditions}
+          dynamic={dynamic}
         />
       )}
 
@@ -438,6 +454,8 @@ export function App(): JSX.Element {
               <p className="engine-error">{engineError}</p>
             </section>
           )}
+
+          {dynamic !== undefined && <DynamicPanel dynamic={dynamic} />}
         </div>
       </main>
 

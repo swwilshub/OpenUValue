@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type {
   BuildingElement,
   CorrectionResult,
+  DynamicResult,
   EnvironmentConditions,
   PartLContext,
   TemperatureProfile,
@@ -44,7 +45,7 @@ const PART_L_CONTEXTS: readonly { readonly id: PartLContext; readonly label: str
 type Verdict = 'ok' | 'risk' | 'none';
 
 interface MetricProps {
-  readonly label: string;
+  readonly label: React.ReactNode;
   readonly value: string;
   readonly unit?: string;
   readonly note?: string;
@@ -71,6 +72,8 @@ export interface SummaryStripProps {
   readonly corrections: CorrectionResult | undefined;
   readonly profile: TemperatureProfile;
   readonly conditions: EnvironmentConditions;
+  /** BS EN ISO 13786 figures, absent when the dynamic calculation could not run. */
+  readonly dynamic: DynamicResult | undefined;
 }
 
 export function SummaryStrip({
@@ -79,6 +82,7 @@ export function SummaryStrip({
   corrections,
   profile,
   conditions,
+  dynamic,
 }: SummaryStripProps): JSX.Element {
   const [partLContext, setPartLContext] = useState<PartLContext>('new-dwelling');
 
@@ -167,7 +171,7 @@ export function SummaryStrip({
         />
 
         <Metric
-          label="Heat capacity"
+          label="Total capacity"
           value={areal.totalHeatCapacityKJPerM2K.toFixed(0)}
           unit="kJ/(m²·K)"
           note="total, not κ"
@@ -217,6 +221,40 @@ export function SummaryStrip({
             title="Interstitial condensation rate under the conditions set on the build-up tab, by the BS EN ISO 13788 method."
           />
         )}
+
+        {/*
+          BS EN ISO 13786. Neutral like the rest: the standard publishes no scale saying
+          which decrement factor is good, and the answer depends on the building anyway.
+        */}
+        {dynamic !== undefined && (
+          <>
+            <Metric
+              label="Decrement"
+              value={dynamic.main.decrementFactor.toFixed(2)}
+              note={`${(dynamic.main.decrementFactor * 100).toFixed(0)} % of the swing gets in`}
+              title="Decrement factor: the share of an outside temperature swing that reaches the inside surface over a 24 hour cycle."
+            />
+            <Metric
+              label="Time shift"
+              value={dynamic.main.timeShiftHours.toFixed(1)}
+              unit="h"
+              note="until the peak arrives"
+              title="How much later the indoor peak follows the outdoor one."
+            />
+            <Metric
+              label={
+                <>
+                  Heat capacity <span className="symbol-label">κ</span>
+                  <sub>i</sub>
+                </>
+              }
+              value={dynamic.main.internalArealHeatCapacityKJPerM2K.toFixed(0)}
+              unit="kJ/(m²·K)"
+              note="reachable from inside"
+              title="Areal heat capacity of the internal face, per BS EN ISO 13786 — the figure SAP 10.3 uses for thermal mass. Lower than the total heat capacity because a daily cycle only reaches so far into the build-up."
+            />
+          </>
+        )}
       </div>
 
       <div className="strip-foot">
@@ -251,11 +289,11 @@ export function SummaryStrip({
           </p>
           <ul>
             <li>
-              <strong>Decrement factor, time lag and areal heat capacity κ</strong> — how
-              far a summer temperature swing is damped and how many hours it takes to come
-              through. These need the dynamic method of BS EN ISO 13786, which is not
-              implemented. The materials already carry the density and specific heat it
-              needs, so this is the next real piece of physics to add.
+              <strong>A rating on the dynamic figures.</strong> The decrement factor, time
+              shift and κ are calculated (BS EN ISO 13786), but what counts as a good value
+              depends on the building around them — a shaded north wall and a south-facing
+              one with the same numbers are not the same problem. The standard publishes no
+              scale, so neither do we.
             </li>
             <li>
               <strong>A drying reserve</strong>, as a single figure of how much moisture a

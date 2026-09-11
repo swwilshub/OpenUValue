@@ -2026,3 +2026,93 @@ a:hover {
 .summary-strip .tour-caveat li {
   margin-bottom: 0.45rem;
 }
+
+/* ------------------------------------------------------- summer performance ---
+ * The dynamic figures get a definition list rather than the strip's cards: each one
+ * needs a sentence of gloss to be worth anything, and a card is the wrong shape for that.
+ */
+.dynamic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0 0;
+}
+
+.dynamic-grid > div {
+  padding: 0.55rem 0.65rem;
+  background: var(--ground);
+  border-radius: 8px;
+}
+
+.dynamic-grid dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.dynamic-grid dd {
+  margin: 0.15rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.dynamic-grid dd strong {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dynamic-gloss {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+
+.dynamic-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.dynamic-table th,
+.dynamic-table td {
+  text-align: right;
+  padding: 0.32rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.dynamic-table thead th,
+.dynamic-table tbody th {
+  text-align: left;
+  font-weight: 600;
+}
+
+.dynamic-table thead th {
+  color: var(--ink-faint);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/*
+ * Greek letters inside an uppercased label. text-transform turns κ into Κ and μ into Μ,
+ * which read as a Latin K and M and quietly change what the label says — so the symbol is
+ * wrapped and opted out. It inherits its size here rather than taking .symbol-label's own,
+ * which is meant for the layer inputs.
+ */
+.metric-label .symbol-label,
+.dynamic-grid dt .symbol-label,
+.dynamic-table th .symbol-label {
+  font-size: inherit;
+}
+
+/* The subscript naming the face is part of the symbol too: uppercased, the i and e of
+ * kappa-i and kappa-e become I and E, which name nothing. */
+.metric-label sub,
+.dynamic-grid dt sub,
+.dynamic-table th sub {
+  text-transform: none;
+}
