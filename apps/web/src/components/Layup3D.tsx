@@ -1,69 +1,129 @@
+import { useRef, useState } from 'react';
 import { bridgePitchMm, layerDrawCategory } from '../state/model.js';
 import type { UiLayer } from '../state/model.js';
 import { CATEGORY_STYLE } from './hatches.js';
 
 /**
- * An axonometric indicator of the build-up: the layers as slabs, stepped back one behind
- * another so every one of them is visible, numbered from the inside out.
+ * A 3D cutaway of the build-up: the layers as solid boxes, face to face with no gaps
+ * between them, each cut back a little further than the one in front so its edge shows.
  *
- * **It is an indicator, not a model.** It shows the order of the layers, their relative
- * thicknesses and where the members sit; it is not a construction drawing and has no
- * junctions, fixings or detailing in it. The numbers in the section and the calculation
- * come from the layer table, and nothing here feeds them.
+ * **The layers touch.** That is the point of it — it is meant to look like the thing that
+ * gets built, so anything that separated the layers would be showing a construction that
+ * does not exist. What makes each one visible is the stepped cutaway, which is how a
+ * cutaway drawing has always worked: the material is removed, not moved.
  *
- * Drawn as plain SVG in an oblique projection rather than with a 3D library: the engine
- * has no runtime dependencies and the app has almost none, and a rotating render would
- * imply far more precision than this is offering.
+ * Real geometry, rotated and projected here rather than drawn as a fixed picture. Each
+ * layer is a box of eight vertices; the view rotates them about two axes, drops the back
+ * faces, sorts what is left by depth and shades each face by how it lies to the light.
+ * Dragging turns the model. It is orthographic rather than perspective, which is the
+ * convention for a construction drawing and keeps parallel edges parallel.
+ *
+ * Written out rather than pulled from a 3D library: this is a few hundred lines of vector
+ * arithmetic against something that would be the largest dependency in the repository by
+ * a wide margin, in a project whose engine has none at all.
+ *
+ * It is still an indicator. There are no junctions, fixings or detailing in it, and
+ * nothing here feeds the calculation.
  */
+
+const VIEW_W = 640;
+const VIEW_H = 430;
+
+/** Starting angles, in radians. A three-quarter view from slightly above. */
+const DEFAULT_YAW = -0.62;
+const DEFAULT_PITCH = 0.42;
+const MAX_PITCH = 1.35;
+
+/** How much wall the panel shows, before the cutaway steps are added. */
+const PANEL_WIDTH_MM = 700;
+const PANEL_HEIGHT_MM = 470;
+/**
+ * How much further each layer reaches than the one in front of it, as a fraction of the
+ * panel. This is the cutaway: the layers are flush, and successive ones are cut back less,
+ * so every layer shows an edge without any of them being moved.
+ */
+const CUTAWAY_STEP = 0.085;
 
 /**
- * Screen movement per millimetre of depth into the wall. Back is up and to the right, so
- * each successive layer steps that way and shows its own top and side.
+ * Least thickness a layer may be drawn at, in millimetres. A 0.2 mm vapour barrier is a
+ * real layer doing a real job and at true scale it would be thinner than the lines around
+ * it — the same compromise the cross-section makes for layers thinner than a stroke.
  */
-const DEPTH_X = 0.62;
-const DEPTH_Y = -0.42;
+const MIN_THICKNESS_MM = 2.5;
 
-/** How much wall the panel shows. Enough to read a couple of stud bays. */
-const PANEL_WIDTH_MM = 900;
-const PANEL_HEIGHT_MM = 620;
+interface Vec3 {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
+/** Rotate about the Y axis, then the X axis. The camera looks down -Z from +Z. */
+function rotate(v: Vec3, yaw: number, pitch: number): Vec3 {
+  const cy = Math.cos(yaw);
+  const sy = Math.sin(yaw);
+  const x1 = v.x * cy + v.z * sy;
+  const z1 = -v.x * sy + v.z * cy;
+  const cp = Math.cos(pitch);
+  const sp = Math.sin(pitch);
+  return { x: x1, y: v.y * cp - z1 * sp, z: v.y * sp + z1 * cp };
+}
+
+/** The six faces of a box, as indices into the eight corners below. */
+const FACES: readonly {
+  readonly corners: readonly [number, number, number, number];
+  readonly normal: Vec3;
+}[] = [
+  { corners: [4, 5, 6, 7], normal: { x: 0, y: 0, z: 1 } }, // near (toward the room)
+  { corners: [1, 0, 3, 2], normal: { x: 0, y: 0, z: -1 } }, // far
+  { corners: [3, 7, 6, 2], normal: { x: 0, y: -1, z: 0 } }, // bottom
+  { corners: [0, 1, 5, 4], normal: { x: 0, y: 1, z: 0 } }, // top
+  { corners: [1, 2, 6, 5], normal: { x: 1, y: 0, z: 0 } }, // right
+  { corners: [0, 4, 7, 3], normal: { x: -1, y: 0, z: 0 } }, // left
+];
+
+/** Corners of an axis-aligned box, ordered to match FACES. */
+function corners(
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+  z0: number,
+  z1: number,
+): readonly Vec3[] {
+  return [
+    { x: x0, y: y1, z: z0 },
+    { x: x1, y: y1, z: z0 },
+    { x: x1, y: y0, z: z0 },
+    { x: x0, y: y0, z: z0 },
+    { x: x0, y: y1, z: z1 },
+    { x: x1, y: y1, z: z1 },
+    { x: x1, y: y0, z: z1 },
+    { x: x0, y: y0, z: z1 },
+  ];
+}
+
+/** A face ready to draw: its outline, how far away it is, and how lit it is. */
+interface DrawnFace {
+  readonly points: string;
+  readonly depth: number;
+  readonly fill: string;
+  readonly shade: number;
+  readonly key: string;
+}
 
 /**
- * Extra separation between layers, in screen units.
- *
- * A 289 mm wall against a 900 mm panel is thin, and stacked at true depth the layers
- * collapse into a sliver where nothing can be told apart. Pulling them apart is what
- * makes the order readable — it is the whole point of drawing it this way — so the
- * thicknesses stay to scale relative to each other and the gaps between them do not
- * mean anything. The caption says so.
+ * Light from over the viewer's left shoulder. Normalised so the brightest face is fully
+ * lit; the fixed ambient floor keeps a face turned away from the light readable rather
+ * than black.
  */
-const EXPLODE_GAP_PX = 11;
-
-/**
- * Least depth a layer may be drawn at, in screen units. A 0.2 mm vapour barrier is a real
- * layer with a real job, and at true scale it would be invisible — the same compromise
- * the cross-section makes for layers thinner than a line, and said out loud in the
- * caption rather than left for someone to discover.
- */
-const MIN_DEPTH_PX = 3.5;
-
-const VIEW_W = 620;
-const VIEW_H = 400;
+const LIGHT: Vec3 = { x: -0.42, y: 0.74, z: 0.52 };
+const AMBIENT = 0.62;
 
 export interface Layup3DProps {
   readonly layers: readonly UiLayer[];
-  /** Per layer, whether the calculation included it. Excluded ones are drawn faded. */
   readonly included: readonly boolean[];
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
-}
-
-interface Slab {
-  readonly layer: UiLayer;
-  readonly index: number;
-  /** Depth of the near face and the far face, in screen units. */
-  readonly z0: number;
-  readonly z1: number;
-  readonly included: boolean;
 }
 
 export function Layup3D({
@@ -72,15 +132,18 @@ export function Layup3D({
   selectedLayerId,
   onSelectLayer,
 }: Layup3DProps): JSX.Element {
+  const [yaw, setYaw] = useState(DEFAULT_YAW);
+  const [pitch, setPitch] = useState(DEFAULT_PITCH);
+  const dragRef = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
+
   const totalThicknessMm = layers.reduce((total, layer) => total + layer.thicknessMm, 0);
   if (layers.length === 0 || totalThicknessMm <= 0) {
     return <p className="empty-note">Add a layer with a thickness to see the layup.</p>;
   }
 
   /*
-   * Wide enough to show two bays of the widest member spacing, so the rhythm is visible
-   * rather than a single lonely stud. Falls back to the plain panel width where nothing
-   * is bridged by measured members.
+   * Wide enough for two bays of the widest member spacing, so the rhythm of the studs
+   * reads rather than a single lonely one.
    */
   const widestPitchMm = layers.reduce((widest, layer) => {
     if (
@@ -96,225 +159,321 @@ export function Layup3D({
       bridgePitchMm(layer.bridgeWidthMm, layer.bridgeSpacingMm, layer.bridgeDistanceBasis),
     );
   }, 0);
-  const panelWidthMm = Math.max(PANEL_WIDTH_MM, widestPitchMm * 2.1);
-  const panelHeightMm = panelWidthMm * (PANEL_HEIGHT_MM / PANEL_WIDTH_MM);
+  /*
+   * Enough panel to read the stud rhythm, but no more: every extra millimetre of wall
+   * makes the stack thinner in proportion, and the stack is the thing being looked at.
+   */
+  const baseWidthMm = Math.max(PANEL_WIDTH_MM, widestPitchMm * 1.6);
+  const baseHeightMm = baseWidthMm * (PANEL_HEIGHT_MM / PANEL_WIDTH_MM);
 
   /*
-   * One scale for length and for depth, so a 100 mm layer really is a tenth of a 1000 mm
-   * panel. Chosen to fit the projected bounding box — the panel plus the whole stack's
-   * step — into the view.
+   * The stack, front to back. Depth runs from the inside face at z = 0 outwards into
+   * negative z, each layer starting exactly where the one before it ended — the whole
+   * point being that there is nothing between them.
    */
-  const gapTotal = Math.max(0, layers.length - 1) * EXPLODE_GAP_PX;
+  const stack = (() => {
+    let z = 0;
+    return layers.map((layer, index) => {
+      const thickness = Math.max(MIN_THICKNESS_MM, layer.thicknessMm);
+      const z1 = z;
+      z -= thickness;
+      return {
+        layer,
+        index,
+        included: included[index] ?? true,
+        z0: z,
+        z1,
+        // Each layer reaches further right and further up than the one in front.
+        widthMm: baseWidthMm * (1 + index * CUTAWAY_STEP),
+        heightMm: baseHeightMm * (1 + index * CUTAWAY_STEP),
+      };
+    });
+  })();
+
+  const widestMm = Math.max(...stack.map((slab) => slab.widthMm));
+  const tallestMm = Math.max(...stack.map((slab) => slab.heightMm));
+
+  // Centre the model on its own bounding box so it turns about the middle of itself.
+  const cx = -widestMm / 2;
+  const cy = -tallestMm / 2;
+  const cz = totalThicknessMm / 2;
+
+  const place = (v: Vec3): Vec3 =>
+    rotate({ x: v.x + cx, y: v.y + cy, z: v.z + cz }, yaw, pitch);
+
   /*
-   * The gaps are fixed screen units and the rest scales, so the scale is what is left
-   * once they have been taken out of the space the stack has to fit into:
-   *   available = scale * (panel + thickness * depthStep) + gaps * depthStep
+   * Fit to what the model actually projects to at the angle it is at.
+   *
+   * A fixed worst-case bound was tried first and is not usable: turning about the upright
+   * axis swings the width into the depth, so the depth that then feeds the vertical
+   * extent is not the build-up's thickness but can be as wide as the wall — the only
+   * honest fixed bound is the full 3D diagonal, which leaves a flat slab marooned in white
+   * space at every angle anyone would actually look at it from. Measuring the corners
+   * costs one pass over eight vertices per box and can never clip.
    */
-  const fit = (available: number, panelMm: number, depthStep: number): number =>
-    (available - gapTotal * depthStep) / (panelMm + totalThicknessMm * depthStep);
-  const scale = Math.max(
-    0.02,
-    Math.min(fit(VIEW_W - 150, panelWidthMm, DEPTH_X), fit(VIEW_H - 60, panelHeightMm, -DEPTH_Y)),
+  const outline = stack.flatMap((slab) =>
+    corners(0, slab.widthMm, 0, slab.heightMm, slab.z0, slab.z1).map(place),
   );
+  const minX = Math.min(...outline.map((v) => v.x));
+  const maxX = Math.max(...outline.map((v) => v.x));
+  const minY = Math.min(...outline.map((v) => v.y));
+  const maxY = Math.max(...outline.map((v) => v.y));
+  const scale = Math.min(
+    (VIEW_W - 96) / Math.max(1, maxX - minX),
+    (VIEW_H - 52) / Math.max(1, maxY - minY),
+  );
+  // Centre on the projected box rather than on the model's own middle: the cutaway steps
+  // make it lopsided, and centring on the geometry leaves it visibly off to one side.
+  const originX = (VIEW_W - 70) / 2 - ((minX + maxX) / 2) * scale;
+  const originY = VIEW_H / 2 + ((minY + maxY) / 2) * scale;
 
-  const panelW = panelWidthMm * scale;
-  const panelH = panelHeightMm * scale;
+  const toScreen = (v: Vec3): readonly [number, number] => [
+    originX + v.x * scale,
+    originY - v.y * scale,
+  ];
 
-  const slabs: Slab[] = [];
-  let depth = 0;
-  layers.forEach((layer, index) => {
-    const t = Math.max(MIN_DEPTH_PX, layer.thicknessMm * scale);
-    slabs.push({ layer, index, z0: depth, z1: depth + t, included: included[index] ?? true });
-    depth += t + EXPLODE_GAP_PX;
-  });
-  const totalDepth = depth;
+  const faceBrightness = (normal: Vec3): number => {
+    const n = rotate(normal, yaw, pitch);
+    const lambert = Math.max(0, n.x * LIGHT.x + n.y * LIGHT.y + n.z * LIGHT.z);
+    return AMBIENT + (1 - AMBIENT) * lambert;
+  };
 
-  // Origin: the near face's bottom-left, with room above and right for the stack to step.
-  const originX = 24;
-  const originY = VIEW_H - 34 - panelH;
-
-  const px = (x: number, z: number): number => originX + x + z * DEPTH_X;
-  const py = (y: number, z: number): number => originY + y + z * DEPTH_Y;
-  const quad = (points: readonly (readonly [number, number, number])[]): string =>
-    points.map(([x, y, z]) => `${px(x, z).toFixed(1)},${py(y, z).toFixed(1)}`).join(' ');
-
-  /** Members crossing a layer, seen end-on in the cut along the top of the panel. */
-  const membersOf = (layer: UiLayer): readonly { readonly x0: number; readonly x1: number }[] => {
-    if (
-      layer.kind !== 'solid' ||
-      layer.bridgedPercent <= 0 ||
-      layer.bridgeSizing !== 'dimensions' ||
-      layer.bridgeWidthMm <= 0
-    ) {
-      return [];
-    }
-    const pitchMm = bridgePitchMm(
-      layer.bridgeWidthMm,
-      layer.bridgeSpacingMm,
-      layer.bridgeDistanceBasis,
-    );
-    if (!(pitchMm > 0)) {
-      return [];
-    }
-    const out: { x0: number; x1: number }[] = [];
-    for (let centreMm = pitchMm / 2; centreMm < panelWidthMm; centreMm += pitchMm) {
+  /** Every visible face of one box, ready for the depth sort. */
+  const boxFaces = (
+    key: string,
+    fill: string,
+    box: readonly Vec3[],
+    skip: readonly number[] = [],
+  ): readonly DrawnFace[] => {
+    const placed = box.map(place);
+    const out: DrawnFace[] = [];
+    FACES.forEach((face, faceIndex) => {
+      /*
+       * Faces buried against a neighbouring box are never emitted. Two boxes sitting
+       * flush share a plane, so both would land at the same depth and the sort would have
+       * no way to choose between them — they would flicker against each other as the
+       * model turned.
+       */
+      if (skip.includes(faceIndex)) {
+        return;
+      }
+      // Drop the faces turned away from the camera: they can never be seen, and drawing
+      // them would put a wrongly shaded polygon over one that should be in front.
+      const n = rotate(face.normal, yaw, pitch);
+      if (n.z <= 0.0001) {
+        return;
+      }
+      const vertices = face.corners.map((corner) => placed[corner]);
+      if (vertices.some((vertex) => vertex === undefined)) {
+        return;
+      }
+      const depth =
+        vertices.reduce((total, vertex) => total + (vertex?.z ?? 0), 0) / vertices.length;
       out.push({
-        x0: (centreMm - layer.bridgeWidthMm / 2) * scale,
-        x1: (centreMm + layer.bridgeWidthMm / 2) * scale,
+        key: `${key}-${faceIndex}`,
+        points: vertices
+          .map((vertex) => {
+            const [sx, sy] = toScreen(vertex ?? { x: 0, y: 0, z: 0 });
+            return `${sx.toFixed(1)},${sy.toFixed(1)}`;
+          })
+          .join(' '),
+        depth,
+        fill,
+        shade: faceBrightness(face.normal),
       });
-    }
+    });
     return out;
   };
 
-  const timber = CATEGORY_STYLE['timber-and-board'];
+  const timberFill = CATEGORY_STYLE['timber-and-board'].fill;
+
+  const faces: DrawnFace[] = [];
+  const badges: { index: number; x: number; y: number; id: string }[] = [];
+
+  /**
+   * A bridged layer is not one material: it is members with the layer's material packed
+   * between them. Modelling it that way is what lets the members be seen at all — buried
+   * inside a single solid box they would be sealed in by their own layer — and it is also
+   * how the layer is actually built.
+   */
+  const segmentsOf = (slab: (typeof stack)[number]): readonly {
+    readonly x0: number;
+    readonly x1: number;
+    readonly fill: string;
+    readonly isMember: boolean;
+  }[] => {
+    const style = CATEGORY_STYLE[layerDrawCategory(slab.layer.materialId, slab.layer.kind)];
+    const fill = slab.included ? style.fill : 'var(--excluded-hatch)';
+    const whole = [{ x0: 0, x1: slab.widthMm, fill, isMember: false }];
+
+    if (
+      slab.layer.kind !== 'solid' ||
+      slab.layer.bridgedPercent <= 0 ||
+      slab.layer.bridgeSizing !== 'dimensions' ||
+      slab.layer.bridgeWidthMm <= 0
+    ) {
+      return whole;
+    }
+    const pitchMm = bridgePitchMm(
+      slab.layer.bridgeWidthMm,
+      slab.layer.bridgeSpacingMm,
+      slab.layer.bridgeDistanceBasis,
+    );
+    if (!(pitchMm > 0)) {
+      return whole;
+    }
+
+    const out: { x0: number; x1: number; fill: string; isMember: boolean }[] = [];
+    let cursor = 0;
+    for (let centre = pitchMm / 2; centre < slab.widthMm; centre += pitchMm) {
+      const m0 = Math.max(cursor, centre - slab.layer.bridgeWidthMm / 2);
+      const m1 = Math.min(slab.widthMm, centre + slab.layer.bridgeWidthMm / 2);
+      if (m1 <= m0) {
+        continue;
+      }
+      if (m0 > cursor) {
+        out.push({ x0: cursor, x1: m0, fill, isMember: false });
+      }
+      out.push({ x0: m0, x1: m1, fill: timberFill, isMember: true });
+      cursor = m1;
+    }
+    if (cursor < slab.widthMm) {
+      out.push({ x0: cursor, x1: slab.widthMm, fill, isMember: false });
+    }
+    return out.length > 0 ? out : whole;
+  };
+
+  for (const slab of stack) {
+    const segments = segmentsOf(slab);
+    segments.forEach((segment, segmentIndex) => {
+      const skip: number[] = [];
+      if (segmentIndex > 0) {
+        skip.push(5); // left face, buried against the segment before it
+      }
+      if (segmentIndex < segments.length - 1) {
+        skip.push(4); // right face, buried against the next one
+      }
+      faces.push(
+        ...boxFaces(
+          `${slab.layer.id}-${segmentIndex}`,
+          segment.fill,
+          corners(segment.x0, segment.x1, 0, slab.heightMm, slab.z0, slab.z1),
+          skip,
+        ),
+      );
+    });
+
+    // The badge sits on the layer's own exposed top-right corner and turns with it.
+    const badgeAt = place({ x: slab.widthMm, y: slab.heightMm, z: slab.z1 });
+    const [bx, by] = toScreen(badgeAt);
+    badges.push({ index: slab.index, x: bx, y: by, id: slab.layer.id });
+  }
+
+  faces.sort((a, b) => a.depth - b.depth);
+
+  /*
+   * Badges are placed in 3D and turn with the model, so two thin layers put theirs on top
+   * of one another. Nudging each clear of the one before it, along the line between them,
+   * keeps them legible without pulling any of them far from the layer it names.
+   */
+  const BADGE_MIN_GAP = 19;
+  for (let i = 1; i < badges.length; i += 1) {
+    const previous = badges[i - 1];
+    const current = badges[i];
+    if (previous === undefined || current === undefined) {
+      continue;
+    }
+    const dx = current.x - previous.x;
+    const dy = current.y - previous.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance >= BADGE_MIN_GAP) {
+      continue;
+    }
+    // Coincident badges have no direction to push along, so follow the stack's own step.
+    const ux = distance < 0.001 ? 0.85 : dx / distance;
+    const uy = distance < 0.001 ? -0.53 : dy / distance;
+    badges[i] = {
+      ...current,
+      x: previous.x + ux * BADGE_MIN_GAP,
+      y: previous.y + uy * BADGE_MIN_GAP,
+    };
+  }
+
+  const beginRotate = (event: React.PointerEvent<SVGSVGElement>): void => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { x: event.clientX, y: event.clientY, yaw, pitch };
+  };
+
+  const continueRotate = (event: React.PointerEvent<SVGSVGElement>): void => {
+    const start = dragRef.current;
+    if (start === null) {
+      return;
+    }
+    setYaw(start.yaw + (event.clientX - start.x) * 0.008);
+    // Clamped short of straight up or down: past vertical the model turns inside out and
+    // the light comes from the wrong side.
+    setPitch(
+      Math.max(-MAX_PITCH, Math.min(MAX_PITCH, start.pitch - (event.clientY - start.y) * 0.008)),
+    );
+  };
+
+  const endRotate = (): void => {
+    dragRef.current = null;
+  };
 
   return (
     <figure className="layup-3d">
-      <svg
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-        role="img"
-        aria-label={`Axonometric indicator of ${layers.length} layers, numbered from the inside out`}
-      >
-        {/*
-          Furthest first. The outermost layer is the one furthest from the viewer, so
-          painting from the back forwards lets each nearer layer cover it, which is what
-          leaves only its top and side edge showing.
-        */}
-        {[...slabs].reverse().map((slab) => {
-          const style = CATEGORY_STYLE[layerDrawCategory(slab.layer.materialId, slab.layer.kind)];
-          const isSelected = slab.layer.id === selectedLayerId;
-          const faceFill = slab.included ? style.fill : 'var(--excluded-hatch)';
-          return (
+      <div className="layup-stage">
+        <svg
+          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+          role="img"
+          aria-label={`Three-dimensional cutaway of ${layers.length} layers, numbered from the inside out`}
+          onPointerDown={beginRotate}
+          onPointerMove={continueRotate}
+          onPointerUp={endRotate}
+          onPointerCancel={endRotate}
+        >
+          {faces.map((face) => (
+            <polygon
+              key={face.key}
+              points={face.points}
+              fill={face.fill}
+              className="layup-face"
+              style={{ filter: `brightness(${face.shade.toFixed(3)})` }}
+            />
+          ))}
+
+          {badges.map((badge) => (
             <g
-              key={slab.layer.id}
-              className={`layup-slab${isSelected ? ' is-selected' : ''}`}
+              key={badge.id}
+              className={`layup-badge-group${badge.id === selectedLayerId ? ' is-selected' : ''}`}
               onClick={() =>
-                onSelectLayer?.(isSelected ? undefined : slab.layer.id)
+                onSelectLayer?.(badge.id === selectedLayerId ? undefined : badge.id)
               }
             >
-              <title>
-                {`${slab.index + 1}. ${slab.layer.label} — ${slab.layer.thicknessMm} mm`}
-              </title>
-
-              {/* The face toward the room, and the hatch that says what it is made of. */}
-              <polygon
-                points={quad([
-                  [0, 0, slab.z0],
-                  [panelW, 0, slab.z0],
-                  [panelW, panelH, slab.z0],
-                  [0, panelH, slab.z0],
-                ])}
-                fill={faceFill}
-              />
-              {slab.included && style.hatch !== undefined && (
-                <polygon
-                  points={quad([
-                    [0, 0, slab.z0],
-                    [panelW, 0, slab.z0],
-                    [panelW, panelH, slab.z0],
-                    [0, panelH, slab.z0],
-                  ])}
-                  fill={`url(#${style.hatch})`}
-                />
-              )}
-
-              {/* The cut along the top, where the members show end-on. */}
-              <polygon
-                points={quad([
-                  [0, 0, slab.z0],
-                  [panelW, 0, slab.z0],
-                  [panelW, 0, slab.z1],
-                  [0, 0, slab.z1],
-                ])}
-                fill={faceFill}
-                className="layup-top"
-              />
-              {membersOf(slab.layer).map((member, memberIndex) => (
-                <polygon
-                  key={memberIndex}
-                  points={quad([
-                    [member.x0, 0, slab.z0],
-                    [member.x1, 0, slab.z0],
-                    [member.x1, 0, slab.z1],
-                    [member.x0, 0, slab.z1],
-                  ])}
-                  fill={timber.fill}
-                  className="layup-member"
-                />
-              ))}
-
-              {/* The cut down the side. */}
-              <polygon
-                points={quad([
-                  [panelW, 0, slab.z0],
-                  [panelW, panelH, slab.z0],
-                  [panelW, panelH, slab.z1],
-                  [panelW, 0, slab.z1],
-                ])}
-                fill={faceFill}
-                className="layup-side"
-              />
-
-              <polygon
-                points={quad([
-                  [0, 0, slab.z0],
-                  [panelW, 0, slab.z0],
-                  [panelW, panelH, slab.z0],
-                  [0, panelH, slab.z0],
-                ])}
-                fill="none"
-                className="layup-edge"
-              />
-            </g>
-          );
-        })}
-
-        {/*
-          A number per layer, sitting on its own cut edge along the top. Numbered from
-          the inside out, the same direction the layer table runs in.
-        */}
-        {/*
-          Badges sit off the corner of each layer's cut. Two thin layers next to each
-          other would otherwise land on top of one another, so each is pushed clear of
-          the one before it — the leader line still points at the layer it belongs to.
-        */}
-        {(() => {
-          let lastBadgeY = Number.POSITIVE_INFINITY;
-          return slabs.map((slab) => {
-          const midDepth = (slab.z0 + slab.z1) / 2;
-          const badgeX = px(panelW, midDepth) + 16;
-          const naturalY = py(0, midDepth) + 4;
-          const badgeY = Math.min(naturalY, lastBadgeY - 18);
-          lastBadgeY = badgeY;
-          return (
-            <g key={`badge-${slab.layer.id}`} className="layup-badge-group">
-              <line
-                x1={px(panelW, midDepth)}
-                y1={py(0, midDepth)}
-                x2={badgeX - 8}
-                y2={badgeY}
-                className="layup-leader"
-              />
-              <circle cx={badgeX} cy={badgeY} r={8} className="layup-badge" />
-              <text x={badgeX} y={badgeY + 3.2} className="layup-badge-text" textAnchor="middle">
-                {slab.index + 1}
+              <circle cx={badge.x} cy={badge.y} r={8.5} className="layup-badge" />
+              <text x={badge.x} y={badge.y + 3.2} className="layup-badge-text" textAnchor="middle">
+                {badge.index + 1}
               </text>
             </g>
-          );
-          });
-        })()}
+          ))}
+        </svg>
 
-        <text x={originX} y={VIEW_H - 12} className="layup-side-label">
-          inside face
-        </text>
-        {/* On the back-left corner: the badges own the right-hand side. */}
-        <text x={px(0, totalDepth)} y={py(0, totalDepth) - 8} className="layup-side-label">
-          outside face
-        </text>
-      </svg>
+        <button
+          type="button"
+          className="layup-reset"
+          onClick={() => {
+            setYaw(DEFAULT_YAW);
+            setPitch(DEFAULT_PITCH);
+          }}
+        >
+          Reset view
+        </button>
+      </div>
 
       <ol className="layup-legend">
-        {slabs.map((slab) => (
+        {stack.map((slab) => (
           <li key={slab.layer.id}>
             <button
               type="button"
@@ -332,13 +491,15 @@ export function Layup3D({
       </ol>
 
       <figcaption>
-        An indicator of the order and relative thickness of the layers, not a construction
-        drawing — there are no junctions, fixings or detailing in it, and nothing here
-        feeds the calculation. The layers are pulled apart so the order can be read, so
-        the gaps between them mean nothing; thicknesses are to scale against each other,
-        except that the very thinnest are given a minimum depth to keep them visible. Studs and rafters appear end-on in
-        the cut along the top. <strong>Cross battens are not drawn yet</strong> — a second
-        layer of members running the other way is on the roadmap.
+        <strong>Drag to turn it.</strong> The layers are face to face with nothing between
+        them, as built; what makes each one visible is that it is cut back a little further
+        than the one in front. A bridged layer is built the way it is built — members with
+        the layer's material packed between them — so the studs show in the cut rather than
+        being buried. It is an indicator rather than a construction drawing: no junctions,
+        fixings or detailing, and nothing in it feeds the calculation. Layers thinner than
+        the drawing can show are given a minimum thickness.{' '}
+        <strong>Cross battens are not drawn yet</strong> — a second set of members running
+        the other way is on the roadmap.
       </figcaption>
     </figure>
   );

@@ -106,23 +106,25 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              The <strong>3D layup</strong> button swaps the section for an axonometric
-              view: the layers as slabs, pulled apart and stepped back so every one is
-              visible, numbered from the inside out to match the layer list. Studs and
-              rafters appear end-on in the cut along the top.
+              The <strong>3D layup</strong> button swaps the section for a cutaway you can
+              turn with the pointer. The layers sit <strong>face to face with nothing
+              between them</strong>, because that is how they get built; what makes each
+              one visible is that it is cut back a little further than the one in front,
+              the way a cutaway drawing has always worked — material removed, not moved.
             </p>
             <p>
-              <strong>It is an indicator, not a drawing.</strong> There are no junctions,
-              fixings or detailing in it, and nothing in it feeds the calculation — the
-              U-value comes from the layer table either way. The gaps between layers are
-              there to make the order readable and mean nothing; thicknesses are to scale
-              against each other, except that the very thinnest are given a minimum depth
-              so a vapour barrier does not vanish.
+              A bridged layer is modelled as it is built: members with the layer's material
+              packed between them. That is what lets you see a stud at all — sealed inside
+              one solid slab it would be invisible — and it is also the truth of the
+              construction.
             </p>
             <p>
-              Click a slab, or a line in the list beside it, to pick that layer out — the
-              selection carries back to the section and the layer table. Cross battens, a
-              second set of members running the other way, are not drawn yet.
+              <strong>It is an indicator, not a drawing.</strong> No junctions, fixings or
+              detailing, and nothing in it feeds the calculation — the U-value comes from
+              the layer table either way. Thicknesses are to scale against each other,
+              except that the very thinnest get a minimum so a vapour barrier does not
+              vanish. Click a layer or a line in the list to pick it out; the selection
+              carries back to the section. Cross battens are not drawn yet.
             </p>
           </>
         ),

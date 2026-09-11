@@ -2917,10 +2917,42 @@ body.is-dragging * {
   align-items: start;
 }
 
+.layup-stage {
+  position: relative;
+  min-width: 0;
+}
+
 .layup-3d svg {
   width: 100%;
   height: auto;
   display: block;
+  cursor: grab;
+  /* The drag turns the model; it must not also sweep a text selection across the page. */
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.layup-3d svg:active {
+  cursor: grabbing;
+}
+
+.layup-reset {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.layup-reset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .layup-3d figcaption {
@@ -2930,32 +2962,14 @@ body.is-dragging * {
   line-height: 1.45;
 }
 
-/* The two cut faces are shaded so the slab reads as solid rather than as an outline. */
-.layup-top {
-  filter: brightness(1.06);
-}
-
-.layup-side {
-  filter: brightness(0.9);
-}
-
-.layup-edge {
-  stroke: var(--layer-edge);
-  stroke-width: 0.8;
-}
-
-.layup-member {
-  stroke: var(--cat-timber-ink);
-  stroke-width: 0.7;
-}
-
-.layup-slab {
-  cursor: pointer;
-}
-
-.layup-slab.is-selected .layup-edge {
-  stroke: var(--accent);
-  stroke-width: 2;
+/*
+ * A hairline on every face. Without it two faces of the same material meeting edge-on
+ * dissolve into one shape and the solid stops reading as a solid.
+ */
+.layup-face {
+  stroke: rgba(60, 52, 40, 0.32);
+  stroke-width: 0.5;
+  stroke-linejoin: round;
 }
 
 .layup-badge {
@@ -2964,22 +2978,20 @@ body.is-dragging * {
   stroke-width: 0.9;
 }
 
+.layup-badge-group {
+  cursor: pointer;
+}
+
+.layup-badge-group.is-selected .layup-badge {
+  stroke: var(--accent);
+  stroke-width: 2;
+  fill: var(--accent-soft);
+}
+
 .layup-badge-text {
   font-size: 9px;
   font-weight: 700;
   fill: var(--ink);
-}
-
-.layup-leader {
-  stroke: var(--ink-faint);
-  stroke-width: 0.7;
-}
-
-.layup-side-label {
-  font-size: 9px;
-  fill: var(--ink-faint);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .layup-legend {
