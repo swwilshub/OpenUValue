@@ -178,25 +178,94 @@ export function makeLayerId(): string {
 /* --------------------------------------------------------- studs and rafters --- */
 
 /**
- * A repeating member's share of the element face is simply its width divided by its
- * spacing: 38 mm members at 400 mm centres occupy 9.5 % of the wall. That is plain
- * arithmetic and needs no standard behind it.
+ * The share of the element face taken by repeating members.
  *
- * What it does NOT include is the rest of the timber in a real wall - sole plates,
- * head plates, noggins, lintels and studs doubled at openings - which is why a
- * conventional whole-element allowance is usually larger than this figure. Typing the
- * percentage directly is the way to use such an allowance instead.
+ * BR 443 (2019), 4.5: "In general the fraction can be calculated as the timber width
+ * divided by the spacing interval, allowing for any additional cross pieces", and its
+ * worked examples add a flat 1 % for those cross pieces:
  *
- * TODO(verify): whether BR 443 prescribes how the bridged fraction for a timber-frame
- * wall is to be derived, and whether it gives a standard allowance to use in place of
- * a measured width and spacing.
+ *   35 mm joists at 600 mm centres: (35 / 600) + 0.01 = 0.068
+ *   50 mm joists at 400 mm centres: (50 / 400) + 0.01 = 0.135
+ *
+ * with the note "1% added for additional timbers". So the width-over-spacing figure on
+ * its own is an under-estimate, and the allowance is part of the convention rather
+ * than a safety margin someone added.
+ *
+ * It is still only the repeating members plus that allowance. BR 443 4.4.1 treats a
+ * whole timber-frame wall separately and gives a default of 15 %, because sole and head
+ * plates, lintels and doubled studs at openings are not a fixed percentage of anything
+ * — see BR443_TIMBER_FRACTION_DEFAULTS.
  */
+export const BR443_ADDITIONAL_TIMBER_ALLOWANCE = 0.01;
+
 export function bridgedPercentFromDimensions(widthMm: number, spacingMm: number): number {
   if (!Number.isFinite(widthMm) || !Number.isFinite(spacingMm) || spacingMm <= 0) {
     return 0;
   }
-  return Math.min(100, Math.max(0, (widthMm / spacingMm) * 100));
+  const fraction = widthMm / spacingMm + BR443_ADDITIONAL_TIMBER_ALLOWANCE;
+  return Math.min(100, Math.max(0, fraction * 100));
 }
+
+/**
+ * The defaults BR 443 (2019) gives for common cases, for use where the members are not
+ * being measured. Quoted with the clause each comes from so the choice is auditable.
+ */
+export interface TimberFractionDefault {
+  readonly id: string;
+  readonly label: string;
+  readonly percent: number;
+  readonly clause: string;
+  readonly note: string;
+}
+
+export const BR443_TIMBER_FRACTION_DEFAULTS: readonly TimberFractionDefault[] = [
+  {
+    id: 'timber-frame',
+    label: 'Timber frame wall',
+    percent: 15,
+    clause: 'BR 443 (2019) 4.4.1(i)',
+    note:
+      'Default for timber frame, based on 38 mm timbers at 600 mm centres. Additional ' +
+      'heat losses at corners, window surrounds and between floors are not counted in ' +
+      'the timber fraction — they belong to the junction ψ-values.',
+  },
+  {
+    id: 'timber-frame-improved',
+    label: 'Timber frame wall, improved detailing',
+    percent: 12.5,
+    clause: 'BR 443 (2019) 4.4.1(ii)',
+    note:
+      'Allowed only where all of BR 443 4.4.1(ii) is met: a single top plate, the sole ' +
+      'plate below finished floor level, no mid-height full-depth noggings, and studs ' +
+      'at internal wall junctions no deeper than 38 mm with continuous insulation behind.',
+  },
+  {
+    id: 'ceiling-joists',
+    label: 'Ceiling joists',
+    percent: 12.8,
+    clause: 'BR 443 (2019) 4.5.1',
+    note: 'Based on 47 mm timbers at 400 mm centres: (47 / 400) + 0.01.',
+  },
+  {
+    id: 'ceiling-joists-doubled',
+    label: 'Ceiling joists, doubled up',
+    percent: 16.7,
+    clause: 'BR 443 (2019) 4.5.2',
+    note:
+      'Joists at 600 mm centres may be inconsistently spaced and doubled: ' +
+      '(2 × 47) / 600 + 0.01.',
+  },
+  {
+    id: 'floor-joists',
+    label: 'Suspended timber floor joists',
+    percent: 10.8,
+    clause: 'BR 443 (2019) 4.5.3',
+    note:
+      'Based on 38 mm timbers at 400 mm centres plus a nogging every 3 m: ' +
+      '(38 / 400) + (38 / 3000). Note this one uses an explicit nogging term rather ' +
+      'than the flat 1 % allowance.',
+  },
+];
 
 /** A common UK stud size and spacing, used when studs are first added to a layer. */
 export const DEFAULT_STUD_WIDTH_MM = 38;
@@ -274,14 +343,19 @@ export function timberFrameExample(): UiState {
       layerFromMaterial('gypsum-plasterboard', 12.5),
       {
         ...insulation,
-        // 38 mm studs at 400 mm centres: 38/400 = 9.5 % of the wall face.
-        bridgedPercent: bridgedPercentFromDimensions(38, 400),
+        /*
+         * BR 443 (2019) 4.4.1(i) gives 15 % as the default timber fraction for a
+         * timber-frame wall — not the bare width-over-spacing figure, because plates,
+         * lintels and doubled studs at openings are not a fixed share of the spacing.
+         * So the example carries the convention rather than a measurement.
+         */
+        bridgedPercent: 15,
         bridgeLabel: 'Softwood stud',
         bridgeMaterialId: 'softwood-structural',
         bridgeLambdaWPerMK: 0.13,
-        bridgeSizing: 'dimensions',
+        bridgeSizing: 'fraction',
         bridgeWidthMm: 38,
-        bridgeSpacingMm: 400,
+        bridgeSpacingMm: 600,
       },
       layerFromMaterial('osb-board', 9),
       { ...blankAirLayer(), thicknessMm: 25, ventilation: 'well-ventilated' },

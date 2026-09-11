@@ -162,13 +162,28 @@ export const SATURATION_PRESSURE_DENOMINATOR_BELOW_ZERO = 265.5;
 /* -------------------------------------------------------------- reporting ----- */
 
 /**
- * Reporting precision. Calculation is at full double precision throughout; these
- * apply only at the point of display.
+ * Reporting precision. Calculation runs at full double precision; these apply only at
+ * the point of display.
  *
- * TODO(verify): the rounding requirements in BS EN ISO 6946 and BR 443 - understood
- * to be thermal resistances to three decimal places and U-values to two, but the
- * clause needs checking, as does whether BR 443 requires two significant figures for
- * small U-values.
+ * BS EN ISO 6946:2017, 6.5.2: "If the thermal transmittance is presented as a final
+ * result, it shall be rounded to two significant figures, and information shall be
+ * provided on the input data used for the calculation."
+ *
+ * Two significant figures is NOT two decimal places. They agree around U = 0.26 and
+ * part company at both ends: U = 0.0583 reports as 0.058, not 0.06, and U = 1.234
+ * reports as 1.2, not 1.23. The distinction matters most for the well-insulated
+ * elements this tool exists to help design.
+ *
+ * The same clause allows corrections to be omitted when they total less than 3 % of U
+ * — see DELTA_U_NEGLIGIBLE_FRACTION.
+ *
+ * TODO(verify): the rounding convention for thermal *resistance* as reported here.
+ * BS EN ISO 6946:2017 6.7.1.1 requires intermediate resistances to at least three
+ * decimal places, which is a floor on calculation rather than a rule for display, and
+ * BR 443 (2019) is silent on reporting precision. Three decimal places is our own
+ * choice, consistent with that floor.
  */
 export const RESISTANCE_REPORTING_DECIMAL_PLACES = 3;
-export const U_VALUE_REPORTING_DECIMAL_PLACES = 2;
+
+/** BS EN ISO 6946:2017, 6.5.2. */
+export const U_VALUE_REPORTING_SIGNIFICANT_FIGURES = 2;

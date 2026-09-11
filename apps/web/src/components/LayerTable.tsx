@@ -9,6 +9,7 @@ import {
 import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
 import { MaterialPicker } from './MaterialPicker.js';
 import {
+  BR443_TIMBER_FRACTION_DEFAULTS,
   DEFAULT_STUD_SPACING_MM,
   DEFAULT_STUD_WIDTH_MM,
   type UiLayer,
@@ -571,11 +572,40 @@ export function LayerTable({
                 {layer.bridgeSizing === 'dimensions' && (
                   <p className="footnote">
                     {layer.bridgeWidthMm} mm every {layer.bridgeSpacingMm} mm is{' '}
-                    {layer.bridgedPercent.toFixed(1)}% of the face. That is the repeating
-                    members only — plates, noggins and lintels are extra, so switch to a
-                    percentage to use a whole-element allowance instead.
+                    {((layer.bridgeWidthMm / layer.bridgeSpacingMm) * 100).toFixed(1)}%, plus
+                    the 1% BR 443 adds for additional timbers ={' '}
+                    <strong>{layer.bridgedPercent.toFixed(1)}%</strong> (BR 443 4.5). For a
+                    whole timber-frame wall BR 443 gives a flat default instead — pick one
+                    below, or switch to a percentage and type your own.
                   </p>
                 )}
+
+                <div className="br443-defaults">
+                  <span className="picker-label">BR 443 defaults</span>
+                  <div className="chip-row">
+                    {BR443_TIMBER_FRACTION_DEFAULTS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={
+                          Math.abs(layer.bridgedPercent - preset.percent) < 0.05 &&
+                          layer.bridgeSizing === 'fraction'
+                            ? 'chip is-current'
+                            : 'chip'
+                        }
+                        title={`${preset.clause} — ${preset.note}`}
+                        onClick={() =>
+                          update(index, {
+                            bridgeSizing: 'fraction',
+                            bridgedPercent: preset.percent,
+                          })
+                        }
+                      >
+                        {preset.label} {preset.percent}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

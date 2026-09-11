@@ -104,8 +104,18 @@ describe('calculateUValue, homogeneous elements (BS EN ISO 6946)', () => {
 describe('reporting precision', () => {
   it('rounds resistances to three decimal places and U-values to two', () => {
     expect(roundResistanceForReporting(3.8769265)).toBe(3.877);
+    // BS EN ISO 6946:2017, 6.5.2: two significant figures, not two decimal places.
     expect(roundUValueForReporting(0.2579363)).toBe(0.26);
-    expect(roundUValueForReporting(3.891697)).toBe(3.89);
+    // Where the two conventions part company: 3.891697 to two significant figures is
+    // 3.9, where two decimal places would have given 3.89.
+    expect(roundUValueForReporting(3.891697)).toBe(3.9);
+    // And at the well-insulated end, which is what this distinction is for: a Passivhaus
+    // wall at 0.0583 reports as 0.058, not as the 0.06 two decimal places would give.
+    expect(roundUValueForReporting(0.0583)).toBe(0.058);
+    expect(roundUValueForReporting(0.104)).toBe(0.1);
+    expect(roundUValueForReporting(12.34)).toBe(12);
+    // Zero has no significant figures to round to and passes through.
+    expect(roundUValueForReporting(0)).toBe(0);
   });
 
   it('passes a null U-value through unchanged, so out-of-scope stays out of scope', () => {
