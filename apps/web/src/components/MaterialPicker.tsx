@@ -192,8 +192,13 @@ export function MaterialPicker({
                         >
                           <MaterialSwatch category={material.category} size={18} />
                           <span className="picker-option-name">{material.name}</span>
-                          <span className="picker-option-lambda">
-                            {material.lambdaWPerMK} W/(m·K)
+                          <span className="picker-option-props">
+                            <span title="Thermal conductivity">
+                              λ {material.lambdaWPerMK}
+                            </span>
+                            <span title="Water vapour resistance factor: how many times harder than still air this is to get vapour through">
+                              μ {material.vapourResistanceFactorMu}
+                            </span>
                           </span>
                         </button>
                       </li>

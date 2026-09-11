@@ -14,6 +14,7 @@ export * from './types.js';
 export * from './constants.js';
 export * from './boundary.js';
 export * from './psychrometrics.js';
+export * from './vapour.js';
 export * from './rounding.js';
 export * from './surfaceResistance.js';
 export * from './airLayer.js';

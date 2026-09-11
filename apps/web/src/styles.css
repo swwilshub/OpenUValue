@@ -370,7 +370,12 @@ button.danger:hover {
 
 .layer-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) auto;
+  /*
+   * Four inputs across: material, thickness, lambda, mu. The readouts used to be a
+   * fifth column, but once they grew to R, Sd, delta and a class chip they squeezed
+   * the inputs down to unusable stubs, so they take a row of their own below.
+   */
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
   gap: 8px;
   align-items: end;
 }
@@ -382,7 +387,7 @@ button.danger:hover {
 }
 
 .bridging-grid {
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed var(--line);
@@ -1031,11 +1036,24 @@ button.danger:hover {
 
 /* ------------------------------------------------------ layer readouts etc ---- */
 
+/*
+ * A label that is a symbol rather than a word. The base label rule uppercases, which
+ * turns a lower-case mu into a capital Mu — visually an "M", and a different quantity.
+ */
+.symbol-label {
+  text-transform: none;
+  font-size: 13px;
+}
+
 .layer-readout {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 6px 14px;
+  margin-top: 2px;
+  padding-top: 7px;
+  border-top: 1px dotted var(--line);
 }
 
 .readout {
@@ -1402,6 +1420,65 @@ button.danger:hover {
   stroke: var(--surface);
   stroke-width: 3px;
   stroke-linejoin: round;
+}
+
+.callout-leader {
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+
+.callout-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  fill: var(--accent);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.tour-callout {
+  animation: tour-fade 420ms ease-out 500ms both;
+}
+
+/* Where the walkthrough admits a limit of the tool rather than teaching physics. */
+.tour-caveat {
+  padding: 9px 11px;
+  border-left: 3px solid var(--warn);
+  background: var(--warn-soft);
+  font-size: 12.5px;
+}
+
+/* The vapour behaviour of one layer, at a glance. */
+.vapour-chip {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.vapour-vapour-open {
+  background: #eef3ee;
+  color: var(--ok);
+}
+
+.vapour-vapour-retarding {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.vapour-vapour-barrier {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.picker-option-props {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 .risk-leader {

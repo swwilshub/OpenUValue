@@ -69,6 +69,18 @@ const INTERNAL_INSULATION: readonly TourLayer[] = [
   { id: 'brk', label: 'Solid brick', thicknessMm: 215, lambdaWPerMK: 0.77, vapourResistanceFactorMu: 10, category: 'masonry' },
 ];
 
+/**
+ * The same internally-insulated wall with a polythene vapour control layer on the warm
+ * side of the insulation. 0.2 mm thick, so thermally it does nothing at all; at
+ * mu = 100 000 it is worth 20 m of still air to vapour.
+ */
+const INTERNAL_INSULATION_WITH_VCL: readonly TourLayer[] = [
+  { id: 'pb', label: 'Plasterboard', thicknessMm: 12.5, lambdaWPerMK: 0.25, vapourResistanceFactorMu: 10, category: 'plaster-and-render' },
+  { id: 'vcl', label: 'Polythene sheet', thicknessMm: 0.2, lambdaWPerMK: 0.33, vapourResistanceFactorMu: 100000, category: 'membrane' },
+  { id: 'ins', label: 'Mineral wool', thicknessMm: 100, lambdaWPerMK: 0.035, vapourResistanceFactorMu: 1, category: 'insulation' },
+  { id: 'brk', label: 'Solid brick', thicknessMm: 215, lambdaWPerMK: 0.77, vapourResistanceFactorMu: 10, category: 'masonry' },
+];
+
 /** The same wall insulated on the outside instead. */
 const EXTERNAL_INSULATION: readonly TourLayer[] = [
   { id: 'brk', label: 'Solid brick', thicknessMm: 215, lambdaWPerMK: 0.77, vapourResistanceFactorMu: 10, category: 'masonry' },
@@ -79,8 +91,10 @@ const EXTERNAL_INSULATION: readonly TourLayer[] = [
 /* ------------------------------------------------------------- the drawing ---- */
 
 const WIDTH = 560;
-const HEIGHT = 210;
-const PAD_TOP = 14;
+/** Tall enough to keep the plot the same height once the callout has its headroom. */
+const HEIGHT = 222;
+/** Leaves room above the plot for a callout on a layer too thin to label in place. */
+const PAD_TOP = 26;
 const FILM = 26;
 
 interface TourFigureProps {
@@ -89,6 +103,8 @@ interface TourFigureProps {
   readonly showDewPoint: boolean;
   readonly showRisk: boolean;
   readonly showLayerNames: boolean;
+  /** Point at one layer by id, for a layer too thin to notice on its own. */
+  readonly calloutLayerId?: string;
 }
 
 function TourFigure({
@@ -97,6 +113,7 @@ function TourFigure({
   showDewPoint,
   showRisk,
   showLayerNames,
+  calloutLayerId,
 }: TourFigureProps): JSX.Element {
   const element = useMemo(() => toElement('tour', layers), [layers]);
   const result = useMemo(() => calculateUValue(element), [element]);
@@ -112,7 +129,10 @@ function TourFigure({
   const boxes: { layer: TourLayer; x: number; width: number }[] = [];
   let cursor = FILM;
   for (const layer of layers) {
-    const width = layer.thicknessMm * scale;
+    // A 0.2 mm sheet in a 330 mm wall is a third of a pixel. Draw it at a minimum
+    // width so it exists on screen; the caption says which layers this applies to.
+    const trueWidth = layer.thicknessMm * scale;
+    const width = Math.max(1.6, trueWidth);
     boxes.push({ layer, x: cursor, width });
     cursor += width;
   }
@@ -137,6 +157,11 @@ function TourFigure({
   const points = profile.nodes
     .map((node, index) => `${nodeX(index).toFixed(1)},${toY(node.temperatureC).toFixed(1)}`)
     .join(' ');
+
+  const calloutBox =
+    calloutLayerId === undefined
+      ? undefined
+      : boxes.find((box) => box.layer.id === calloutLayerId);
 
   // The coldest interface that is below the internal dew point, which is the one worth
   // pointing at. Surfaces are excluded: the internal one is a different phenomenon
@@ -269,6 +294,34 @@ function TourFigure({
           </g>
         )}
 
+        {calloutBox !== undefined && (
+          <g className="tour-callout">
+            <line
+              x1={calloutBox.x + calloutBox.width / 2}
+              y1={PAD_TOP}
+              x2={calloutBox.x + calloutBox.width / 2}
+              y2={PAD_TOP - 7}
+              className="callout-leader"
+            />
+            <text
+              x={calloutBox.x + calloutBox.width / 2}
+              y={PAD_TOP - 10}
+              className="callout-label"
+              textAnchor="middle"
+            >
+              {calloutBox.layer.thicknessMm} mm · S
+              <tspan baselineShift="sub" fontSize="7">
+                d
+              </tspan>{' '}
+              {(
+                (calloutBox.layer.vapourResistanceFactorMu * calloutBox.layer.thicknessMm) /
+                1000
+              ).toFixed(0)}{' '}
+              m
+            </text>
+          </g>
+        )}
+
         <text x="2" y={HEIGHT - 8} className="side-label">
           inside
         </text>
@@ -294,6 +347,7 @@ interface Step {
   readonly showDewPoint: boolean;
   readonly showRisk: boolean;
   readonly showLayerNames: boolean;
+  readonly calloutLayerId?: string;
 }
 
 const STEPS: readonly Step[] = [
@@ -392,7 +446,45 @@ const STEPS: readonly Step[] = [
     ),
   },
   {
-    title: 'The same wall, insulated outside',
+    title: 'One fix: a vapour barrier',
+    layers: INTERNAL_INSULATION_WITH_VCL,
+    showTemperature: true,
+    showDewPoint: true,
+    showLayerNames: true,
+    showRisk: true,
+    calloutLayerId: 'vcl',
+    body: (
+      <>
+        <p>
+          The same wall again, with one thing added: a sheet of polythene on the warm side
+          of the insulation, <strong>0.2 mm thick</strong>. It is the hairline marked at the
+          top of the drawing — at this scale it is barely a line.
+        </p>
+        <p>
+          Look at what did <em>not</em> change. The temperature line is in exactly the same
+          place, and the U-value is identical to two decimal places: a fifth of a millimetre
+          of plastic is worth nothing thermally. The junction out at the brick is still at
+          1.9 °C and is <strong>still flagged</strong>.
+        </p>
+        <p>
+          What changed is invisible on this drawing. Before the sheet, everything between the
+          room and that cold junction added up to 0.23 m of equivalent still air. With it,
+          <strong> 20.2 m</strong> — about ninety times harder for vapour to cross. The
+          moisture largely never arrives, so it cannot condense.
+        </p>
+        <p className="tour-caveat">
+          This is exactly why OpenUValue calls its dew-point check a{' '}
+          <strong>screening indicator</strong> rather than a verdict. Being colder than the
+          dew point is necessary for condensation but not sufficient — whether vapour gets
+          there is the other half, and judging that properly is a BS EN ISO 13788 calculation
+          this tool does not yet do. The S<sub>d</sub> figures beside each layer are what you
+          would weigh up by hand in the meantime.
+        </p>
+      </>
+    ),
+  },
+  {
+    title: 'The better fix: insulate outside',
     layers: EXTERNAL_INSULATION,
     showTemperature: true,
     showDewPoint: true,
@@ -403,7 +495,9 @@ const STEPS: readonly Step[] = [
         <p>
           Move the insulation to the outside face and the brick sits on the warm side of it. The
           whole masonry wall now stays well above the dew point, and the cold part of the
-          build-up is the insulation and render, which tolerate it.
+          build-up is the insulation and render, which tolerate it. Nothing has to be kept dry
+          by a sheet of plastic that has to be installed perfectly and stay intact for decades:
+          the geometry does the work.
         </p>
         <p>
           Same wall, same insulation, same weather — the order of the layers is what changed.
@@ -478,6 +572,7 @@ export function IntroTour({ open, onClose }: IntroTourProps): JSX.Element | null
           showDewPoint={current.showDewPoint}
           showRisk={current.showRisk}
           showLayerNames={current.showLayerNames}
+          calloutLayerId={current.calloutLayerId}
         />
 
         <div className="tour-body">{current.body}</div>

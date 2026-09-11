@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import type { UValueResult } from '@openuvalue/engine';
-import { roundResistanceForReporting } from '@openuvalue/engine';
+import {
+  roundResistanceForReporting,
+  vapourClassForSd,
+  vapourPermeabilityKgPerMSPa,
+  vapourResistanceMNsPerG,
+} from '@openuvalue/engine';
 import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
 import { MaterialPicker } from './MaterialPicker.js';
 import {
@@ -20,6 +25,22 @@ export interface LayerTableProps {
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
 }
+
+
+/**
+ * Permeability runs from about 2e-10 for air down to 2e-15 for polythene, so it is
+ * only readable in scientific notation. Rendered as "2.0e-10" rather than with a
+ * superscript, because it sits inline in a dense row of numbers.
+ */
+function formatPermeability(deltaKgPerMSPa: number): string {
+  return deltaKgPerMSPa.toExponential(1);
+}
+
+const VAPOUR_CLASS_LABELS = {
+  'vapour-open': 'vapour open',
+  'vapour-retarding': 'vapour retarding',
+  'vapour-barrier': 'vapour barrier',
+} as const;
 
 const VENTILATION_LABELS = {
   unventilated: 'Unventilated',
@@ -345,7 +366,10 @@ export function LayerTable({
               )}
 
               {layer.kind === 'solid' && (
-                <label title="Water vapour resistance factor, dimensionless">
+                <label
+                  className="symbol-label"
+                  title="Water vapour resistance factor, dimensionless"
+                >
                   μ
                   <input
                     type="number"
@@ -372,18 +396,46 @@ export function LayerTable({
                   </span>
                   <span className="readout-unit">m²K/W</span>
                 </span>
-                {layer.kind === 'solid' && (
-                  <span className="readout" title="Equivalent air layer thickness, Sd = μ × d">
-                    <span className="readout-label">
-                      S<sub>d</sub>
+                {layer.kind === 'solid' && reported !== undefined && (
+                  <>
+                    <span
+                      className="readout"
+                      title={
+                        `Equivalent air layer thickness: this layer holds back as much ` +
+                        `water vapour as ${reported.vapourDiffusionThicknessSdM.toFixed(2)} m ` +
+                        `of still air (${vapourResistanceMNsPerG(
+                          reported.vapourDiffusionThicknessSdM,
+                        ).toFixed(1)} MN·s/g)`
+                      }
+                    >
+                      <span className="readout-label">
+                        S<sub>d</sub>
+                      </span>
+                      <span className="readout-value">
+                        {reported.vapourDiffusionThicknessSdM.toFixed(2)}
+                      </span>
+                      <span className="readout-unit">m</span>
                     </span>
-                    <span className="readout-value">
-                      {reported === undefined
-                        ? '—'
-                        : reported.vapourDiffusionThicknessSdM.toFixed(2)}
+                    <span
+                      className="readout"
+                      title="Water vapour permeability, δ = δ of still air ÷ μ"
+                    >
+                      <span className="readout-label">δ</span>
+                      <span className="readout-value">
+                        {formatPermeability(vapourPermeabilityKgPerMSPa(
+                          layer.vapourResistanceFactorMu,
+                        ))}
+                      </span>
+                      <span className="readout-unit">kg/(m·s·Pa)</span>
                     </span>
-                    <span className="readout-unit">m</span>
-                  </span>
+                    <span className={`vapour-chip vapour-${vapourClassForSd(
+                      reported.vapourDiffusionThicknessSdM,
+                    )}`}>
+                      {VAPOUR_CLASS_LABELS[
+                        vapourClassForSd(reported.vapourDiffusionThicknessSdM)
+                      ]}
+                    </span>
+                  </>
                 )}
               </div>
             </div>
