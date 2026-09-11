@@ -473,18 +473,19 @@ export const CHAPTERS: readonly GuideChapter[] = [
               because their centres are 638 mm apart.
             </p>
             <p>
-              Once a width and a spacing are set, the members are drawn in the band under
-              the cross-section, at their true width and pitch. That band looks{' '}
-              <em>along</em> the wall rather than through it, so its vertical scale is a
-              length — which is why it is a separate register rather than being drawn over
-              the temperature plot, where height already means degrees.
+              Once a width and a spacing are set, the members appear in the cross-section
+              itself, inside the layer they bridge, at their true width and pitch. The
+              height of the drawing is a length of wall — the caption says how much — so
+              the spacing you can see is the spacing you typed. The temperature line is an
+              overlay on that section, read against the degrees axis on the right: a
+              member drawn level with a temperature does not mean anything by it.
             </p>
             <p>
               Or enter a fraction directly if you are using a convention. BR 443 publishes
               defaults — 15 % for a timber-framed wall — which is more than width ÷ spacing,
               because plates, lintels and doubled studs at openings are timber too. A layer
-              given that way has no geometry to draw, so its column in the band is marked
-              as having no spacing rather than left looking empty.
+              given that way has no geometry to draw, so it carries its percentage on its
+              label but no members in the drawing.
             </p>
           </>
         ),
