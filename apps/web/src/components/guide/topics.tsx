@@ -574,7 +574,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
       },
       {
         id: 'layer-cavity',
-        title: 'Cavities and ventilation',
+        title: 'Cavities: type, ventilation and reflective faces',
         figure: <CavityFigure />,
         body: (
           <>
@@ -582,12 +582,25 @@ export const CHAPTERS: readonly GuideChapter[] = [
               An air cavity insulates because the air in it is still. Let outside air wash through
               and it stops: an <strong>unventilated</strong> cavity carries its full resistance, a{' '}
               <strong>well-ventilated</strong> one carries none — and everything outside it is
-              disregarded too, because it is at outdoor temperature.
+              disregarded too, because it is at outdoor temperature. The openings figure, in mm²
+              per metre, is what decides which of the three classes applies.
             </p>
             <p>
-              The openings figure, in mm² per metre, is what decides which of the three classes
-              applies. A cavity behind rainscreen cladding is usually well ventilated whether the
-              designer meant it or not.
+              <strong>Cavity type</strong> sets all of that at once for the cases that actually
+              come up. The timber frame one is worth knowing about: a timber framed wall has to be
+              drained and vented, and the NHBC requirement of an open perpend every 1.2 m comes to
+              roughly 580 mm² per metre — over the 500 mm² threshold, so that cavity is{' '}
+              <em>slightly</em> ventilated, not unventilated, even though nobody set out to
+              ventilate it.
+            </p>
+            <p>
+              <strong>Surfaces</strong> is about radiation. Most of the heat crossing a still air
+              gap crosses it as radiation, so a reflective face — foil on the back of a board —
+              roughly doubles the cavity's resistance: 0.44 m²K/W in a wall against 0.18. It only
+              counts where the foil actually faces the air space; foil buried between two solid
+              layers does nothing at all. Below 25 mm the benefit falls away, and for a thin
+              reflective cavity in a roof or floor there is no published figure, so the tool uses
+              the ordinary value and says so rather than guessing.
             </p>
           </>
         ),

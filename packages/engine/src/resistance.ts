@@ -58,7 +58,12 @@ export function layerSectionResistances(
       // A slightly ventilated layer takes the unventilated table value here; its
       // ventilation is resolved at assembly level (see assembly.ts). A well
       // ventilated layer is disregarded there and never reaches this function.
-      const air = unventilatedAirLayerResistanceM2KPerW(layer.thicknessM, direction, layer.id);
+      const air = unventilatedAirLayerResistanceM2KPerW(
+        layer.thicknessM,
+        direction,
+        layer.id,
+        layer.emissivity ?? 'high',
+      );
       return {
         unbridgedM2KPerW: air.resistanceM2KPerW,
         bridgingAreaFraction: 0,

@@ -1,5 +1,6 @@
 import type {
   AirGapLevel,
+  AirLayerEmissivity,
   AirLayerVentilation,
   BuildingElement,
   EnvironmentConditions,
@@ -64,6 +65,11 @@ export interface UiLayer {
   /** Air layers only. */
   readonly ventilation: AirLayerVentilation;
   readonly openingAreaMm2PerM: number;
+  /**
+   * Air layers only: whether a surface bounding the cavity is reflective. BR 443 4.7.2 —
+   * only counts where the reflective face actually looks into the air space.
+   */
+  readonly emissivity: AirLayerEmissivity;
 }
 
 export interface UiState {
@@ -374,6 +380,7 @@ export function blankSolidLayer(): UiLayer {
     bridgeDistanceBasis: 'centres',
     ventilation: 'unventilated',
     openingAreaMm2PerM: 0,
+    emissivity: 'high',
   };
 }
 
@@ -392,6 +399,90 @@ export function layerFromMaterial(materialId: string, thicknessMm: number): UiLa
     lambdaWPerMK: engineMaterial.lambdaWPerMK,
     vapourResistanceFactorMu: engineMaterial.vapourResistanceFactorMu,
   };
+}
+
+/**
+ * The cavities that actually turn up in UK construction, each with the ventilation class
+ * and emissivity that go with it, so a cavity can be chosen by what it *is* rather than by
+ * setting three fields correctly.
+ *
+ * Every one is BR 443 (2019) 4.7, quoted in its note.
+ */
+export interface CavityPreset {
+  readonly id: string;
+  readonly label: string;
+  readonly thicknessMm: number;
+  readonly ventilation: AirLayerVentilation;
+  readonly openingAreaMm2PerM: number;
+  readonly emissivity: AirLayerEmissivity;
+  readonly note: string;
+}
+
+export const CAVITY_PRESETS: readonly CavityPreset[] = [
+  {
+    id: 'unventilated-masonry',
+    label: 'Unventilated cavity, ordinary surfaces',
+    thicknessMm: 50,
+    ventilation: 'unventilated',
+    openingAreaMm2PerM: 0,
+    emissivity: 'high',
+    note:
+      'Still air between ordinary building surfaces. BR 443 (2019) 4.7.1: "Cavities in ' +
+      'unventilated masonry wall constructions normally have R = 0.18 m²K/W."',
+  },
+  {
+    id: 'unventilated-low-e',
+    label: 'Unventilated cavity, one reflective face',
+    thicknessMm: 25,
+    ventilation: 'unventilated',
+    openingAreaMm2PerM: 0,
+    emissivity: 'low',
+    note:
+      'A foil face looking into the cavity cuts the radiation across it and roughly ' +
+      'doubles its resistance — 0.44 m²K/W in a wall against 0.18. BR 443 (2019) 4.7.2, ' +
+      'at e = 0.2 and at least 25 mm wide. The foil only counts if it faces the air space.',
+  },
+  {
+    id: 'slightly-ventilated-timber-frame',
+    label: 'Slightly ventilated cavity, timber frame',
+    thicknessMm: 50,
+    ventilation: 'slightly-ventilated',
+    openingAreaMm2PerM: 580,
+    emissivity: 'high',
+    note:
+      'BR 443 (2019) 4.7.1 works this one through: a timber framed wall has to be drained ' +
+      'and vented, and the NHBC requirement of an open perpend every 1.2 m comes to about ' +
+      '580 mm² per metre — over the 500 mm² threshold, so the cavity is slightly ' +
+      'ventilated rather than unventilated.',
+  },
+  {
+    id: 'well-ventilated-rainscreen',
+    label: 'Well ventilated cavity, behind cladding',
+    thicknessMm: 50,
+    ventilation: 'well-ventilated',
+    openingAreaMm2PerM: 1500,
+    emissivity: 'high',
+    note:
+      'A cavity behind tile hanging, boarding or a rainscreen. BR 443 (2019) 4.7.1 calls ' +
+      'this out as a well ventilated cavity: the air in it is at outdoor temperature, so ' +
+      'it and everything outboard of it are disregarded, and the outer surface resistance ' +
+      'rises because the cladding shelters the wall.',
+  },
+];
+
+export function cavityPreset(id: string): CavityPreset | undefined {
+  return CAVITY_PRESETS.find((preset) => preset.id === id);
+}
+
+/** Which preset a cavity currently matches, if any. */
+export function matchingCavityPreset(layer: UiLayer): CavityPreset | undefined {
+  return CAVITY_PRESETS.find(
+    (preset) =>
+      preset.ventilation === layer.ventilation &&
+      preset.emissivity === layer.emissivity &&
+      (preset.ventilation !== 'slightly-ventilated' ||
+        preset.openingAreaMm2PerM === layer.openingAreaMm2PerM),
+  );
 }
 
 export function blankAirLayer(): UiLayer {
@@ -505,6 +596,7 @@ export function toBuildingElement(state: UiState): BuildingElement {
         thicknessM: millimetresToMetres(layer.thicknessMm),
         ventilation: layer.ventilation,
         openingAreaMm2PerM: layer.openingAreaMm2PerM,
+        emissivity: layer.emissivity,
       };
     }
     const solid = {

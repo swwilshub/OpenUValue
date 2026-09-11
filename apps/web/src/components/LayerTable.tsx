@@ -10,6 +10,9 @@ import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
 import { MaterialPicker } from './MaterialPicker.js';
 import {
   BR443_TIMBER_FRACTION_DEFAULTS,
+  CAVITY_PRESETS,
+  cavityPreset,
+  matchingCavityPreset,
   type BridgeDistanceBasis,
   bridgePitchMm,
   DEFAULT_STUD_SPACING_MM,
@@ -357,25 +360,34 @@ export function LayerTable({
                 />
               ) : (
                 <label>
-                  Ventilation
+                  Cavity type
                   <HelpButton
                     topicId="layer-cavity"
-                    label="cavity ventilation"
+                    label="cavity type and ventilation"
                     onOpen={onOpenGuide}
                   />
                   <select
-                    value={layer.ventilation}
-                    onChange={(event) =>
+                    value={matchingCavityPreset(layer)?.id ?? 'custom'}
+                    onChange={(event) => {
+                      const preset = cavityPreset(event.target.value);
+                      if (preset === undefined) {
+                        return;
+                      }
                       update(index, {
-                        ventilation: event.target.value as UiLayer['ventilation'],
-                      })
-                    }
+                        ventilation: preset.ventilation,
+                        openingAreaMm2PerM: preset.openingAreaMm2PerM,
+                        emissivity: preset.emissivity,
+                      });
+                    }}
                   >
-                    {Object.entries(VENTILATION_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
+                    {CAVITY_PRESETS.map((preset) => (
+                      <option key={preset.id} value={preset.id} title={preset.note}>
+                        {preset.label}
                       </option>
                     ))}
+                    {matchingCavityPreset(layer) === undefined && (
+                      <option value="custom">Custom</option>
+                    )}
                   </select>
                 </label>
               )}
@@ -425,6 +437,45 @@ export function LayerTable({
                       })
                     }
                   />
+                </label>
+              )}
+
+              {layer.kind === 'air' && (
+                <label title="Set directly when the cavity does not match one of the types above.">
+                  Ventilation
+                  <select
+                    value={layer.ventilation}
+                    onChange={(event) =>
+                      update(index, {
+                        ventilation: event.target.value as UiLayer['ventilation'],
+                      })
+                    }
+                  >
+                    {(Object.keys(VENTILATION_LABELS) as UiLayer['ventilation'][]).map(
+                      (kind) => (
+                        <option key={kind} value={kind}>
+                          {VENTILATION_LABELS[kind]}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+              )}
+
+              {layer.kind === 'air' && (
+                <label className="symbol-label" title="Whether a surface facing the cavity is reflective — foil, usually. BR 443 (2019) 4.7.2.">
+                  Surfaces
+                  <select
+                    value={layer.emissivity}
+                    onChange={(event) =>
+                      update(index, {
+                        emissivity: event.target.value as UiLayer['emissivity'],
+                      })
+                    }
+                  >
+                    <option value="high">Ordinary</option>
+                    <option value="low">One reflective (e = 0.2)</option>
+                  </select>
                 </label>
               )}
 

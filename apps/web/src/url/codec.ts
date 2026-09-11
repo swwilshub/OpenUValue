@@ -44,6 +44,8 @@ interface EncodedLayer {
   readonly bdb?: 'centres' | 'clear';
   readonly v?: AirLayerVentilation;
   readonly o?: number;
+  /** Air layers: surface emissivity. Absent in links written before it existed. */
+  readonly em?: 'high' | 'low';
 }
 
 interface EncodedState {
@@ -141,7 +143,12 @@ export function encodeState(state: UiState): string {
         u: layer.vapourResistanceFactorMu,
       };
       if (layer.kind === 'air') {
-        return { ...base, v: layer.ventilation, o: layer.openingAreaMm2PerM };
+        return {
+          ...base,
+          v: layer.ventilation,
+          o: layer.openingAreaMm2PerM,
+          em: layer.emissivity,
+        };
       }
       if (layer.bridgedPercent > 0) {
         return {
@@ -209,6 +216,8 @@ function decodeLayer(raw: unknown): UiLayer {
     bridgeSizing: raw['bz'] === 'dimensions' ? 'dimensions' : 'fraction',
     bridgeWidthMm: Math.max(0, finiteNumber(raw['bw'], base.bridgeWidthMm)),
     bridgeSpacingMm: Math.max(1, finiteNumber(raw['bsp'], base.bridgeSpacingMm)),
+    // An older link meant ordinary surfaces, which is what every cavity was then.
+    emissivity: raw['em'] === 'low' ? 'low' : 'high',
     // A link written before the basis existed meant centres, which is what the field
     // always was, so an absent value decodes to that rather than changing the geometry.
     bridgeDistanceBasis: raw['bdb'] === 'clear' ? 'clear' : 'centres',

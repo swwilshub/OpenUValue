@@ -66,12 +66,25 @@ export interface SolidLayer {
  */
 export type AirLayerVentilation = 'unventilated' | 'slightly-ventilated' | 'well-ventilated';
 
+/**
+ * Emissivity of the surfaces bounding an air layer. 'high' is ordinary building
+ * materials; 'low' is a reflective face — foil, most often — which cuts the radiation
+ * across the gap and roughly doubles its resistance. BR 443 (2019) 4.7.2.
+ */
+export type AirLayerEmissivity = 'high' | 'low';
+
 export interface AirLayer {
   readonly kind: 'air';
   readonly id: string;
   readonly label: string;
   readonly thicknessM: Metres;
   readonly ventilation: AirLayerVentilation;
+  /**
+   * Whether a surface bounding the cavity is low-emissivity. Defaults to 'high'.
+   * A low-emissivity surface only counts if it faces an air space: BR 443 4.7.2, "A low
+   * emissivity surface has no effect on the U-value if not adjacent to an air space".
+   */
+  readonly emissivity?: AirLayerEmissivity;
   /** Area of openings to the outside per metre of length. Required when slightly ventilated. */
   readonly openingAreaMm2PerM?: number;
 }

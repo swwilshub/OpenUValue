@@ -105,6 +105,67 @@ export const UNVENTILATED_AIR_LAYER_TABLE: readonly AirLayerTableRow[] = [
  * TODO(verify): both thresholds and their clause in BS EN ISO 6946, including whether
  * the figures differ for walls (per metre of length) and roofs (per m^2 of area).
  */
+
+/**
+ * Unventilated air layers bounded by a **low-emissivity** surface — foil-faced board
+ * facing a cavity, most often.
+ *
+ * A reflective surface cuts the radiation across the gap, and radiation is most of what
+ * crosses a still air layer, so the resistance roughly doubles. BR 443 (2019) 4.7.2:
+ * "When the calculated resistance is not available for products with low-emissivity
+ * surface (e.g. foil-faced products with the foil adjacent to an unventilated airspace of
+ * width at least 25 mm), the thermal resistance of the airspace may be taken as" —
+ *
+ *   heat flow horizontal (wall),  e = 0.2   R = 0.44
+ *   heat flow upwards (roof),     e = 0.2   R = 0.34
+ *   heat flow downwards (floor),  e = 0.2   R = 0.50
+ *
+ * Below 25 mm the resistance falls away, and BR 443 gives figures only for walls: 10 mm
+ * is 0.29 and 5 mm is 0.17, with 20 mm "still close to that for 25 mm". Those three wall
+ * points are tabulated here and interpolated between; see VERIFY.md for what that costs
+ * between 10 and 25 mm.
+ *
+ * There is no data for a thin low-emissivity cavity in a roof or a floor, so none is
+ * invented — airLayer.ts falls back to the high-emissivity value there and says so, which
+ * under-states the resistance rather than over-stating it.
+ *
+ * BR 443 4.7.2 also warns that an emissivity below 0.2 may only be used where it comes
+ * from a certificate issued by an accredited body, and that BS EN 15976 cannot measure
+ * below 0.02 so nothing lower can be declared at all. This engine models the 0.2 case
+ * only, which is the one BR 443 tabulates.
+ */
+export interface LowEmissivityAirLayerRow {
+  readonly thicknessM: number;
+  readonly horizontal: SquareMetreKelvinPerWatt;
+}
+
+/** BR 443 (2019) 4.7.2, wall applications at e = 0.2. */
+export const LOW_EMISSIVITY_AIR_LAYER_WALL_TABLE: readonly LowEmissivityAirLayerRow[] = [
+  { thicknessM: 0.005, horizontal: 0.17 },
+  { thicknessM: 0.01, horizontal: 0.29 },
+  { thicknessM: 0.025, horizontal: 0.44 },
+];
+
+/**
+ * BR 443 (2019) 4.7.2, at or above 25 mm, e = 0.2. Flat with thickness: "The thermal
+ * resistance for unventilated cavities larger than 25 mm will remain unchanged with
+ * respect to the thickness of the cavity if the same emissivity value is used."
+ */
+export const LOW_EMISSIVITY_AIR_LAYER_M2K_PER_W: Readonly<
+  Record<HeatFlowDirection, SquareMetreKelvinPerWatt>
+> = {
+  horizontal: 0.44,
+  upward: 0.34,
+  downward: 0.5,
+};
+
+/** The emissivity BR 443 4.7.2 tabulates, and the least that may be declared at all. */
+export const LOW_EMISSIVITY_TABULATED = 0.2;
+export const MIN_DECLARABLE_EMISSIVITY = 0.02;
+
+/** Thickness at and above which the low-emissivity values are flat. */
+export const LOW_EMISSIVITY_FULL_THICKNESS_M = 0.025;
+
 export const SLIGHTLY_VENTILATED_MIN_OPENING_AREA_MM2_PER_M = 500;
 export const WELL_VENTILATED_MIN_OPENING_AREA_MM2_PER_M = 1500;
 
