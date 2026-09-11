@@ -42,6 +42,13 @@ const CALLOUT_GAP = 12;
 const CALLOUT_MAX_WIDTH = 210;
 /** Approximate advance width of one character at the callout's 10.5px size. */
 const CALLOUT_CHAR_WIDTH = 5.6;
+/** Half-width of a resize handle's grab area, and the least thickness a drag may set. */
+const RESIZE_GRAB_HALF_WIDTH = 6;
+const MIN_THICKNESS_MM = 1;
+const MAX_THICKNESS_MM = 2000;
+/** Thicknesses land on this step, so a drag gives a buildable number rather than 97.3184. */
+const RESIZE_STEP_MM = 0.5;
+
 /** Minimum drawn width before a layer can carry its thickness caption. */
 const MIN_WIDTH_FOR_CAPTION = 26;
 /**
@@ -115,6 +122,8 @@ export interface CrossSectionProps {
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
   /** Reorder by dragging a layer along the drawing. Same contract as the table's. */
   readonly onReorder?: ((from: number, to: number) => void) | undefined;
+  /** Change a layer's thickness by dragging the handle on its outer edge. */
+  readonly onResizeLayer?: ((index: number, thicknessMm: number) => void) | undefined;
 }
 
 export function CrossSection({
@@ -124,6 +133,7 @@ export function CrossSection({
   selectedLayerId,
   onSelectLayer,
   onReorder,
+  onResizeLayer,
 }: CrossSectionProps): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null);
   /**
@@ -141,6 +151,23 @@ export function CrossSection({
     /** How far into the layer it was picked up, so it does not jump under the cursor. */
     readonly grabOffsetX: number;
   } | null>(null);
+  /**
+   * Resizing a layer by its edge handle.
+   *
+   * The drawing is scaled so the build-up fills the width, so growing a layer would
+   * normally shrink the scale and slide the edge out from under the pointer — the handle
+   * would run away as you chased it. Both the scale and the width of the viewBox are
+   * therefore frozen at the moment the handle is grabbed, which makes the drag exactly
+   * one-to-one; the drawing refits when the handle is let go.
+   */
+  const [resize, setResize] = useState<{
+    readonly index: number;
+    readonly startClientX: number;
+    readonly startThicknessMm: number;
+    readonly frozenScale: number;
+    readonly frozenViewBoxWidth: number;
+  } | null>(null);
+
   const totalThicknessMm = layers.reduce((total, layer) => total + layer.thicknessMm, 0);
   if (layers.length === 0 || totalThicknessMm <= 0) {
     return (
@@ -152,7 +179,7 @@ export function CrossSection({
 
   const includedFlags = result.layers.map((layer) => layer.includedInCalculation);
   const lastIncludedIndex = includedFlags.lastIndexOf(true);
-  const scale = DRAW_WIDTH / totalThicknessMm;
+  const scale = resize === null ? DRAW_WIDTH / totalThicknessMm : resize.frozenScale;
 
   /**
    * Whether a drag has passed the threshold that tells it apart from a click. Until it
@@ -331,7 +358,8 @@ export function CrossSection({
     gridTemperatures.push(Number(value.toFixed(6)));
   }
 
-  const viewBoxWidth = totalWidth + AXIS_WIDTH - VIEWBOX_MIN_X;
+  const viewBoxWidth =
+    resize === null ? totalWidth + AXIS_WIDTH - VIEWBOX_MIN_X : resize.frozenViewBoxWidth;
 
   /*
    * The stud register. Only layers sized by width-and-spacing can be drawn: a layer
@@ -413,6 +441,46 @@ export function CrossSection({
       return 0;
     }
     return VIEWBOX_MIN_X + ((clientX - rect.left) / rect.width) * viewBoxWidth;
+  };
+
+  const beginResize = (
+    event: React.PointerEvent<SVGRectElement>,
+    index: number,
+    thicknessMm: number,
+  ): void => {
+    event.preventDefault();
+    // Stop the press reaching the layer underneath, which would start a reorder drag.
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setResize({
+      index,
+      startClientX: event.clientX,
+      startThicknessMm: thicknessMm,
+      frozenScale: scale,
+      frozenViewBoxWidth: viewBoxWidth,
+    });
+  };
+
+  const continueResize = (event: React.PointerEvent<SVGRectElement>): void => {
+    if (resize === null || onResizeLayer === undefined) {
+      return;
+    }
+    event.stopPropagation();
+    const deltaUserX = toUserX(event.clientX) - toUserX(resize.startClientX);
+    const deltaMm = deltaUserX / resize.frozenScale;
+    const next = Math.min(
+      MAX_THICKNESS_MM,
+      Math.max(
+        MIN_THICKNESS_MM,
+        Math.round((resize.startThicknessMm + deltaMm) / RESIZE_STEP_MM) * RESIZE_STEP_MM,
+      ),
+    );
+    onResizeLayer(resize.index, Number(next.toFixed(2)));
+  };
+
+  const endResize = (event: React.PointerEvent<SVGRectElement>): void => {
+    event.stopPropagation();
+    setResize(null);
   };
 
   /** The gap between layers that a pointer at this position would drop into. */
@@ -675,6 +743,55 @@ export function CrossSection({
         })}
 
         {/*
+          A grip on the outer edge of every layer. Each one resizes the layer to its left,
+          so every layer has exactly one — the inside face is not a boundary between two
+          layers and carries none. Drawn after the boxes so the grab area sits on top of
+          them, and after the studs so nothing buries it.
+        */}
+        {onResizeLayer !== undefined &&
+          boxes.map((box) => {
+            const index = layers.findIndex((layer) => layer.id === box.layer.id);
+            const edgeX = drawXOf(box) + box.width;
+            const isActive = resize?.index === index;
+            return (
+              <g
+                key={`resize-${box.layer.id}`}
+                className={`resize-handle${isActive ? ' is-active' : ''}`}
+              >
+                <line
+                  x1={edgeX}
+                  y1={TOP_PAD}
+                  x2={edgeX}
+                  y2={TOP_PAD + PLOT_HEIGHT}
+                  className="resize-handle-line"
+                />
+                {[0.36, 0.5, 0.64].map((at) => (
+                  <circle
+                    key={at}
+                    cx={edgeX}
+                    cy={TOP_PAD + PLOT_HEIGHT * at}
+                    r={1.9}
+                    className="resize-handle-grip"
+                  />
+                ))}
+                <rect
+                  x={edgeX - RESIZE_GRAB_HALF_WIDTH}
+                  y={TOP_PAD}
+                  width={RESIZE_GRAB_HALF_WIDTH * 2}
+                  height={PLOT_HEIGHT}
+                  className="resize-handle-target"
+                  onPointerDown={(event) => beginResize(event, index, box.layer.thicknessMm)}
+                  onPointerMove={continueResize}
+                  onPointerUp={endResize}
+                  onPointerCancel={endResize}
+                >
+                  <title>{`Drag to change the thickness of ${box.layer.label}`}</title>
+                </rect>
+              </g>
+            );
+          })}
+
+        {/*
           Layer names, outside the drawing with a leader line to the layer each names.
           Outside because a name set inside a layer has to be rotated, is cut short by
           anything narrow, and competes with the temperature line for the same space.
@@ -783,8 +900,9 @@ export function CrossSection({
         are drawn at a fixed width. Names sit above the drawing with a line to the layer
         each one belongs to, the hatching shows what a layer is made of, and the tinted
         band is everything at or below the internal dew point. Drag a layer sideways to
-        reorder it — it comes with you at its real width while the rest open a gap — or
-        click one to pick it out in the layer list.
+        reorder it — it comes with you at its real width while the rest open a gap — drag
+        the grip on its outer edge to change its thickness, or click one to pick it out in
+        the layer list.
         {hasBridgedLayer &&
           ' A bridged layer is outlined in the accent colour, and its callout carries the bridged percentage.' +
           (hasDrawableStuds

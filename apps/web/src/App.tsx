@@ -198,6 +198,23 @@ export function App(): JSX.Element {
       };
     });
   }, []);
+  /**
+   * Set one layer's thickness, from the resize handles on the drawing. Fires on every
+   * pointer move, which is why the hash is written with replaceState — a drag would
+   * otherwise leave a hundred entries in the back button.
+   */
+  const setLayerThickness = useCallback((index: number, thicknessMm: number) => {
+    setState((current) => {
+      const layer = current.layers[index];
+      if (layer === undefined || layer.thicknessMm === thicknessMm) {
+        return current;
+      }
+      const layers = [...current.layers];
+      layers[index] = { ...layer, thicknessMm };
+      return { ...current, layers };
+    });
+  }, []);
+
   const setAirGapLevel = useCallback((airGapLevel: AirGapLevel) => {
     setState((current) => ({ ...current, airGapLevel }));
   }, []);
@@ -415,6 +432,7 @@ export function App(): JSX.Element {
               selectedLayerId={selectedLayerId}
               onSelectLayer={setSelectedLayerId}
               onReorder={reorderLayers}
+              onResizeLayer={setLayerThickness}
             />
           ) : (
             <Layup3D

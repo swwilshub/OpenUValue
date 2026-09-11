@@ -3049,3 +3049,50 @@ body.is-dragging * {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ------------------------------------------------------- resize handles ---
+ * A grip on the outer edge of each layer. Quiet until the pointer is near it: the drawing
+ * is meant to be read, and a row of permanent controls would compete with the layers.
+ */
+.resize-handle-target {
+  fill: transparent;
+  cursor: ew-resize;
+}
+
+.resize-handle-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.resize-handle-grip {
+  fill: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.resize-handle:hover .resize-handle-line,
+.resize-handle:hover .resize-handle-grip,
+.resize-handle.is-active .resize-handle-line,
+.resize-handle.is-active .resize-handle-grip {
+  opacity: 1;
+}
+
+/* While a resize is running the cursor must not flicker back as it crosses other layers. */
+.cross-section:has(.resize-handle.is-active) {
+  cursor: ew-resize;
+}
+
+/*
+ * A touch device has no hover, so a handle that only appears on hover can never be found.
+ * There they stay faintly visible instead.
+ */
+@media (hover: none) {
+  .resize-handle-line,
+  .resize-handle-grip {
+    opacity: 0.45;
+  }
+}

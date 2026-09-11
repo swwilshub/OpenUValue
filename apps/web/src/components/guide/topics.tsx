@@ -156,6 +156,33 @@ export const CHAPTERS: readonly GuideChapter[] = [
         ),
       },
       {
+        id: 'resize-layer',
+        title: 'Resizing a layer by its edge',
+        figure: <ResistanceFigure />,
+        body: (
+          <>
+            <p>
+              Every layer has a grip on its <strong>outer edge</strong> — the one further
+              from the room. Drag it and the layer gets thicker or thinner, in half
+              millimetres, with the U-value and everything downstream of it following as
+              you go. The thickness box in the layer list is the same number typed instead
+              of dragged.
+            </p>
+            <p>
+              Each grip belongs to the layer on its left, so every layer has exactly one.
+              The inside face has none: it is not a boundary between two layers.
+            </p>
+            <p>
+              The drawing normally scales so the build-up fills the width, which would make
+              a growing layer push its own edge out from under your pointer — you would be
+              chasing the grip as it ran away. The scale is therefore held still for the
+              length of the drag, so the edge goes exactly where you put it, and the
+              drawing refits when you let go.
+            </p>
+          </>
+        ),
+      },
+      {
         id: 'select-layer',
         title: 'Clicking a layer',
         figure: <LayersFigure highlightIndex={2} />,
