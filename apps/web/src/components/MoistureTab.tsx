@@ -13,6 +13,7 @@ import {
 import type { UiLayer } from '../state/model.js';
 import { GlaserChart } from './GlaserChart.js';
 import { HumidityChart } from './HumidityChart.js';
+import { HelpButton } from './guide/Guide.js';
 
 /**
  * Everything about moisture in one place: how damp the air gets inside the build-up,
@@ -29,6 +30,8 @@ import { HumidityChart } from './HumidityChart.js';
 const DEFAULT_PERIOD_DAYS = 90;
 
 export interface MoistureTabProps {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
   readonly element: BuildingElement;
   readonly layers: readonly UiLayer[];
   readonly conditions: EnvironmentConditions;
@@ -40,6 +43,7 @@ export function MoistureTab({
   layers,
   conditions,
   profile,
+  onOpenGuide,
 }: MoistureTabProps): JSX.Element {
   const [pathId, setPathId] = useState<string | undefined>(undefined);
   const [wettingDays, setWettingDays] = useState(DEFAULT_PERIOD_DAYS);
@@ -88,10 +92,14 @@ export function MoistureTab({
       {/* ------------------------------------------------ humidity inside ---- */}
       <section className="panel">
         <div className="panel-head">
-          <h2>How damp does it get inside the wall?</h2>
+          <h2>
+            How damp does it get inside the wall?
+            <HelpButton topicId="moisture-humidity" label="the humidity chart" onOpen={onOpenGuide} />
+          </h2>
           {assessment.perPath.length > 1 && (
             <label className="inline-select">
               Path
+              <HelpButton topicId="moisture-path" label="the section path selector" onOpen={onOpenGuide} />
               <select value={shown.pathId} onChange={(event) => setPathId(event.target.value)}>
                 {assessment.perPath.map((path) => (
                   <option key={path.pathId} value={path.pathId}>
@@ -107,7 +115,10 @@ export function MoistureTab({
 
       {/* ------------------------------------------------- where and how much --- */}
       <section className="panel">
-        <h2>Where does it condense?</h2>
+        <h2>
+          Where does it condense?
+          <HelpButton topicId="moisture-glaser" label="the Glaser diagram" onOpen={onOpenGuide} />
+        </h2>
         {assessment.condenses ? (
           <p className="verdict verdict-risk">
             <strong>Vapour reaches saturation inside the build-up</strong> at{' '}
@@ -128,7 +139,10 @@ export function MoistureTab({
 
       {/* ------------------------------------------------ seasonal balance ---- */}
       <section className="panel">
-        <h2>Over a season, does it dry out again?</h2>
+        <h2>
+          Over a season, does it dry out again?
+          <HelpButton topicId="moisture-seasons" label="the seasonal balance" onOpen={onOpenGuide} />
+        </h2>
         <p className="footnote">
           Water that collects over a winter is only a problem if it does not leave again.
           Set how long each season lasts and what the weather does in the drying one; the
@@ -253,7 +267,10 @@ export function MoistureTab({
 
       {/* --------------------------------------------------------- mould ---- */}
       <section className="panel">
-        <h2>Mould on the inside surface</h2>
+        <h2>
+          Mould on the inside surface
+          <HelpButton topicId="moisture-mould" label="the mould check" onOpen={onOpenGuide} />
+        </h2>
         {surfaceHumidity === undefined ? (
           <p className="footnote">No internal surface to assess.</p>
         ) : (

@@ -10,6 +10,7 @@ import {
   roundResistanceForReporting,
   roundUValueForReporting,
 } from '@openuvalue/engine';
+import { HelpButton } from './guide/Guide.js';
 
 const WARNING_TITLES: Record<Warning['code'], string> = {
   'combined-method-ratio-exceeds-limit': 'Out of scope for this method',
@@ -22,6 +23,8 @@ const WARNING_TITLES: Record<Warning['code'], string> = {
 };
 
 export interface ResultsPanelProps {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
   readonly result: UValueResult;
   readonly profile: TemperatureProfile;
   /** Undefined where the element has no U-value to correct. */
@@ -36,6 +39,7 @@ export function ResultsPanel({
   corrections,
   airGapLevel,
   onAirGapLevelChange,
+  onOpenGuide,
 }: ResultsPanelProps): JSX.Element {
   /*
    * BR 443 (2019) 4.8: "The U-value is first calculated without taking account of
@@ -51,7 +55,10 @@ export function ResultsPanel({
 
   return (
     <section className="panel results">
-      <h2>Result</h2>
+      <h2>
+        Result
+        <HelpButton topicId="result-headline" label="the result box" onOpen={onOpenGuide} />
+      </h2>
 
       {rounded === null ? (
         <div className="u-value u-value-void">
@@ -174,7 +181,10 @@ export function ResultsPanel({
         </details>
       )}
 
-      <h3>Surface condensation</h3>
+      <h3>
+        Surface condensation
+        <HelpButton topicId="result-surface-condensation" label="surface condensation" onOpen={onOpenGuide} />
+      </h3>
       {internalSurface === undefined ? (
         <p className="empty-note">Add a layer to assess the internal surface.</p>
       ) : internalSurface.isBelowInternalDewPoint ? (
@@ -196,7 +206,10 @@ export function ResultsPanel({
         </p>
       )}
 
-      <h3>Dew-point screening, within the element</h3>
+      <h3>
+        Dew-point screening, within the element
+        <HelpButton topicId="result-dew-screen" label="dew-point screening" onOpen={onOpenGuide} />
+      </h3>
       {coldNodes.length === 0 ? (
         <p className="verdict verdict-ok">
           No interface falls to the internal dew point of{' '}
@@ -241,7 +254,10 @@ export function ResultsPanel({
 
       {profile.warnings.length > 0 && (
         <>
-          <h3>Notes and limits</h3>
+          <h3>
+        Notes and limits
+        <HelpButton topicId="result-warnings" label="notes and limits" onOpen={onOpenGuide} />
+      </h3>
           <ul className="warnings">
             {profile.warnings.map((warning, index) => (
               <li key={`${warning.code}-${index}`} className={`warning warning-${warning.code}`}>

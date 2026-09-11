@@ -17,8 +17,11 @@ import {
   blankSolidLayer,
   bridgedPercentFromDimensions,
 } from '../state/model.js';
+import { HelpButton } from './guide/Guide.js';
 
 export interface LayerTableProps {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
   readonly layers: readonly UiLayer[];
   readonly result: UValueResult;
   readonly onChange: (layers: readonly UiLayer[]) => void;
@@ -55,6 +58,7 @@ export function LayerTable({
   onChange,
   selectedLayerId,
   onSelectLayer,
+  onOpenGuide,
 }: LayerTableProps): JSX.Element {
   /** Index being dragged, and the gap it would drop into. Null when not dragging. */
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -197,7 +201,10 @@ export function LayerTable({
   return (
     <div className="layer-table">
       <div className="layer-table-head">
-        <span>Layer, inside to outside</span>
+        <span>
+          Layer, inside to outside
+          <HelpButton topicId="add-layer" label="the layers box" onOpen={onOpenGuide} />
+        </span>
         <span className="layer-actions-head">
           <button type="button" onClick={() => insert(layers.length, blankSolidLayer())}>
             + layer
@@ -302,6 +309,11 @@ export function LayerTable({
               ) : (
                 <label>
                   Ventilation
+                  <HelpButton
+                    topicId="layer-cavity"
+                    label="cavity ventilation"
+                    onOpen={onOpenGuide}
+                  />
                   <select
                     value={layer.ventilation}
                     onChange={(event) =>
@@ -335,6 +347,7 @@ export function LayerTable({
               {layer.kind === 'solid' ? (
                 <label>
                   λ, W/(m·K)
+                  <HelpButton topicId="layer-lambda" label="thermal conductivity λ" onOpen={onOpenGuide} />
                   <input
                     type="number"
                     min={0.001}
@@ -372,6 +385,7 @@ export function LayerTable({
                   title="Water vapour resistance factor, dimensionless"
                 >
                   μ
+                  <HelpButton topicId="layer-mu" label="vapour resistance μ" onOpen={onOpenGuide} />
                   <input
                     type="number"
                     min={1}
@@ -446,6 +460,11 @@ export function LayerTable({
                 <button type="button" onClick={() => addStuds(index)}>
                   + studs or rafters
                 </button>
+                <HelpButton
+                  topicId="layer-bridging"
+                  label="studs and rafters"
+                  onOpen={onOpenGuide}
+                />
               </div>
             )}
 

@@ -20,6 +20,7 @@ import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { SummaryStrip } from './components/SummaryStrip.js';
 import { DynamicPanel } from './components/DynamicPanel.js';
+import { Guide, HelpButton } from './components/guide/Guide.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
 import {
@@ -69,6 +70,16 @@ export function App(): JSX.Element {
   /** Layer picked in either the table or the drawing; the other view follows. */
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<TabId>('buildup');
+  /*
+   * The feature guide. `guideTopic` is what a help button beside a box passes in, so the
+   * guide opens at that box rather than at the beginning.
+   */
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideTopic, setGuideTopic] = useState<string | undefined>(undefined);
+  const openGuide = useCallback((topicId?: string) => {
+    setGuideTopic(topicId);
+    setGuideOpen(true);
+  }, []);
   /**
    * The walkthrough opens by itself the first time, and not again. localStorage can
    * throw outright in a private window or with site data blocked, so a failure to read
@@ -262,6 +273,7 @@ export function App(): JSX.Element {
       {/* Mounted once: every material hatch in the page resolves to these. */}
       <HatchDefs />
       <IntroTour open={tourOpen} onClose={closeTour} />
+      <Guide open={guideOpen} topicId={guideTopic} onClose={() => setGuideOpen(false)} />
 
       <header className="app-header">
         <div>
@@ -274,6 +286,9 @@ export function App(): JSX.Element {
         <div className="header-actions">
           <button type="button" onClick={() => setTourOpen(true)}>
             How to read this
+          </button>
+          <button type="button" onClick={() => openGuide()}>
+            Guide to every feature
           </button>
           <button type="button" onClick={() => setState(defaultState())}>
             Masonry example
@@ -288,7 +303,7 @@ export function App(): JSX.Element {
       </header>
 
       <p className="phase-banner">
-        <strong>Phase 1.</strong> Steady-state only. Material values and several clause
+        <strong>Still being checked.</strong> Material values and several clause
         references still need checking against printed standards — see{' '}
         <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. BR 443's
         mechanical-fastener correction is not implemented, so a build-up with insulation
@@ -307,9 +322,17 @@ export function App(): JSX.Element {
       {result !== undefined && profile !== undefined && (
         <section className="panel hero-panel">
           <div className="section-header">
-            <h2>Cross-section and temperature</h2>
+            <h2>
+              Cross-section and temperature
+              <HelpButton
+                topicId="layers-to-scale"
+                label="the cross-section drawing"
+                onOpen={openGuide}
+              />
+            </h2>
             <label className="inline-select">
               Show
+              <HelpButton topicId="section-selector" label="the section selector" onOpen={openGuide} />
               <select
                 value={state.section}
                 disabled={!bridged}
@@ -343,6 +366,9 @@ export function App(): JSX.Element {
             <button type="button" className="link-button" onClick={() => setTourOpen(true)}>
               How to read this drawing
             </button>
+            <button type="button" className="link-button" onClick={() => openGuide('layers-to-scale')}>
+              Guide to every feature
+            </button>
           </div>
 
           {bridged && state.section === 'combined' && (
@@ -364,6 +390,7 @@ export function App(): JSX.Element {
       */}
       {result !== undefined && profile !== undefined && (
         <SummaryStrip
+          onOpenGuide={openGuide}
           element={element}
           result={result}
           corrections={corrections}
@@ -390,6 +417,7 @@ export function App(): JSX.Element {
 
       {tab === 'moisture' && result !== undefined && profile !== undefined && (
         <MoistureTab
+          onOpenGuide={openGuide}
           element={element}
           layers={state.layers}
           conditions={state.conditions}
@@ -415,6 +443,7 @@ export function App(): JSX.Element {
               <p className="engine-error">{engineError}</p>
             ) : (
               <LayerTable
+                onOpenGuide={openGuide}
                 layers={state.layers}
                 result={result}
                 onChange={setLayers}
@@ -426,6 +455,7 @@ export function App(): JSX.Element {
 
           {result !== undefined && (
             <BoundaryPanel
+              onOpenGuide={openGuide}
               heatFlowDirection={state.heatFlowDirection}
               conditions={state.conditions}
               internalSurfaceCondition={state.internalSurfaceCondition}
@@ -442,6 +472,7 @@ export function App(): JSX.Element {
         <div className="column-right">
           {result !== undefined && profile !== undefined ? (
             <ResultsPanel
+              onOpenGuide={openGuide}
               result={result}
               profile={profile}
               corrections={corrections}
@@ -455,7 +486,7 @@ export function App(): JSX.Element {
             </section>
           )}
 
-          {dynamic !== undefined && <DynamicPanel dynamic={dynamic} />}
+          {dynamic !== undefined && <DynamicPanel dynamic={dynamic} onOpenGuide={openGuide} />}
         </div>
       </main>
 

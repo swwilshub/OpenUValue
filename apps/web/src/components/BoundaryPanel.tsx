@@ -16,6 +16,7 @@ import {
   commonDefaultConditions,
   conditionsForEnvironment,
 } from '../state/model.js';
+import { HelpButton } from './guide/Guide.js';
 
 const DIRECTION_LABELS: Record<HeatFlowDirection, string> = {
   horizontal: 'Horizontal — wall',
@@ -24,6 +25,8 @@ const DIRECTION_LABELS: Record<HeatFlowDirection, string> = {
 };
 
 export interface BoundaryPanelProps {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
   readonly heatFlowDirection: HeatFlowDirection;
   readonly conditions: EnvironmentConditions;
   readonly internalSurfaceCondition: InternalSurfaceCondition;
@@ -52,6 +55,7 @@ export function BoundaryPanel({
   onConditionsChange,
   onInternalSurfaceConditionChange,
   onExternalEnvironmentChange,
+  onOpenGuide,
 }: BoundaryPanelProps): JSX.Element {
   const set = (patch: Partial<EnvironmentConditions>): void => {
     onConditionsChange({ ...conditions, ...patch });
@@ -67,7 +71,10 @@ export function BoundaryPanel({
   return (
     <section className="panel boundary-panel">
       <div className="panel-head">
-        <h2>Conditions</h2>
+        <h2>
+        Conditions
+        <HelpButton topicId="conditions-direction" label="the conditions box" onOpen={onOpenGuide} />
+      </h2>
         <button
           type="button"
           className="ghost-button"
@@ -97,10 +104,18 @@ export function BoundaryPanel({
         <div className="boundary-side">
           <h3>
             <span className="side-chip side-chip-inside">Inside</span>
+            <HelpButton topicId="conditions-inside" label="inside conditions" onOpen={onOpenGuide} />
           </h3>
 
           <fieldset className="choice-group">
-            <legend>Air circulation at the surface</legend>
+            <legend>
+              Air circulation at the surface
+              <HelpButton
+                topicId="conditions-surface"
+                label="air circulation at the surface"
+                onOpen={onOpenGuide}
+              />
+            </legend>
             {INTERNAL_SURFACE_CONDITIONS.map((condition) => (
               <label key={condition.kind} className="choice">
                 <input
@@ -162,6 +177,7 @@ export function BoundaryPanel({
         <div className="boundary-side">
           <h3>
             <span className="side-chip side-chip-outside">Outside</span>
+            <HelpButton topicId="conditions-outside" label="what is on the other side" onOpen={onOpenGuide} />
           </h3>
 
           <label className="field">

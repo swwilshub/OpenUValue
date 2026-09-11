@@ -1,4 +1,5 @@
 import type { DynamicResult } from '@openuvalue/engine';
+import { HelpButton } from './guide/Guide.js';
 
 /**
  * Summer performance: what the construction does to a temperature that swings, as
@@ -11,6 +12,8 @@ import type { DynamicResult } from '@openuvalue/engine';
  */
 
 export interface DynamicPanelProps {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
   readonly dynamic: DynamicResult;
 }
 
@@ -20,13 +23,16 @@ function formatHours(hours: number): string {
   return minutes === 60 ? `${whole + 1} h 00 m` : `${whole} h ${String(minutes).padStart(2, '0')} m`;
 }
 
-export function DynamicPanel({ dynamic }: DynamicPanelProps): JSX.Element {
+export function DynamicPanel({ dynamic, onOpenGuide }: DynamicPanelProps): JSX.Element {
   const main = dynamic.main;
   const hours = dynamic.periodS / 3600;
 
   return (
     <section className="panel">
-      <h2>Summer performance</h2>
+      <h2>
+        Summer performance
+        <HelpButton topicId="summer-decrement" label="summer performance" onOpen={onOpenGuide} />
+      </h2>
       <p className="footnote">
         How the build-up handles a temperature that swings over {hours} hours, rather than
         one held steady. Two walls with the same U-value can be far apart here — it is the
@@ -96,7 +102,10 @@ export function DynamicPanel({ dynamic }: DynamicPanelProps): JSX.Element {
 
       {dynamic.perPath.length > 1 && (
         <>
-          <h3>Between the studs, and through them</h3>
+          <h3>
+            Between the studs, and through them
+            <HelpButton topicId="summer-sections" label="the per-section table" onOpen={onOpenGuide} />
+          </h3>
           <p className="footnote">
             BS EN ISO 13786 is a method for layers that run right across the element. This
             one is bridged, so each section is calculated on its own and the figures above

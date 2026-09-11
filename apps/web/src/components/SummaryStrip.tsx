@@ -18,6 +18,7 @@ import {
   surfaceRelativeHumidityPercent,
   vapourClassForSd,
 } from '@openuvalue/engine';
+import { HelpButton } from './guide/Guide.js';
 
 /**
  * The whole build-up in one line of figures, kept on screen under the drawing so the
@@ -67,6 +68,8 @@ function Metric({ label, value, unit, note, verdict = 'none', title }: MetricPro
 }
 
 export interface SummaryStripProps {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
   readonly element: BuildingElement;
   readonly result: UValueResult;
   readonly corrections: CorrectionResult | undefined;
@@ -83,6 +86,7 @@ export function SummaryStrip({
   profile,
   conditions,
   dynamic,
+  onOpenGuide,
 }: SummaryStripProps): JSX.Element {
   const [partLContext, setPartLContext] = useState<PartLContext>('new-dwelling');
 
@@ -132,6 +136,10 @@ export function SummaryStrip({
 
   return (
     <section className="summary-strip" aria-label="Build-up summary">
+      <p className="strip-title">
+        At a glance
+        <HelpButton topicId="strip-u-value" label="the summary strip" onOpen={onOpenGuide} />
+      </p>
       <div className="metric-row">
         <Metric
           label="U-value"
@@ -260,6 +268,11 @@ export function SummaryStrip({
       <div className="strip-foot">
         <label className="inline-select">
           Judge the U-value as
+          <HelpButton
+            topicId="strip-partl-context"
+            label="which Part L limit applies"
+            onOpen={onOpenGuide}
+          />
           <select
             value={partLContext}
             onChange={(event) => setPartLContext(event.target.value as PartLContext)}

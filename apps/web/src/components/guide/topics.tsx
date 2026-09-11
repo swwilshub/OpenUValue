@@ -1,0 +1,956 @@
+import {
+  CavityFigure,
+  CombinedFigure,
+  DirectionFigure,
+  DewPointFigure,
+  DragFigure,
+  EnvironmentFigure,
+  FilmsFigure,
+  GaugeFigure,
+  GlaserFigure,
+  KappaFigure,
+  LayersFigure,
+  PickerFigure,
+  ProvenanceFigure,
+  ResistanceFigure,
+  SeasonFigure,
+  ShareFigure,
+  StudFigure,
+  SurfaceConditionFigure,
+  TemperatureFigure,
+  VapourFigure,
+  WaveFigure,
+} from './figures.js';
+
+/**
+ * Every control and every box in OpenUValue, with a diagram of what it does.
+ *
+ * The ordering follows the screen rather than the physics: someone looking something up
+ * is looking at a thing and wants to know what it is. The physics tour ("How to read
+ * this drawing") is the other way round and still exists for a first read.
+ *
+ * Each topic has an `id`, which is what a help button next to a box passes in to open
+ * the guide at the right place. Those ids are referenced from the panels, so renaming one
+ * breaks a button — grep before changing it.
+ */
+
+export interface GuideTopic {
+  readonly id: string;
+  readonly title: string;
+  readonly figure: JSX.Element;
+  readonly body: JSX.Element;
+}
+
+export interface GuideChapter {
+  readonly id: string;
+  readonly title: string;
+  readonly blurb: string;
+  readonly topics: readonly GuideTopic[];
+}
+
+export const CHAPTERS: readonly GuideChapter[] = [
+  {
+    id: 'drawing',
+    title: 'The drawing',
+    blurb: 'The cross-section at the top of the page, and everything drawn on it.',
+    topics: [
+      {
+        id: 'layers-to-scale',
+        title: 'Layers, drawn to scale',
+        figure: <LayersFigure />,
+        body: (
+          <>
+            <p>
+              The build-up runs <strong>inside on the left, outside on the right</strong>, and
+              each layer is drawn at its real thickness. Widen a layer in the list and it widens
+              here.
+            </p>
+            <p>
+              The hatching says what a layer is made of — coursing for masonry, a soft wave for
+              quilt insulation, a wood grain for timber. The same hatch appears beside the
+              material in the picker, so the list and the drawing read as one thing.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'surface-films',
+        title: 'The two hatched strips at the edges',
+        figure: <FilmsFigure />,
+        body: (
+          <>
+            <p>
+              Those are the <strong>surface resistances</strong> — the thin films of still air
+              that cling to each face of a wall. They are real resistance: the inside film is
+              worth about as much as 5 mm of insulation, and the calculation would be wrong
+              without them.
+            </p>
+            <p>
+              They have no thickness to draw, so they are shown at a fixed width. R
+              <sub>si</sub> is the inside one, R<sub>se</sub> the outside; both come from
+              BS EN ISO 6946 and depend on which way heat is flowing.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'drag-reorder',
+        title: 'Dragging layers around',
+        figure: <DragFigure />,
+        body: (
+          <>
+            <p>
+              Pick up any layer in the drawing and drop it somewhere else. A line shows where it
+              will land. The same thing works from the handle in the layer list, if you would
+              rather work there.
+            </p>
+            <p>
+              This is the fastest way to answer the question that matters most in a retrofit:{' '}
+              <em>does the insulation go inside or outside?</em> Drag it across and watch the
+              temperature line and the condensation verdict change. The U-value will barely
+              move; everything else will.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'select-layer',
+        title: 'Clicking a layer',
+        figure: <LayersFigure highlightIndex={2} />,
+        body: (
+          <p>
+            Clicking a layer in the drawing highlights it and scrolls the matching row in the
+            layer list into view, and the reverse works too. Useful once a build-up has eight
+            layers and three of them are called “board”.
+          </p>
+        ),
+      },
+      {
+        id: 'temperature-line',
+        title: 'The solid line: temperature',
+        figure: <TemperatureFigure />,
+        body: (
+          <>
+            <p>
+              The line falls from the inside temperature to the outside one, and its{' '}
+              <strong>steepness is the whole story</strong>. It plunges through insulation, which
+              resists heat, and barely tilts through brick, which does not.
+            </p>
+            <p>
+              A layer's width on screen is its thickness; its share of the <em>drop</em> is its
+              share of the resistance. Two layers of the same thickness can take completely
+              different bites out of the line.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'dew-point',
+        title: 'The dashed line and the tinted band',
+        figure: <DewPointFigure />,
+        body: (
+          <>
+            <p>
+              Warm air holds more moisture than cold air. Cool a parcel of air far enough and it
+              can no longer hold what it has, and the surplus becomes liquid water. The
+              temperature where that happens is the <strong>dew point</strong>.
+            </p>
+            <p>
+              Anywhere the solid line dips into the tinted band, the construction is colder than
+              the dew point. In a well-built wall that only happens out beyond the insulation,
+              which is exactly where you want it.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'section-selector',
+        title: 'The “Show” selector',
+        figure: <StudFigure />,
+        body: (
+          <>
+            <p>
+              Only active when something in the build-up is bridged by studs or rafters. It picks
+              which slice of the wall gets drawn: <strong>between the studs</strong>, {' '}
+              <strong>through the studs</strong>, or the <strong>combined</strong> average.
+            </p>
+            <p>
+              It changes the picture only. The condensation verdict is always worked out for
+              every slice and the worst one reported, whichever you are looking at — so you
+              cannot hide a problem by changing the view.
+            </p>
+          </>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'strip',
+    title: 'The summary strip',
+    blurb: 'The row of figures under the drawing, which stays put whichever tab you are on.',
+    topics: [
+      {
+        id: 'strip-u-value',
+        title: 'U-value',
+        figure: <GaugeFigure value={0.26} limit={0.26} />,
+        body: (
+          <>
+            <p>
+              How much heat crosses a square metre for each degree of difference between inside
+              and out. <strong>Lower is better.</strong> It is the headline number for a reason:
+              it is what building control asks for.
+            </p>
+            <p>
+              The note underneath is the limiting value from Approved Document L, and the card
+              turns green or red against it. That limit is a <em>maximum to clear</em>, not a
+              target to aim at — the document says so itself.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-partl-context',
+        title: '“Judge the U-value as…”',
+        figure: <GaugeFigure value={0.26} limit={0.18} />,
+        body: (
+          <>
+            <p>
+              The same wall is held to three different standards depending on the job. A new
+              dwelling's wall may be 0.26; the same wall built into an existing dwelling must
+              reach 0.18; a renovated one has its own figure again.
+            </p>
+            <p>
+              Pick the one that matches your project. Nothing else on the page changes — only
+              what the U-value is being measured against. England and dwellings only; Wales,
+              Scotland and Northern Ireland set their own.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-thickness-mass',
+        title: 'Thickness and mass',
+        figure: <LayersFigure />,
+        body: (
+          <>
+            <p>
+              Thickness is the sum of the layers — the number that decides whether the build-up
+              fits the space you have. Mass is the dry weight of a square metre of it.
+            </p>
+            <p>
+              Mass counts only layers with a density in the catalogue. If some layer has none,
+              the card says how many were left out, because a total that quietly omits half a
+              wall is worse than no total.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-capacity',
+        title: 'Total capacity, and why κ is different',
+        figure: <KappaFigure />,
+        body: (
+          <>
+            <p>
+              <strong>Total capacity</strong> is all the heat the build-up could hold if you
+              warmed every part of it through: simply ρ × c × d added up.
+            </p>
+            <p>
+              <strong>κ</strong> further along the strip is the part a <em>daily</em> cycle can
+              actually reach. A 24-hour swing only penetrates a certain distance into a material
+              — roughly 100 mm for masonry — so mass buried deeper contributes almost nothing.
+              That is why the two numbers can differ by a factor of ten, and why a very thick
+              wall is not proportionally better at riding out a hot day.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-vapour',
+        title: 'Vapour resistance (Sd)',
+        figure: <VapourFigure />,
+        body: (
+          <>
+            <p>
+              S<sub>d</sub> is the build-up's resistance to water vapour, expressed as{' '}
+              <strong>the depth of still air that would resist it just as much</strong>. An
+              S<sub>d</sub> of 1.85 m means the wall is as hard for vapour to cross as 1.85 m of
+              open air.
+            </p>
+            <p>
+              High is not automatically good. What matters is the order: resistance on the warm
+              side keeps vapour out, the same resistance on the cold side traps it in.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-surface',
+        title: 'Inside surface',
+        figure: <SurfaceConditionFigure />,
+        body: (
+          <>
+            <p>
+              The temperature of the room-side face, and the humidity of the air touching it.
+              That air is always damper than the room: same moisture, colder air.
+            </p>
+            <p>
+              At 80 % surface humidity mould will grow, and the card turns red — long before any
+              liquid water appears. This is why mould shows up in cold corners and behind
+              wardrobes first.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-condensation',
+        title: 'Condensation',
+        figure: <GlaserFigure />,
+        body: (
+          <p>
+            Whether water is forming <em>inside</em> the build-up under the conditions set on the
+            Conditions box, and if so how fast. “None” means the vapour stays below saturation
+            all the way through. Any number here is worth understanding before you build —
+            follow it to the Moisture tab, which shows where and whether it dries out again.
+          </p>
+        ),
+      },
+      {
+        id: 'strip-dynamic',
+        title: 'Decrement, time shift and κᵢ',
+        figure: <WaveFigure />,
+        body: (
+          <>
+            <p>
+              The three summer numbers. <strong>Decrement</strong> is the fraction of an outdoor
+              temperature swing that reaches the inside surface — 0.42 means 42 % gets through.{' '}
+              <strong>Time shift</strong> is how many hours later it arrives.{' '}
+              <strong>κᵢ</strong> is how much heat the inside face can soak up and give back.
+            </p>
+            <p>
+              A heavy wall damps the swing and delays it past the evening, when you can open a
+              window. A lightweight one passes the afternoon straight through. Two walls with an
+              identical U-value can be completely different here.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'strip-no-rating',
+        title: 'Why nothing is scored out of five',
+        figure: <GaugeFigure value={0.2} limit={0.26} />,
+        body: (
+          <>
+            <p>
+              Two figures carry a verdict, and each names the source: the U-value against
+              Approved Document L, and the surface humidity against the 80 % mould threshold in
+              BS EN ISO 13788. Both of those are published limits.
+            </p>
+            <p>
+              Nothing published grades a wall's mass, capacity or S<sub>d</sub> from poor to
+              excellent, so OpenUValue does not either. A five-star scale invented here would sit
+              in the most prominent place on the page looking exactly as authoritative as the two
+              that are real.
+            </p>
+          </>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'layers',
+    title: 'Building the layers',
+    blurb: 'The Layers box on the Build-up tab: every field, and what it changes.',
+    topics: [
+      {
+        id: 'add-layer',
+        title: 'Adding a layer or a cavity',
+        figure: <LayersFigure />,
+        body: (
+          <p>
+            A new layer lands at the outside end and can be dragged wherever you want it. Add a{' '}
+            <strong>cavity</strong> instead when the gap is air rather than a product — an air
+            layer is handled differently, because air insulates by not moving and stops doing so
+            once it can circulate.
+          </p>
+        ),
+      },
+      {
+        id: 'layer-material',
+        title: 'Choosing a material',
+        figure: <PickerFigure />,
+        body: (
+          <>
+            <p>
+              The picker is grouped by what things are, with the section hatch beside each entry
+              and λ and μ on the right, so you can choose on the numbers rather than the name.
+              Type to search, arrow keys to move, Enter to pick.
+            </p>
+            <p>
+              Choosing a material fills in λ, μ, density and specific heat together. Density and
+              specific heat are not editable — they never affect a U-value, only mass and the
+              summer figures.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'layer-lambda',
+        title: 'λ — thermal conductivity',
+        figure: <ResistanceFigure />,
+        body: (
+          <>
+            <p>
+              How readily heat passes through the material itself, in W/(m·K).{' '}
+              <strong>Lower insulates better.</strong> Mineral wool is about 0.035; brick is
+              about 0.77, some twenty times worse.
+            </p>
+            <p>
+              The layer's resistance is thickness ÷ λ, which is why 100 mm of quilt beats a metre
+              of brick. Typing your own λ is allowed — it detaches the layer from the catalogue
+              entry, since it is no longer that product.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'layer-mu',
+        title: 'μ and δ — vapour',
+        figure: <VapourFigure barrier />,
+        body: (
+          <>
+            <p>
+              <strong>μ</strong> is how many times harder than still air the material is for
+              water vapour to cross. Air is 1 by definition; mineral wool is about 1; brick about
+              10; a polythene sheet is around 100 000.
+            </p>
+            <p>
+              δ beside it is the same property the other way up — permeability rather than
+              resistance. The layer's S<sub>d</sub> is μ × thickness, which is how a 0.2 mm sheet
+              can out-resist a metre of masonry.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'layer-provenance',
+        title: 'The coloured dot beside a material',
+        figure: <ProvenanceFigure />,
+        body: (
+          <>
+            <p>
+              How far the material's numbers have been traced to a published source. Green: every
+              value cites a clause. Amber: some do. Grey: not yet checked, and the entry says so
+              rather than inventing a reference.
+            </p>
+            <p>
+              Hover for the source. This is the same honesty as VERIFY.md, brought to the point of
+              choosing — an unattributed figure should never pass for a checked one.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'layer-bridging',
+        title: 'Studs and rafters',
+        figure: <StudFigure />,
+        body: (
+          <>
+            <p>
+              Insulation between timbers is not one material — it is quilt for most of the area
+              and wood where the studs are, and wood conducts about four times better. Ignoring
+              them can under-state a wall's U-value by a fifth.
+            </p>
+            <p>
+              Give the member's width and its spacing and the bridged fraction follows; or enter a
+              fraction directly if you are using a convention. BR 443 publishes defaults — 15 %
+              for a timber-framed wall — which is more than width ÷ spacing, because plates,
+              lintels and doubled studs at openings are timber too.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'layer-readouts',
+        title: 'The R and Sd readouts on each row',
+        figure: <ResistanceFigure />,
+        body: (
+          <p>
+            What that layer contributes, worked out as you type. <strong>R</strong> is its thermal
+            resistance in m²K/W — thickness ÷ λ. <strong>S<sub>d</sub></strong> is its vapour
+            resistance as an equivalent depth of air — μ × thickness. Together they tell you
+            whether a layer is earning its place.
+          </p>
+        ),
+      },
+      {
+        id: 'layer-cavity',
+        title: 'Cavities and ventilation',
+        figure: <CavityFigure />,
+        body: (
+          <>
+            <p>
+              An air cavity insulates because the air in it is still. Let outside air wash through
+              and it stops: an <strong>unventilated</strong> cavity carries its full resistance, a{' '}
+              <strong>well-ventilated</strong> one carries none — and everything outside it is
+              disregarded too, because it is at outdoor temperature.
+            </p>
+            <p>
+              The openings figure, in mm² per metre, is what decides which of the three classes
+              applies. A cavity behind rainscreen cladding is usually well ventilated whether the
+              designer meant it or not.
+            </p>
+          </>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'conditions',
+    title: 'Conditions',
+    blurb: 'The Conditions box: which way heat flows, and what is on each side.',
+    topics: [
+      {
+        id: 'conditions-direction',
+        title: 'Wall, roof or floor',
+        figure: <DirectionFigure />,
+        body: (
+          <p>
+            Heat rises, so the direction it is travelling changes the surface resistances and the
+            behaviour of any cavity. Upward is a roof, downward a floor, horizontal a wall —
+            BS EN ISO 6946 counts anything within 30° of horizontal as a wall, so a steeply
+            pitched roof uses the wall figures. Changing this also changes which Part L limit the
+            summary strip measures you against.
+          </p>
+        ),
+      },
+      {
+        id: 'conditions-inside',
+        title: 'Inside temperature and humidity',
+        figure: <DewPointFigure />,
+        body: (
+          <p>
+            These set the warm end of the temperature line and, with it, the dew point. Humidity
+            matters more than people expect: at 20 °C, air at 40 % reaches its dew point at 6 °C,
+            but at 65 % it gets there at 13 °C — a difference that decides whether a wall
+            condenses. A steamy bathroom is a different building from a dry living room.
+          </p>
+        ),
+      },
+      {
+        id: 'conditions-surface',
+        title: 'Normal or reduced air circulation',
+        figure: <SurfaceConditionFigure />,
+        body: (
+          <>
+            <p>
+              The standard surface resistance assumes air can move freely across the wall. Behind
+              a wardrobe, in a corner, or in a niche, it cannot — so the surface runs colder than
+              the room and the air against it is damper.
+            </p>
+            <p>
+              Switch to <strong>reduced</strong> to test those spots. It is the honest setting for
+              a mould question, because mould appears exactly where the furniture is.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'conditions-outside',
+        title: 'What is on the other side',
+        figure: <EnvironmentFigure />,
+        body: (
+          <>
+            <p>
+              An outside wall faces weather. A ceiling may face an unheated loft. A party floor
+              faces another heated room. Each has its own outer surface resistance and its own
+              temperature, and picking the wrong one moves the answer a long way.
+            </p>
+            <p>
+              Rear-ventilated cladding is a special case: the cavity is at outdoor temperature, so
+              the outer surface behaves like an indoor one. Ground is listed but not supported —
+              it needs BS EN ISO 13370, which this tool does not do, so it refuses rather than
+              guessing.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'conditions-defaults',
+        title: 'The “common defaults” button',
+        figure: <EnvironmentFigure />,
+        body: (
+          <p>
+            Sets both sides back to ordinary starting values for the environment you have chosen,
+            so you can get back to a sensible baseline after experimenting. It changes only the
+            temperatures and humidities — never your layers.
+          </p>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'result',
+    title: 'The Result box',
+    blurb: 'The full thermal result, its breakdown, and the things it refuses to answer.',
+    topics: [
+      {
+        id: 'result-headline',
+        title: 'The headline U-value',
+        figure: <GaugeFigure value={0.26} limit={0.26} />,
+        body: (
+          <p>
+            Reported to two significant figures, which is what BS EN ISO 6946 asks for — a wall
+            calculated to 0.2583 is not known to four digits, and printing them would imply it
+            was. The full-precision figure is used everywhere internally; only the display is
+            rounded.
+          </p>
+        ),
+      },
+      {
+        id: 'result-air-gaps',
+        title: 'Air gaps in the insulation',
+        figure: <StudFigure />,
+        body: (
+          <>
+            <p>
+              Insulation is rarely as perfect as the specification. BR 443 recognises three levels:
+              no meaningful gaps, gaps that bridge the layer, and gaps that let air circulate
+              between the warm and cold sides. Each adds a correction to the U-value.
+            </p>
+            <p>
+              Level 1 is the default, because the standard says to assume it unless the conditions
+              for level 0 are met. If the total correction comes to under 3 % of the U-value it may
+              be left off — and it is, but the figure is still shown so you can see what was
+              dropped.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'result-breakdown',
+        title: 'Total resistance and the layer table',
+        figure: <ResistanceFigure />,
+        body: (
+          <p>
+            Every layer's resistance, plus the two surface films, adding up to the total — and the
+            U-value is one divided by that total. This is the table to scan when a U-value is
+            worse than expected: it is almost always one layer doing nothing.
+          </p>
+        ),
+      },
+      {
+        id: 'result-combined',
+        title: 'The combined method',
+        figure: <CombinedFigure />,
+        body: (
+          <>
+            <p>
+              A bridged wall has no single resistance, so BS EN ISO 6946 brackets it: an upper
+              limit assuming heat cannot move sideways at all, a lower limit assuming it moves
+              sideways freely, and the answer is the average of the two.
+            </p>
+            <p>
+              If those two limits are more than 1.5 times apart the bracket is too loose to be
+              useful, and <strong>no U-value is reported at all</strong> — the element needs proper
+              numerical modelling instead. Metal through the insulation is excluded outright for
+              the same reason.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'result-surface-condensation',
+        title: 'Surface condensation',
+        figure: <SurfaceConditionFigure />,
+        body: (
+          <p>
+            Whether the room-side face falls below the dew point of the room air — the wet-window
+            failure, on a wall. It is the most visible kind and the least serious, because you can
+            see it happening. The mould threshold bites well before it.
+          </p>
+        ),
+      },
+      {
+        id: 'result-dew-screen',
+        title: 'Dew-point screening',
+        figure: <DewPointFigure failing />,
+        body: (
+          <p>
+            A quick comparison at every interface of the temperature there against the dew point
+            there. It is a screening test, not a verdict: it flags where to look. The Moisture tab
+            does the full BS EN ISO 13788 assessment, which accounts for how hard the vapour had
+            to work to arrive.
+          </p>
+        ),
+      },
+      {
+        id: 'result-warnings',
+        title: 'Notes and limits',
+        figure: <CombinedFigure />,
+        body: (
+          <p>
+            Where the calculation has hit the edge of what the method covers — a cavity outside the
+            tabulated range, an interpolation, an in-house convention, a correction applied
+            unscaled. They are shown rather than swallowed. A tool that silently degrades is worse
+            than one that admits it cannot answer.
+          </p>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'summer',
+    title: 'Summer performance',
+    blurb: 'What the build-up does to a temperature that swings, rather than one held steady.',
+    topics: [
+      {
+        id: 'summer-decrement',
+        title: 'Decrement factor',
+        figure: <WaveFigure />,
+        body: (
+          <p>
+            The share of an outdoor temperature swing that makes it to the inside surface over 24
+            hours. 0.42 means a 10 °C swing outside arrives as 4.2 °C inside. Lower is calmer
+            indoors — and it is mass, not insulation, that does most of the work.
+          </p>
+        ),
+      },
+      {
+        id: 'summer-time-shift',
+        title: 'Time shift',
+        figure: <WaveFigure />,
+        body: (
+          <p>
+            How much later the indoor peak arrives. Get it past the evening and the heat lands when
+            the outside air is cooler and you can open a window; land it at 4 p.m. and it adds to
+            the worst part of the day. A masonry cavity wall manages around nine hours; a
+            lightweight panel manages two or three.
+          </p>
+        ),
+      },
+      {
+        id: 'summer-kappa',
+        title: 'κᵢ and κₑ',
+        figure: <KappaFigure />,
+        body: (
+          <>
+            <p>
+              The heat each face can absorb and release over a cycle. κ<sub>i</sub> is the one that
+              matters for comfort, and the one SAP 10.3 uses for thermal mass.
+            </p>
+            <p>
+              A large gap between the two faces means the insulation is cutting one side off from
+              the mass. That is exactly what internal wall insulation does: the U-value improves
+              and the thermal mass disappears behind the insulation.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'summer-y-value',
+        title: 'Periodic transmittance Y',
+        figure: <WaveFigure />,
+        body: (
+          <p>
+            The swinging counterpart of the U-value, in the same units. Where U says how much heat
+            crosses under a steady difference, Y says how much of a <em>cycling</em> difference
+            crosses. Divide Y by U and you get the decrement factor.
+          </p>
+        ),
+      },
+      {
+        id: 'summer-sections',
+        title: 'Between the studs, and through them',
+        figure: <StudFigure />,
+        body: (
+          <p>
+            BS EN ISO 13786 is written for layers that run right across an element. A bridged one is
+            not that, so each section is calculated separately and shown with its area share rather
+            than being averaged into a single number — timber stores far more heat than the
+            insulation it displaces, and averaging that away would hide the point.
+          </p>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'moisture',
+    title: 'The Moisture tab',
+    blurb: 'Where water forms inside a build-up, how much, and whether it leaves again.',
+    topics: [
+      {
+        id: 'moisture-humidity',
+        title: 'How damp does it get inside the wall',
+        figure: <VapourFigure />,
+        body: (
+          <p>
+            Relative humidity at every point through the build-up, drawn against real thickness so
+            it lines up with the cross-section above. Where it touches 100 % the air cannot hold
+            what it carries and water appears. The 80 % line is where mould becomes possible.
+          </p>
+        ),
+      },
+      {
+        id: 'moisture-path',
+        title: 'The path selector',
+        figure: <StudFigure />,
+        body: (
+          <p>
+            On a bridged build-up, which slice is being plotted. Worth switching: the stud path is
+            colder at the inside surface, and the insulation path is colder further out, so they
+            fail in different places. The verdict always uses the worst of them.
+          </p>
+        ),
+      },
+      {
+        id: 'moisture-glaser',
+        title: 'Where does it condense',
+        figure: <GlaserFigure />,
+        body: (
+          <>
+            <p>
+              The dots are how much vapour pressure each interface could hold at its temperature.
+              The straight line is what the vapour actually does: it takes the most direct route it
+              can without ever exceeding what the material can hold — like a string pulled taut
+              underneath the dots.
+            </p>
+            <p>
+              Wherever the taut line touches a dot, the vapour has run out of room and water forms
+              there. If it touches nothing, the build-up is stopping the moisture before it reaches
+              anywhere cold enough.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'moisture-seasons',
+        title: 'Over a season, does it dry out',
+        figure: <SeasonFigure />,
+        body: (
+          <>
+            <p>
+              Water that collects over a winter is only a problem if it does not leave again. Set
+              how long each season lasts and what the weather does in the drying one, and this
+              accumulates at the calculated rate and then evaporates it.
+            </p>
+            <p>
+              A build-up that gains a little every year and never gives it back is the failure that
+              rots a wall slowly rather than quickly — which is much worse, because nobody notices
+              for a decade.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'moisture-no-pass-mark',
+        title: 'Why there is no pass mark here',
+        figure: <SeasonFigure />,
+        body: (
+          <p>
+            A formal assessment compares the accumulated water against a permitted maximum, using
+            seasons and weather taken from a design climate for the location. OpenUValue ships
+            none of those, because it cannot attribute them to a clause — so it asks you for them
+            instead and gives no verdict. The arithmetic is real; deciding what counts as too much
+            stays with whoever can cite the limit.
+          </p>
+        ),
+      },
+      {
+        id: 'moisture-mould',
+        title: 'Mould on the inside surface',
+        figure: <SurfaceConditionFigure />,
+        body: (
+          <p>
+            Mould needs neither condensation nor liquid water — only air that stays damp against a
+            surface, which happens at about 80 % surface humidity. Since a cold surface makes the
+            air against it damper than the room, this bites long before anything looks wet, and it
+            bites first in corners and behind furniture.
+          </p>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'trust',
+    title: 'Sharing, and how much to trust this',
+    blurb: 'The share link, the examples, and the parts that are still unverified.',
+    topics: [
+      {
+        id: 'share-link',
+        title: 'The share link',
+        figure: <ShareFigure />,
+        body: (
+          <>
+            <p>
+              The entire build-up is encoded in the page address. Copy the link and whoever opens
+              it sees exactly your wall — no account, no upload, no server. The link <em>is</em> the
+              file.
+            </p>
+            <p>
+              Bookmark variants to compare them. An old link still opens after the tool has
+              changed: anything it does not mention falls back to the current default.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'examples',
+        title: 'The example buttons',
+        figure: <LayersFigure />,
+        body: (
+          <p>
+            Two starting points written for this tool — a filled-cavity masonry wall and a timber
+            frame wall. They replace whatever is on screen, so copy your link first if you want to
+            come back to it. Neither is taken from anyone else's example library.
+          </p>
+        ),
+      },
+      {
+        id: 'verify',
+        title: 'What still needs checking',
+        figure: <ProvenanceFigure />,
+        body: (
+          <>
+            <p>
+              Several standards this tool follows are not free to read. Where a value or a clause
+              reference could not be confirmed against a printed copy, it is marked rather than
+              guessed, and listed in VERIFY.md with what would change if it turned out to be wrong.
+            </p>
+            <p>
+              That file is linked in the footer and is worth a look before you rely on a number for
+              anything that matters. A guessed citation would be worse than an admitted gap.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'not-built',
+        title: 'What is not built yet',
+        figure: <CombinedFigure />,
+        body: (
+          <p>
+            Mechanical fasteners through insulation are not corrected for, so a build-up with
+            insulation screwed through is under-reported. Ground-bearing floors need a different
+            standard and are refused rather than approximated. Overheating proper needs solar gain
+            and a room model, so the summer figures here are an input to that, not a substitute.
+            ROADMAP.md in the footer keeps the current list.
+          </p>
+        ),
+      },
+    ],
+  },
+];
+
+export const ALL_TOPICS: readonly GuideTopic[] = CHAPTERS.flatMap((chapter) => chapter.topics);
+
+export function findTopicIndex(topicId: string): number {
+  return ALL_TOPICS.findIndex((topic) => topic.id === topicId);
+}

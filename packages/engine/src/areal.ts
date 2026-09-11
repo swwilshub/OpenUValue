@@ -14,9 +14,9 @@ import type { Metres } from './units.js';
  * quantity: under a daily cycle only material within a thermal penetration depth of the
  * surface takes part, so kappa is generally smaller than this total and depends on which
  * face the cycle is applied to. Anything that wants kappa — a SAP 10.3 calculation, a
- * decrement factor, a time shift — needs ISO 13786, which is not implemented. See
- * ROADMAP.md Phase 4. The total is still worth showing: it is what sets how much heat a
- * construction can absorb in absolute terms, and it is honestly labelled as the total.
+ * decrement factor, a time shift — wants `calculateDynamicProperties` in dynamic.ts, not
+ * this. The total is still worth showing: it is what sets how much heat a construction
+ * can absorb in absolute terms, and it is honestly labelled as the total.
  *
  * **Mass is the dry mass** of the materials as specified. It makes no allowance for
  * moisture content, fixings, finishes or the structure behind, so it indicates what a
