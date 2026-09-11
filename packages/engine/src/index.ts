@@ -25,6 +25,7 @@ export * from './uvalue.js';
 export * from './corrections.js';
 export * from './areal.js';
 export * from './partL.js';
+export * from './dynamic.js';
 export * from './temperatureProfile.js';
 export * from './condensation/method.js';
 export * from './condensation/glaser.js';
