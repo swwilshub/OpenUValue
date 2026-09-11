@@ -9,6 +9,7 @@ import type {
 import { calculateTemperatureProfile, calculateUValue } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
+import { InterstitialPanel } from './components/InterstitialPanel.js';
 import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { LayerTable } from './components/LayerTable.js';
@@ -339,7 +340,10 @@ export function App(): JSX.Element {
 
         <div className="column-right">
           {result !== undefined && profile !== undefined ? (
-            <ResultsPanel result={result} profile={profile} />
+            <>
+              <ResultsPanel result={result} profile={profile} />
+              <InterstitialPanel element={element} conditions={state.conditions} />
+            </>
           ) : (
             <section className="panel">
               <h2>Result</h2>

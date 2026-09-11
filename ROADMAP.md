@@ -33,6 +33,21 @@ nothing impedes vapour reaching it, but within the element it is a **screening
 indicator** — necessary for condensation, not sufficient. Turning it into an
 assessment needs the vapour side, which is what this phase adds.
 
+**Delivered since:** the Glaser construction itself — the vapour pressure profile
+against the saturation ceiling, the condensation planes and their rates — calculated at
+**one set of conditions**, the ones on screen. See `engine/src/condensation/glaser.ts`
+and `iso13788.ts`, and the diagram in the results.
+
+**Still outstanding**, and the reason the above is not a BS EN ISO 13788 *assessment*:
+
+0. **Monthly climate data.** The standard's assessment runs the construction for each
+   of twelve months and passes an element only if what condenses in winter evaporates
+   again within the year. That needs mean monthly external temperature and humidity for
+   the location. OpenUValue ships none and will not invent any. Until a dataset with a
+   citable source is added — or the UI lets a user paste twelve months of their own —
+   the annual verdict cannot be given. The accumulation loop itself is small; the data
+   is the blocker.
+
 4. **BS EN ISO 13788 monthly (Glaser) interstitial condensation assessment**:
    monthly climate data, condensation and evaporation over an annual cycle, and the
    drying-reserve question ("does it dry out again by the end of the year?").
