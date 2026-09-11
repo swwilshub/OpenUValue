@@ -1886,6 +1886,16 @@ button.danger:hover {
   color: var(--risk);
 }
 
+.corrections {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.corrections .footnote {
+  margin-top: 7px;
+}
+
 /* ---------------------------------------------------------------- footer ---- */
 
 .app-footer {

@@ -1,4 +1,5 @@
 import type {
+  AirGapLevel,
   AirLayerVentilation,
   BuildingElement,
   EnvironmentConditions,
@@ -8,7 +9,11 @@ import type {
   Layer,
   ProfileSection,
 } from '@openuvalue/engine';
-import { externalEnvironment, externalEnvironmentsForDirection } from '@openuvalue/engine';
+import {
+  DEFAULT_AIR_GAP_LEVEL,
+  externalEnvironment,
+  externalEnvironmentsForDirection,
+} from '@openuvalue/engine';
 import { millimetresToMetres, percentToFraction } from '@openuvalue/engine';
 import type { MaterialCategory } from '@openuvalue/materials';
 import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
@@ -57,6 +62,11 @@ export interface UiState {
   readonly internalSurfaceCondition: InternalSurfaceCondition;
   /** What the outer face faces: outside air, a loft, another heated room, ... */
   readonly externalEnvironment: ExternalEnvironmentKind;
+  /**
+   * Air gaps in the insulation layer, BR 443 (2019) 4.8.1. A property of how the
+   * element is built rather than of the weather, so it lives with the build-up.
+   */
+  readonly airGapLevel: AirGapLevel;
 }
 
 
@@ -331,6 +341,8 @@ export function defaultState(): UiState {
     section: 'combined',
     internalSurfaceCondition: 'normal-air-circulation',
     externalEnvironment: 'outside-air',
+    // BR 443 (2019) 4.8.1: level 1 unless the conditions for level 0 are met.
+    airGapLevel: DEFAULT_AIR_GAP_LEVEL,
   };
 }
 
@@ -365,6 +377,8 @@ export function timberFrameExample(): UiState {
     section: 'combined',
     internalSurfaceCondition: 'normal-air-circulation',
     externalEnvironment: 'outside-air',
+    // BR 443 (2019) 4.8.1: level 1 unless the conditions for level 0 are met.
+    airGapLevel: DEFAULT_AIR_GAP_LEVEL,
   };
 }
 

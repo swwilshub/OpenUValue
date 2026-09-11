@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  AirGapLevel,
   EnvironmentConditions,
   ExternalEnvironmentKind,
   HeatFlowDirection,
   InternalSurfaceCondition,
   ProfileSection,
 } from '@openuvalue/engine';
-import { calculateTemperatureProfile, calculateUValue } from '@openuvalue/engine';
+import {
+  calculateTemperatureProfile,
+  calculateUValue,
+  computeCorrections,
+} from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
@@ -19,6 +24,7 @@ import {
   type UiState,
   conditionsForEnvironment,
   defaultState,
+  layerDrawCategory,
   environmentForDirection,
   hasBridging,
   timberFrameExample,
@@ -174,6 +180,9 @@ export function App(): JSX.Element {
       };
     });
   }, []);
+  const setAirGapLevel = useCallback((airGapLevel: AirGapLevel) => {
+    setState((current) => ({ ...current, airGapLevel }));
+  }, []);
   const setConditions = useCallback((conditions: EnvironmentConditions) => {
     setState((current) => ({ ...current, conditions }));
   }, []);
@@ -193,6 +202,31 @@ export function App(): JSX.Element {
     },
     [],
   );
+
+  /*
+   * The air gap correction is scaled by the share of the element's resistance the
+   * insulation provides, so the insulation layers have to be identified. Anything the
+   * catalogue calls insulation counts; a layer with a typed-in lambda does not, since
+   * there is nothing to identify it by.
+   */
+  const corrections = useMemo(() => {
+    if (result === undefined || result.uValueWPerM2K === null) {
+      return undefined;
+    }
+    const insulationResistanceM2KPerW = state.layers.reduce((total, layer, index) => {
+      if (layerDrawCategory(layer.materialId, layer.kind) !== 'insulation') {
+        return total;
+      }
+      return total + (result.layers[index]?.combinedResistanceM2KPerW ?? 0);
+    }, 0);
+    return computeCorrections({
+      uncorrectedUValueWPerM2K: result.uValueWPerM2K,
+      heatFlowDirection: state.heatFlowDirection,
+      airGapLevel: state.airGapLevel,
+      totalResistanceM2KPerW: result.totalResistanceM2KPerW,
+      ...(insulationResistanceM2KPerW > 0 ? { insulationResistanceM2KPerW } : {}),
+    });
+  }, [result, state.layers, state.heatFlowDirection, state.airGapLevel]);
 
   const bridged = hasBridging(state);
 
@@ -376,7 +410,13 @@ export function App(): JSX.Element {
 
         <div className="column-right">
           {result !== undefined && profile !== undefined ? (
-            <ResultsPanel result={result} profile={profile} />
+            <ResultsPanel
+              result={result}
+              profile={profile}
+              corrections={corrections}
+              airGapLevel={state.airGapLevel}
+              onAirGapLevelChange={setAirGapLevel}
+            />
           ) : (
             <section className="panel">
               <h2>Result</h2>

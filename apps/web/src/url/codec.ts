@@ -1,4 +1,5 @@
 import type {
+  AirGapLevel,
   AirLayerVentilation,
   ExternalEnvironmentKind,
   HeatFlowDirection,
@@ -46,6 +47,8 @@ interface EncodedState {
   readonly i?: InternalSurfaceCondition;
   /** External environment. Absent in links written before it existed. */
   readonly e?: ExternalEnvironmentKind;
+  /** Air gap level. Absent in links written before it existed. */
+  readonly g?: AirGapLevel;
 }
 
 function toBase64Url(text: string): string {
@@ -77,6 +80,7 @@ export function encodeState(state: UiState): string {
     ],
     i: state.internalSurfaceCondition,
     e: state.externalEnvironment,
+    g: state.airGapLevel,
     ls: state.layers.map((layer) => {
       const base: EncodedLayer = {
         k: layer.kind === 'air' ? 'a' : 's',
@@ -217,6 +221,12 @@ export function decodeState(hash: string): DecodeResult {
           INTERNAL_CONDITION_KINDS.includes(parsed['i'] as InternalSurfaceCondition)
             ? (parsed['i'] as InternalSurfaceCondition)
             : 'normal-air-circulation',
+        // A link from before the correction existed decodes to BR 443's default, which
+        // is what such a build-up would be assessed at today.
+        airGapLevel:
+          parsed['g'] === 'level-0' || parsed['g'] === 'level-2'
+            ? parsed['g']
+            : 'level-1',
         externalEnvironment:
           typeof parsed['e'] === 'string' &&
           EXTERNAL_ENVIRONMENT_KINDS.includes(parsed['e'] as ExternalEnvironmentKind)

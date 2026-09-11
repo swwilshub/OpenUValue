@@ -1,5 +1,15 @@
-import type { TemperatureProfile, UValueResult, Warning } from '@openuvalue/engine';
-import { roundResistanceForReporting, roundUValueForReporting } from '@openuvalue/engine';
+import type {
+  AirGapLevel,
+  CorrectionResult,
+  TemperatureProfile,
+  UValueResult,
+  Warning,
+} from '@openuvalue/engine';
+import {
+  AIR_GAP_LEVELS,
+  roundResistanceForReporting,
+  roundUValueForReporting,
+} from '@openuvalue/engine';
 
 const WARNING_TITLES: Record<Warning['code'], string> = {
   'combined-method-ratio-exceeds-limit': 'Out of scope for this method',
@@ -14,10 +24,27 @@ const WARNING_TITLES: Record<Warning['code'], string> = {
 export interface ResultsPanelProps {
   readonly result: UValueResult;
   readonly profile: TemperatureProfile;
+  /** Undefined where the element has no U-value to correct. */
+  readonly corrections?: CorrectionResult | undefined;
+  readonly airGapLevel: AirGapLevel;
+  readonly onAirGapLevelChange: (level: AirGapLevel) => void;
 }
 
-export function ResultsPanel({ result, profile }: ResultsPanelProps): JSX.Element {
-  const rounded = roundUValueForReporting(result.uValueWPerM2K);
+export function ResultsPanel({
+  result,
+  profile,
+  corrections,
+  airGapLevel,
+  onAirGapLevelChange,
+}: ResultsPanelProps): JSX.Element {
+  /*
+   * BR 443 (2019) 4.8: "The U-value is first calculated without taking account of
+   * these effects, and then a correction DU is added to obtain the final U-value." So
+   * the headline is the corrected figure, and the uncorrected one is shown beside it
+   * rather than instead of it.
+   */
+  const reportedU = corrections?.correctedUValueWPerM2K ?? result.uValueWPerM2K;
+  const rounded = roundUValueForReporting(reportedU);
   const layersOnly = result.totalResistanceM2KPerW - result.rsiM2KPerW - result.rseM2KPerW;
   const coldNodes = profile.nodes.filter((node) => node.isBelowInternalDewPoint);
   const internalSurface = profile.nodes.find((node) => node.kind === 'internal-surface');
@@ -41,6 +68,47 @@ export function ResultsPanel({ result, profile }: ResultsPanelProps): JSX.Elemen
         <div className="u-value">
           <span className="u-value-figure">{rounded.toFixed(2)}</span>
           <span className="u-value-unit">W/(m²·K)</span>
+        </div>
+      )}
+
+      {corrections !== undefined && (
+        <div className="corrections">
+          <label className="field">
+            Air gaps in the insulation (BR 443 4.8.1)
+            <select
+              value={airGapLevel}
+              onChange={(event) => onAirGapLevelChange(event.target.value as AirGapLevel)}
+            >
+              {AIR_GAP_LEVELS.map((level) => (
+                <option key={level.level} value={level.level} title={level.description}>
+                  {level.label} — ΔU {level.deltaUWPerM2K.toFixed(2)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="footnote">
+            {corrections.totalDeltaUWPerM2K === 0 ? (
+              <>No correction for air gaps at this level.</>
+            ) : corrections.isNegligible ? (
+              <>
+                ΔU<sub>g</sub> = {corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K), which is
+                under 3% of the U-value, so BS EN ISO 6946 permits omitting it — and it has
+                been omitted. It is shown here rather than lost.
+              </>
+            ) : (
+              <>
+                ΔU<sub>g</sub> = <strong>{corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K)</strong>{' '}
+                added to an uncorrected {result.uValueWPerM2K?.toFixed(3)}.
+              </>
+            )}{' '}
+            BR 443 4.8.1 makes level 1 the default unless the conditions for level 0 are met.
+            The mechanical-fastener and inverted-roof corrections are not implemented.
+          </p>
+          {corrections.warnings.map((item) => (
+            <p key={item.message} className="footnote">
+              {item.message}
+            </p>
+          ))}
         </div>
       )}
 

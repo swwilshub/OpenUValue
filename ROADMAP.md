@@ -14,10 +14,21 @@ dependency, so each phase is buildable on the one before it.
 Without these, a U-value from this tool is not yet a BR 443 U-value.
 
 1. **BS EN ISO 6946 ΔU corrections.**
+   - `ΔU_g`, air voids in the insulation layer. **Delivered** — BR 443 (2019) 4.8.1
+     gives the three levels (0.00, 0.01, 0.04) with level 1 as the default, and the
+     3 % omission threshold. See `engine/src/corrections.ts`.
    - `ΔU_f`, mechanical fasteners penetrating the insulation. **BR 443 requires
-     this**, so any build-up with insulation fixed through is currently under-reported.
-   - `ΔU_g`, air voids in the insulation layer.
+     this**, so any build-up with insulation fixed through is still under-reported.
+     BR 443 4.8.3 points to BS EN ISO 6946 Annex F.3.2 for the approximate procedure
+     without reproducing it, and that annex is not in the free preview, so the formula
+     cannot yet be attributed. BR 443 does give one usable exemption: no correction is
+     needed for fixings in a flat roof where the metal part of a composite fastener is
+     recessed by at least 50 % of its length and there are no more than 15 fixings per
+     square metre.
    - `ΔU_r`, inverted (upside-down) roofs, where rainwater drains over the insulation.
+   - Wall ties, for which BR 443 4.8.2 gives the data needed (mild steel λ 50,
+     stainless λ 17; double-triangle ties 12.5 mm², vertical twist 80 mm²; typically
+     2.5 per m²) but the correction formula is again in ISO 6946 Annex F.
 2. **Elements adjacent to unheated spaces**, via the unheated-space resistance `R_u`,
    and the BR 443 conventions for garages, roof voids and similar. The engine already
    accepts `rseOverrideM2KPerW`, so this is a matter of computing the right override
