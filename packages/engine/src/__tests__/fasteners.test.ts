@@ -4,6 +4,7 @@ import {
   BR443_WALL_TIE_DENSITY_PER_M2,
   BR443_WALL_TIE_TYPES,
   RECESSED_FIXING_EXEMPTION_MAX_PER_M2,
+  approximateFastenerCorrection,
   assessFasteners,
 } from '../fasteners.js';
 import { computeCorrections } from '../corrections.js';
@@ -211,5 +212,112 @@ describe('fasteners inside the whole correction', () => {
     });
     expect(result.fastenerDeltaUWPerM2K).toBe(0);
     expect(result.warnings.map((w) => w.code)).toContain('metal-bridging-out-of-scope');
+  });
+});
+
+describe('the approximate route, ISO/DIS 6946:2015 Annex F.3.2', () => {
+  /*
+   * A stainless steel double-triangle wall tie through 100 mm of cavity insulation, with
+   * the tie data BR 443 (2019) 4.8.2 gives for when the exact details are not known:
+   *   lambda_f = 17 W/(m*K), A_f = 12.5 mm^2 = 12.5e-6 m^2, n_f = 2.5 per m^2
+   * through mineral wool at lambda 0.035, so R_1 = 0.1 / 0.035 = 2.857 m^2K/W, in an
+   * element whose unbridged total is 3.887 m^2K/W.
+   */
+  const tie = {
+    fastenerConductivityWPerMK: 17,
+    crossSectionalAreaM2: 12.5e-6,
+    fastenersPerM2: 2.5,
+    penetratedLengthM: 0.1,
+    insulationThicknessM: 0.1,
+    insulationResistanceM2KPerW: 0.1 / 0.035,
+    totalResistanceIgnoringBridgingM2KPerW: 3.887,
+  };
+
+  it('works the formula through for a stainless steel wall tie', () => {
+    // alpha = 0.8, since the tie goes right through.
+    // lambda_f * A_f * n_f = 17 x 12.5e-6 x 2.5 = 5.312500e-4
+    //   divided by d_1 = 0.1                    = 5.312500e-3
+    // R_1 = 0.1 / 0.035                         = 2.857142857
+    // R_1 / R_T,h = 2.857142857 / 3.887         = 0.735050902
+    //   squared                                 = 0.540299829
+    // dU_f = 0.8 x 5.3125e-3 x 0.540299829      = 0.0022962743 W/(m^2*K)
+    const result = approximateFastenerCorrection(tie);
+    expect(result.outcome).toBe('corrected');
+    expect(result.deltaUWPerM2K).toBeCloseTo(0.0022962743, 9);
+  });
+
+  it('halves alpha for a fastener recessed half way', () => {
+    // alpha = 0.8 x d_1/d_0 = 0.8 x 0.05/0.1 = 0.4. But d_1 is also the divisor, and it
+    // has halved too, so the lambda*A*n/d_1 term doubles — the two cancel exactly:
+    //   0.4 x (5.312500e-4 / 0.05) x 0.540299829 = 0.0022962743
+    // Which is worth knowing: recessing a fastener does not help unless the insulation
+    // resistance R_1 it sees falls with it, as the standard's NOTE 1 says it does.
+    const recessed = approximateFastenerCorrection({ ...tie, penetratedLengthM: 0.05 });
+    expect(recessed.deltaUWPerM2K).toBeCloseTo(0.0022962743, 9);
+  });
+
+  it('still counts a fastener that passes through at an angle', () => {
+    // The standard's NOTE 1: d_1 can exceed the layer thickness where the fastener goes
+    // through at an angle. It has still fully penetrated, so alpha stays at 0.8.
+    const angled = approximateFastenerCorrection({ ...tie, penetratedLengthM: 0.12 });
+    // 0.8 x (5.312500e-4 / 0.12) x 0.540299829 = 0.0019135619
+    expect(angled.deltaUWPerM2K).toBeCloseTo(0.0019135619, 9);
+  });
+
+  it('scales with the square of the insulation share', () => {
+    // Halving R_1/R_T,h quarters the correction.
+    const half = approximateFastenerCorrection({
+      ...tie,
+      totalResistanceIgnoringBridgingM2KPerW: 3.887 * 2,
+    });
+    // 0.0022962743 / 4 = 0.0005740686
+    expect(half.deltaUWPerM2K).toBeCloseTo(0.0005740686, 9);
+  });
+
+  it('applies no correction to ties across an empty cavity', () => {
+    // "No correction shall be applied ... where there are wall ties across an empty cavity"
+    const result = approximateFastenerCorrection({ ...tie, acrossEmptyCavity: true });
+    expect(result.outcome).toBe('exempt-empty-cavity');
+    expect(result.deltaUWPerM2K).toBe(0);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  it('applies no correction below 1 W/(m·K)', () => {
+    // "...when the thermal conductivity of the fastener is less than 1 W/(m·K)."
+    // BR 443 4.8.2 calls these specialist ties.
+    const result = approximateFastenerCorrection({
+      ...tie,
+      fastenerConductivityWPerMK: 0.9,
+    });
+    expect(result.outcome).toBe('exempt-low-conductivity');
+    expect(result.deltaUWPerM2K).toBe(0);
+
+    // Exactly 1 is not "less than 1", so it is corrected.
+    expect(
+      approximateFastenerCorrection({ ...tie, fastenerConductivityWPerMK: 1 }).outcome,
+    ).toBe('corrected');
+  });
+
+  it('is out of scope, not exempt, with both ends in metal sheets', () => {
+    const result = approximateFastenerCorrection({ ...tie, bothEndsInMetalSheets: true });
+    expect(result.outcome).toBe('out-of-scope-metal-sheets');
+    expect(result.warnings.map((w) => w.code)).toContain('metal-bridging-out-of-scope');
+  });
+
+  it('gives a wall tie a correction small enough to be dropped by the 3 % rule', () => {
+    // 0.0023 against a U of about 0.257 is 0.9 %, under the 3 % threshold — which is why
+    // BR 443 4.8.2 says the effect "may be negligible". The tool still has to calculate it
+    // to find that out, which BR 443 4.8 also says in as many words.
+    const result = approximateFastenerCorrection(tie);
+    expect(result.deltaUWPerM2K / (1 / 3.887)).toBeLessThan(0.03);
+  });
+
+  it('refuses impossible geometry rather than dividing by zero', () => {
+    expect(() =>
+      approximateFastenerCorrection({ ...tie, penetratedLengthM: 0 }),
+    ).toThrow(InvalidInputError);
+    expect(() =>
+      approximateFastenerCorrection({ ...tie, fastenersPerM2: -1 }),
+    ).toThrow(InvalidInputError);
   });
 });
