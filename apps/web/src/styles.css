@@ -781,15 +781,135 @@ button.danger:hover {
   stroke-linejoin: round;
 }
 
+/*
+ * Interface markers. Every condition differs from its neighbours in more than one way -
+ * size, fill, stroke, and for the two loud cases an outer ring - so that the drawing
+ * does not depend on telling two reds apart.
+ */
 .node {
   fill: var(--surface);
   stroke: var(--accent);
   stroke-width: 2;
 }
 
+/*
+ * The plain risk marker, still used by the Glaser, humidity and tour charts, where a
+ * node is either flagged or not and there is no vapour verdict to grade it against.
+ */
 .node-risk {
   fill: var(--risk);
   stroke: var(--risk);
+}
+
+.node-ring {
+  fill: none;
+  stroke-width: 1.4;
+  pointer-events: none;
+}
+
+/*
+ * Colder than the internal dew point but staying dry. This is the ordinary state of
+ * most of an insulated build-up, so it is drawn as information rather than as an alarm:
+ * a cool hollow ring that recedes instead of a red disc that shouts.
+ */
+.node-below-dew-point .node {
+  fill: var(--surface);
+  stroke: var(--temp-cold);
+  stroke-width: 1.75;
+  stroke-dasharray: 2.6 2.2;
+}
+
+/* Water actually arriving. Filled, larger, ringed. */
+.node-condensing .node {
+  fill: var(--temp-cold);
+  stroke: var(--surface);
+  stroke-width: 1.75;
+}
+
+.node-condensing .node-ring {
+  stroke: var(--temp-cold);
+  opacity: 0.55;
+}
+
+/* Condensation on the room-side face: the one an occupant meets. */
+.node-surface-condensation .node {
+  fill: var(--risk);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.node-surface-condensation .node-ring {
+  stroke: var(--risk);
+  opacity: 0.6;
+}
+
+/* A plane giving water back. Hollow, in the drying colour. */
+.node-evaporating .node {
+  fill: var(--surface);
+  stroke: var(--ok);
+  stroke-width: 2.25;
+}
+
+/* The gap between a room-side surface and the dew point it has fallen below. */
+.shortfall-stem {
+  stroke: var(--risk);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2.5;
+  pointer-events: none;
+}
+
+.shortfall-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--risk);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/*
+ * A wet plane: a drop whose area is proportional to the rate, on a leader back to the
+ * interface it forms at. The halo keeps it legible over any hatching.
+ */
+.wet-plane path {
+  fill: var(--temp-cold);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+  paint-order: stroke;
+}
+
+.wet-plane line {
+  stroke: var(--temp-cold);
+  stroke-width: 1.25;
+  stroke-dasharray: 2.5 2.5;
+  opacity: 0.75;
+}
+
+.wet-plane text {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--temp-cold);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+
+/* Drying reads as an outline rather than a filled drop: water leaving, not arriving. */
+.wet-plane.is-drying path {
+  fill: var(--surface);
+  stroke: var(--ok);
+  stroke-width: 1.75;
+}
+
+.wet-plane.is-drying line {
+  stroke: var(--ok);
+}
+
+.wet-plane.is-drying text {
+  fill: var(--ok);
 }
 
 .cross-section figcaption {
