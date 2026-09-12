@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { bridgeGeometry, layerDrawCategory } from '../state/model.js';
 import type { UiLayer } from '../state/model.js';
-import { CATEGORY_STYLE } from './hatches.js';
+import { CATEGORY_3D_FILL } from './hatches.js';
 
 /**
  * A 3D cutaway of the build-up: the layers as solid boxes, face to face with no gaps
@@ -117,6 +117,13 @@ interface DrawnFace {
   readonly fill: string;
   readonly shade: number;
   readonly key: string;
+  /**
+   * Where the box this face belongs to sits along the two axes the boxes are separated
+   * on — layers along z, segments within a layer along x. See the sort below for why the
+   * face's own depth cannot be the primary key.
+   */
+  readonly boxDepthZ: number;
+  readonly boxDepthX: number;
 }
 
 /**
@@ -237,11 +244,22 @@ export function Layup3D({
   };
 
   /** Every visible face of one box, ready for the depth sort. */
+  /*
+   * How much a unit step along each object axis moves a point away from the camera.
+   *
+   * Depth is (R p)·z, which is **linear** in p, so the depth contribution of each axis is
+   * just that axis rotated and its z taken. That linearity is what makes an exact draw
+   * order possible below without sorting individual triangles.
+   */
+  const depthPerX = rotate({ x: 1, y: 0, z: 0 }, yaw, pitch).z;
+  const depthPerZ = rotate({ x: 0, y: 0, z: 1 }, yaw, pitch).z;
+
   const boxFaces = (
     key: string,
     fill: string,
     box: readonly Vec3[],
     skip: readonly number[] = [],
+    boxCentre: { readonly x: number; readonly z: number } = { x: 0, z: 0 },
   ): readonly DrawnFace[] => {
     const placed = box.map(place);
     const out: DrawnFace[] = [];
@@ -276,6 +294,8 @@ export function Layup3D({
           })
           .join(' '),
         depth,
+        boxDepthZ: boxCentre.z * depthPerZ,
+        boxDepthX: boxCentre.x * depthPerX,
         fill,
         shade: faceBrightness(face.normal),
       });
@@ -283,8 +303,8 @@ export function Layup3D({
     return out;
   };
 
-  const timberFill = CATEGORY_STYLE['timber-and-board'].fill;
-  const dabFill = CATEGORY_STYLE['plaster-and-render'].fill;
+  const timberFill = CATEGORY_3D_FILL['timber-and-board'];
+  const dabFill = CATEGORY_3D_FILL['plaster-and-render'];
 
   const faces: DrawnFace[] = [];
   const badges: { index: number; x: number; y: number; id: string }[] = [];
@@ -303,8 +323,9 @@ export function Layup3D({
     /** Nothing is there. An air layer's air, as opposed to the members crossing it. */
     readonly isVoid: boolean;
   }[] => {
-    const style = CATEGORY_STYLE[layerDrawCategory(slab.layer.materialId, slab.layer.kind)];
-    const fill = slab.included ? style.fill : 'var(--excluded-hatch)';
+    const fill = slab.included
+      ? CATEGORY_3D_FILL[layerDrawCategory(slab.layer.materialId, slab.layer.kind)]
+      : 'var(--excluded-hatch)';
     // A cavity is empty, so its air carries no box at all - see the loop below.
     const isCavity = slab.layer.kind === 'air';
     const whole = [{ x0: 0, x1: slab.widthMm, fill, isMember: false, isVoid: isCavity }];
@@ -380,6 +401,7 @@ export function Layup3D({
           segment.fill,
           corners(segment.x0, segment.x1, 0, slab.heightMm, slab.z0, slab.z1),
           skip,
+          { x: (segment.x0 + segment.x1) / 2, z: (slab.z0 + slab.z1) / 2 },
         ),
       );
     });
@@ -390,7 +412,29 @@ export function Layup3D({
     badges.push({ index: slab.index, x: bx, y: by, id: slab.layer.id });
   }
 
-  faces.sort((a, b) => a.depth - b.depth);
+  /*
+   * Draw order, far to near.
+   *
+   * Sorting faces by their own mean depth is the usual painter's algorithm and it is
+   * wrong here, in a way that showed: a stud is a small polygon and the layer in front of
+   * it is a large one, so under yaw the stud's mean depth beat the panel's and it drew
+   * straight through the plasterboard covering it.
+   *
+   * The geometry rescues it. Every box is axis-aligned, layers are separated along z and
+   * the segments within a layer along x, and no two boxes interpenetrate. For boxes
+   * separated by an axis-aligned plane, the one further along the view direction is
+   * behind at *every* point where they overlap on screen — so ordering by the box's
+   * position on the separating axis is exact, at any angle, rather than an approximation
+   * that happens to hold for most of them. Depth being linear in position is what lets
+   * the two axes be compared as plain numbers.
+   *
+   * Layers first, then segments within a layer, then the faces of a single box — which
+   * are convex and never overlap each other, so that last key only needs to be stable.
+   */
+  faces.sort(
+    (a, b) =>
+      a.boxDepthZ - b.boxDepthZ || a.boxDepthX - b.boxDepthX || a.depth - b.depth,
+  );
 
   /*
    * Badges are placed in 3D and turn with the model, so two thin layers put theirs on top

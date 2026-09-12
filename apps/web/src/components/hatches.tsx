@@ -16,6 +16,29 @@ import type { LayerDrawCategory } from '../state/model.js';
  * it will become in the cross-section. An icon that merely resembled the drawing
  * would drift from it.
  */
+/**
+ * Solid fills for the 3D view, one per category.
+ *
+ * Separate from CATEGORY_STYLE on purpose. That palette is built for a line drawing,
+ * where a fill sits behind hatching and should stay out of the way; the same colours
+ * shaded across three faces of a box lose what little separated them, and masonry,
+ * covering, screed, plaster and custom all arrived at the same beige. These keep each
+ * category's hue so a material is recognisably itself in both views, and spread the
+ * saturation and lightness so the layers of a stack can be told apart.
+ */
+export const CATEGORY_3D_FILL: Record<LayerDrawCategory, string> = {
+  masonry: 'var(--cat3d-masonry)',
+  concrete: 'var(--cat3d-concrete)',
+  'timber-and-board': 'var(--cat3d-timber)',
+  insulation: 'var(--cat3d-insulation)',
+  'plaster-and-render': 'var(--cat3d-plaster)',
+  screed: 'var(--cat3d-screed)',
+  membrane: 'var(--cat3d-membrane)',
+  covering: 'var(--cat3d-covering)',
+  air: 'var(--cat3d-air)',
+  custom: 'var(--cat3d-custom)',
+};
+
 export const CATEGORY_STYLE: Record<
   LayerDrawCategory,
   { readonly fill: string; readonly hatch?: string; readonly label: string }

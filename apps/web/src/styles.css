@@ -45,6 +45,24 @@
   --cat-air: #dfe9ee;
   --cat-custom: #e9e3d7;
 
+  /*
+   * Solid fills for the 3D view. The hues match the flat category colours above, so a
+   * material reads as the same thing in both views, but they are pushed harder: a fill
+   * chosen to sit quietly behind hatching in a line drawing turns to mud once it is
+   * shaded on three faces, and half the categories came out the same beige. Saturation
+   * carries the family and lightness separates the members of it.
+   */
+  --cat3d-masonry: #c98b66;
+  --cat3d-concrete: #a9a8a3;
+  --cat3d-timber: #cfa367;
+  --cat3d-insulation: #f0d878;
+  --cat3d-plaster: #e6ded0;
+  --cat3d-screed: #bfae8e;
+  --cat3d-membrane: #7f9b95;
+  --cat3d-covering: #9d8478;
+  --cat3d-air: #cfe2ec;
+  --cat3d-custom: #cdbfa8;
+
   /* The temperature line's vertical colour scale: warm at the top, cold at the bottom. */
   --temp-warm: #c2542a;
   --temp-mid: #0f6d63;
@@ -3355,8 +3373,10 @@ body.is-dragging * {
  * dissolve into one shape and the solid stops reading as a solid.
  */
 .layup-face {
-  stroke: rgba(60, 52, 40, 0.32);
-  stroke-width: 0.5;
+  /* Darker and a shade heavier than it was: two layers of similar colour meeting need a
+     line between them, or the stack reads as one block. */
+  stroke: rgba(48, 41, 32, 0.5);
+  stroke-width: 0.6;
   stroke-linejoin: round;
 }
 

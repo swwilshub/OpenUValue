@@ -244,6 +244,19 @@ export function App(): JSX.Element {
     });
   }, []);
 
+  /**
+   * Turn the build-up back to front: what was the inside face becomes the outside one.
+   *
+   * The layers are reversed and nothing else is. The conditions, the heat flow direction
+   * and the surface resistances stay where they are, because they describe the room and
+   * the weather rather than the wall — so this answers "what if I built this the other
+   * way round", which is the question worth asking, rather than quietly rebuilding the
+   * whole model around the new orientation and changing two things at once.
+   */
+  const reverseLayers = useCallback(() => {
+    setState((current) => ({ ...current, layers: [...current.layers].reverse() }));
+  }, []);
+
   const setLayerThickness = useCallback((index: number, thicknessMm: number) => {
     setState((current) => {
       const layer = current.layers[index];
@@ -472,6 +485,21 @@ export function App(): JSX.Element {
                 3D layup
               </button>
               <HelpButton topicId="layup-3d" label="the 3D layup view" onOpen={openGuide} />
+            </div>
+            <div className="view-toggle">
+              {/*
+                * A build-up operation rather than a view one, so it sits with the view
+                * controls only because that is where both drawings can see it — it
+                * changes the model, and the drawings follow.
+                */}
+              <button
+                type="button"
+                onClick={reverseLayers}
+                disabled={state.layers.length < 2}
+                title="Turn the build-up back to front: the inside face becomes the outside one. The conditions and heat flow direction stay as they are."
+              >
+                Reverse layers
+              </button>
             </div>
             <label className="inline-select" hidden={heroView !== 'section'}>
               Show
