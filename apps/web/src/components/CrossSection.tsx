@@ -11,6 +11,7 @@ import type {
 import type { LayerDrawCategory, UiLayer } from '../state/model.js';
 import { bridgePitchMm, layerDrawCategory } from '../state/model.js';
 import { CATEGORY_STYLE } from './hatches.js';
+import { temperatureIntervalC } from '../format.js';
 
 /**
  * A to-scale cross-section with the steady-state temperature line drawn over it.
@@ -146,7 +147,7 @@ function explain(marker: InterfaceMarker, isOutermost: boolean): string {
   switch (marker.condition) {
     case 'surface-condensation':
       return (
-        `Room air meets a surface ${marker.belowDewPointK.toFixed(1)} K below its dew ` +
+        `Room air meets a surface ${temperatureIntervalC(marker.belowDewPointK)} below its dew ` +
         'point and gives up water onto it. This is the damp-patch and mould case: it ' +
         'happens on the face you can see and touch, and unlike a plane inside the ' +
         'build-up there is no vapour resistance in the way to prevent it. Warming the ' +
@@ -169,11 +170,11 @@ function explain(marker: InterfaceMarker, isOutermost: boolean): string {
       // build-up: nothing is holding vapour back from it, and nothing needs to, because
       // what arrives there leaves into the outside air instead of collecting.
       return isOutermost
-        ? `Colder than the room air's dew point, by ${marker.belowDewPointK.toFixed(1)} K, ` +
+        ? `Colder than the room air's dew point, by ${temperatureIntervalC(marker.belowDewPointK)}, ` +
           'which is simply what the outside face of a wall is in winter. Vapour ' +
           'reaching it escapes to the outside air rather than building up, so the ' +
           'cold here is not the problem — water collecting further in would be.'
-        : `Colder than the room air's dew point, by ${marker.belowDewPointK.toFixed(1)} K, ` +
+        : `Colder than the room air's dew point, by ${temperatureIntervalC(marker.belowDewPointK)}, ` +
           'but the layers inboard hold back enough vapour that it stays dry. Normal ' +
           'rather than a fault: most of the thickness of a well-insulated element is ' +
           'below the dew point by design, and being cold only matters if vapour ' +
@@ -1199,7 +1200,9 @@ export function CrossSection({
               ? ''
               : `\nworst of all paths: ${node.worstCaseTemperatureC.toFixed(2)} °C ` +
                 `(${node.worstCasePathId})`) +
-            (shortfallK > 0 ? `\n${shortfallK.toFixed(1)} K below the internal dew point` : '') +
+            (shortfallK > 0
+              ? `\n${temperatureIntervalC(shortfallK)} below the internal dew point`
+              : '') +
             (marker !== undefined && marker.rateKgPerM2S !== 0
               ? `\n${formatRate(marker.ratePerDayGPerM2)}`
               : '') +
@@ -1210,7 +1213,8 @@ export function CrossSection({
               {/*
                 * Surface condensation is the one case where the shortfall itself is the
                 * finding, so it is drawn as a length: a stem from the node up to the dew
-                * point line it has fallen below, with the gap in kelvin beside it.
+                * point line it has fallen below, with the gap beside it. The gap is a
+                * temperature *difference*, so it is shown in °C — see format.ts.
                 */}
               {condition === 'surface-condensation' && !dragging && (
                 <>
@@ -1223,7 +1227,7 @@ export function CrossSection({
                      * label over on the left.
                      */
                     <text x={x + 9} y={y + 15} className="shortfall-label">
-                      {shortfallK.toFixed(1)} K below dew point
+                      {temperatureIntervalC(shortfallK)} below dew point
                     </text>
                   )}
                 </>

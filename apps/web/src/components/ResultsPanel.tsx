@@ -12,6 +12,7 @@ import {
 } from '@openuvalue/engine';
 import { HelpButton } from './guide/Guide.js';
 import { type UiFasteners, defaultFasteners } from '../state/model.js';
+import { temperatureIntervalC } from '../format.js';
 
 const WARNING_TITLES: Record<Warning['code'], string> = {
   'combined-method-ratio-exceeds-limit': 'Out of scope for this method',
@@ -317,10 +318,15 @@ export function ResultsPanel({
         <p className="verdict verdict-ok">
           The internal surface stays at{' '}
           {internalSurface.worstCaseTemperatureC.toFixed(1)} °C at worst,{' '}
-          {(
-            internalSurface.worstCaseTemperatureC - profile.internalDewPointTemperatureC
-          ).toFixed(1)}{' '}
-          K clear of the internal dew point of{' '}
+          {/*
+            A margin, not a temperature, so it is a difference — and shown in °C for the
+            same reason as everywhere else: the sentence already ends in °C, and it used
+            to switch to K halfway through for the same quantity. See format.ts.
+          */}
+          {temperatureIntervalC(
+            internalSurface.worstCaseTemperatureC - profile.internalDewPointTemperatureC,
+          )}{' '}
+          clear of the internal dew point of{' '}
           {profile.internalDewPointTemperatureC.toFixed(1)} °C.
         </p>
       )}
