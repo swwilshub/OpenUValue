@@ -112,13 +112,40 @@ states outright:
   resistance factors; ISO 10456 Table 3 does, including whether the dry or wet value
   applies. **This matters more than it used to**: μ now drives the interstitial
   condensation verdict, not just a displayed number.
+
+  *Searched and not found (2026-09).* Every trail for μ ends at a copyrighted standard
+  with no lawful free full text, so this is a licence to buy rather than a search to
+  repeat:
+  - **ISO 10456:2007** — the preview runs to page 6 and stops at clause 7.5; Clause 8,
+    which holds Tables 3–5, starts on page 8. ISO's own Online Browsing Platform
+    returns HTTP 403 for it.
+  - **EN 12524:2000** — the predecessor whose tables ISO 10456 adopted. Withdrawn, and
+    no more freely available than its replacement.
+  - **EN 1745:2020** — the tabulated masonry λ values are in Annex A; no preview of the
+    SIST, DIN or NSAI adoptions reaches the annexes.
+  - **BS 5250 Annex E** — the UK route to the same data, equally licensed.
+  - Public-sector documents do not fill the gap the way they did for air layers:
+    Malta's Technical Document F tabulates λ, ρ and c with a source column but **has no
+    μ column at all**, and the Scottish technical handbook simply refers the reader to
+    BS 5250.
+  - The one academic option, Anderson's water-vapour-resistivity literature survey in
+    *Matériaux et Construction*, is paywalled, and a 1970s survey would not be a
+    standards citation even if it were open.
+
+  Copies of the EN 12524 and BS 5250 tables **are** circulating free, but every one
+  found is either an outright piracy site, an unauthorised third-party rehost, or a
+  competing calculator's bundled material database. None is usable here: two of those
+  three are off limits under the clean-room rule regardless of what they contain, and
+  citing any of them as "ISO 10456 Table 3" would assert a citation we have not read —
+  exactly the guessed citation this file exists to prevent. **μ therefore stays
+  unsourced by decision, not by oversight.**
 - **ρ for most records**, which BR 443 gives only where it states a λ against a density.
 - For membranes the useful quantity is the declared S_d to BS EN ISO 12572, not λ.
 
 **No material value here should be used for a submitted calculation until its row is
 closed.**
 
-### Individual records### Individual records
+### Individual records
 
 | id | name | λ W/(m·K) | ρ kg/m³ | c J/(kg·K) | μ | check against |
 |---|---|---|---|---|---|---|
