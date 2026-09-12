@@ -1,5 +1,6 @@
 import rawDatabase from '../data/materials.json' with { type: 'json' };
 import {
+  EVIDENCED_MARKER,
   UNVERIFIED_SOURCE,
   type EngineMaterialProperties,
   type MaterialCategory,
@@ -26,9 +27,18 @@ export function materialsByCategory(category: MaterialCategory): readonly Materi
   return MATERIALS.filter((material) => material.category === category);
 }
 
-/** Ids whose values still need checking against a printed standard. */
+/**
+ * Ids whose values still need checking against a printed standard.
+ *
+ * Every record that is not fully cited, which includes the partly-cited ones and the
+ * evidenced ones. An evidenced value is still an assumption: it agrees with every
+ * public source we could reach, and nobody has read the clause. Narrowing this to
+ * records with no attribution at all would let a record drop off the list the moment
+ * one of its four properties gained a citation, which is the opposite of what the list
+ * is for.
+ */
 export function unverifiedMaterialIds(): readonly string[] {
-  return MATERIALS.filter((material) => material.source === UNVERIFIED_SOURCE).map(
+  return MATERIALS.filter((material) => sourceStatus(material) !== 'cited').map(
     (material) => material.id,
   );
 }
@@ -54,16 +64,25 @@ export function toEngineMaterial(material: MaterialRecord): EngineMaterialProper
  * "TODO(verify)" rather than a plausible-looking reference. That honesty is only
  * useful if it reaches the screen, so this classifies each record for the UI:
  *
- *   'cited'   every value in the record names the clause it came from
- *   'partial' some values are cited and some are still open, with the source string
- *             saying which
- *   'open'    nothing is attributed yet
+ *   'cited'     every value in the record names the clause it came from
+ *   'evidenced' nothing is outstanding, but at least one value is the conventional
+ *               figure rather than one read from the standard - believed right,
+ *               not verified
+ *   'partial'   some values are cited and some are still open, with the source string
+ *               saying which
+ *   'open'      nothing is attributed yet
+ *
+ * Reported worst-first: a record with both an open value and an evidenced one is
+ * 'partial', because the weakest value in it is what a reader needs to know about.
  */
-export type SourceStatus = 'cited' | 'partial' | 'open';
+export type SourceStatus = 'cited' | 'evidenced' | 'partial' | 'open';
 
 export function sourceStatus(material: MaterialRecord): SourceStatus {
-  if (material.source === 'TODO(verify)') {
+  if (material.source === UNVERIFIED_SOURCE) {
     return 'open';
   }
-  return material.source.includes('TODO(verify)') ? 'partial' : 'cited';
+  if (material.source.includes(UNVERIFIED_SOURCE)) {
+    return 'partial';
+  }
+  return material.source.includes(EVIDENCED_MARKER) ? 'evidenced' : 'cited';
 }

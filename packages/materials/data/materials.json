@@ -9,7 +9,7 @@
       "densityKgPerM3": 1700,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "BR 443 (2019) 3.6 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.6 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for fired clay brickwork, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.77 W/(m·K) is BR 443 3.6: \"Unless otherwise specified, brick thermal conductivity should be taken as: Outer leaves (of a cavity wall) 0.77\". c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". ρ and μ are not given by BR 443 and still need BS EN ISO 10456 Table 3."
     },
     {
@@ -20,7 +20,7 @@
       "densityKgPerM3": 1700,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "BR 443 (2019) 3.6 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.6 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for fired clay brickwork, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.56 W/(m·K) is BR 443 3.6, inner leaves of a cavity wall. c 840 J/(kg·K) is BR 443 16. ρ and μ still need BS EN ISO 10456 Table 3."
     },
     {
@@ -31,7 +31,7 @@
       "densityKgPerM3": 1900,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 60,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone). μ: EVIDENCED — the conventional value for dense aggregate concrete block, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Generic UK dense aggregate block. Product values vary widely; check against BR 443 and manufacturer declared values, and confirm mu against ISO 10456 Table 3."
     },
     {
@@ -42,7 +42,7 @@
       "densityKgPerM3": 600,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 6,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone). μ: EVIDENCED — the conventional value for autoclaved aerated concrete, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Generic UK aircrete block. UK products span roughly 0.11 to 0.20 W/(m*K) by density; check against BR 443 and manufacturer declared values."
     },
     {
@@ -53,7 +53,7 @@
       "densityKgPerM3": 2000,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 100,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone). μ: EVIDENCED — the conventional value for concrete at this density, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Check lambda, c and mu against BS EN ISO 10456:2007 Table 3, which tabulates concrete by density."
     },
     {
@@ -64,7 +64,7 @@
       "densityKgPerM3": 2300,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 130,
-      "source": "BR 443 (2019) 3.7 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.7 (thermal conductivity); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for reinforced concrete, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 2.30 W/(m·K) is BR 443 3.7, \"Reinforced concrete beam (1% steel)\". c 840 J/(kg·K) is BR 443 16. ρ and μ still need BS EN ISO 10456 Table 3."
     },
     {
@@ -75,7 +75,7 @@
       "densityKgPerM3": 700,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "BR 443 (2019) 3.8 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.8 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for gypsum plasterboard, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.21 W/(m·K) is BR 443 3.8, \"Standard wallboard (density up to 700 kg/m³)\". This entry was previously 0.25 at 900 kg/m³, which BR 443 gives for the higher-density grade — now a separate entry. c 840 J/(kg·K) is BR 443 16. μ still needs BS EN ISO 10456 Table 3."
     },
     {
@@ -86,7 +86,7 @@
       "densityKgPerM3": 900,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "BR 443 (2019) 3.8 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.8 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for gypsum plasterboard, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.25 W/(m·K) is BR 443 3.8, \"Higher density (up to 900 kg/m³), e.g. acoustic or fire resistant board\". c 840 J/(kg·K) is BR 443 16. μ still needs BS EN ISO 10456 Table 3."
     },
     {
@@ -97,7 +97,7 @@
       "densityKgPerM3": 1300,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 10,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard). μ: EVIDENCED — the conventional value for gypsum plaster, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Gypsum, plasters and renders, plasterboard\". Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density."
     },
     {
@@ -108,7 +108,7 @@
       "densityKgPerM3": 1800,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 25,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard). μ: EVIDENCED — the conventional value for cement and sand render, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Gypsum, plasters and renders, plasterboard\". Check against BS EN ISO 10456:2007 Table 3 (cement mortar / plaster) and BR 443."
     },
     {
@@ -119,7 +119,7 @@
       "densityKgPerM3": 1800,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 30,
-      "source": "BR 443 (2019) 3.7 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.7 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for sand and cement screed, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 1.15 W/(m·K) at ρ 1800 kg/m³ is BR 443 3.7, \"Concrete screed\". The density was 2000 here before and is corrected to the one BR 443 states the λ against. μ still needs BS EN ISO 10456 Table 3."
     },
     {
@@ -130,7 +130,7 @@
       "densityKgPerM3": 500,
       "specificHeatCapacityJPerKgK": 1600,
       "vapourResistanceFactorMu": 50,
-      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for softwood, where the dry and wet values differ widely and the choice changes the result, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.13 W/(m·K) at a typical density of 500 kg/m³ is BR 443 3.9, \"Timber/softwood, e.g. joists, window frames\". c 1600 J/(kg·K) is BR 443 16, \"Timber\". μ still needs BS EN ISO 10456 Table 3, including whether the dry or wet value applies."
     },
     {
@@ -141,7 +141,7 @@
       "densityKgPerM3": 650,
       "specificHeatCapacityJPerKgK": 1700,
       "vapourResistanceFactorMu": 50,
-      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for oriented strand board, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.13 W/(m·K) at a typical density of 650 kg/m³ is BR 443 3.9. c 1700 J/(kg·K) is BR 443 16, \"Plywood\", which is the nearest board it lists. μ still needs BS EN ISO 10456 Table 3."
     },
     {
@@ -152,7 +152,7 @@
       "densityKgPerM3": 500,
       "specificHeatCapacityJPerKgK": 1700,
       "vapourResistanceFactorMu": 90,
-      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity)",
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density); BR 443 (2019) 16 (specific heat capacity). μ: EVIDENCED — the conventional value for plywood, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.13 W/(m·K) at a typical density of 500 kg/m³ is BR 443 3.9. c 1700 J/(kg·K) is BR 443 16, \"Plywood\". μ still needs BS EN ISO 10456 Table 3."
     },
     {
@@ -163,7 +163,7 @@
       "densityKgPerM3": 600,
       "specificHeatCapacityJPerKgK": 1700,
       "vapourResistanceFactorMu": 50,
-      "source": "BR 443 (2019) 3.9 (thermal conductivity and density)",
+      "source": "BR 443 (2019) 3.9 (thermal conductivity and density). μ: EVIDENCED — the conventional value for chipboard, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "λ 0.14 W/(m·K) at a typical density of 600 kg/m³ is BR 443 3.9, \"Particleboards, fibreboard\". c and μ still need BS EN ISO 10456 Table 3."
     },
     {
@@ -174,7 +174,7 @@
       "densityKgPerM3": 20,
       "specificHeatCapacityJPerKgK": 1450,
       "vapourResistanceFactorMu": 1,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene). μ: EVIDENCED — the conventional value for mineral wool, which is very nearly vapour-open, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 1450 J/(kg·K) is BR 443 16, \"Mineral wool, expanded and extruded polystyrene\". Generic value only; lambda is product-specific and declared to BS EN 13162. Check c and mu against BS EN ISO 10456:2007 Table 3 (mineral wool)."
     },
     {
@@ -185,7 +185,7 @@
       "densityKgPerM3": 20,
       "specificHeatCapacityJPerKgK": 1450,
       "vapourResistanceFactorMu": 60,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene). μ: EVIDENCED — the conventional value for expanded polystyrene, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 1450 J/(kg·K) is BR 443 16, \"Mineral wool, expanded and extruded polystyrene\". Generic value only; lambda is product-specific and declared to BS EN 13163. Check c and mu against BS EN ISO 10456:2007 Table 3 (EPS)."
     },
     {
@@ -196,7 +196,7 @@
       "densityKgPerM3": 32,
       "specificHeatCapacityJPerKgK": 1800,
       "vapourResistanceFactorMu": 60,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (PU foam, rigid)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (PU foam, rigid). μ: EVIDENCED — the conventional value for the PIR core; on a foil-faced board the facings dominate and this mu is not the whole story, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 1800 J/(kg·K) is BR 443 16, \"PU foam, rigid\"; PIR is a polyurethane variant and BR 443 lists no separate figure for it. Generic value only; lambda is product-specific and declared to BS EN 13165. Facings dominate the vapour resistance, so mu of the core is not the whole story. Check against ISO 10456 and product declarations."
     },
     {
@@ -207,7 +207,7 @@
       "densityKgPerM3": 140,
       "specificHeatCapacityJPerKgK": 2100,
       "vapourResistanceFactorMu": 5,
-      "source": "TODO(verify)",
+      "source": "TODO(verify). μ: EVIDENCED — the conventional value for wood fibre insulation board, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "Generic value only; lambda is product-specific and declared to BS EN 13171. Check c and mu against ISO 10456 and product declarations."
     },
     {
@@ -218,7 +218,7 @@
       "densityKgPerM3": 980,
       "specificHeatCapacityJPerKgK": 1800,
       "vapourResistanceFactorMu": 100000,
-      "source": "TODO(verify)",
+      "source": "TODO(verify). μ: EVIDENCED — the conventional value for polyethylene sheet, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 5; for a thin membrane the quantity that actually matters is the declared Sd to BS EN ISO 12572, which comes from the product, not from a generic mu.",
       "notes": "A thin membrane's contribution is its Sd, not its lambda. Check lambda, rho, c against ISO 10456 (polyethylene) and take Sd from the product declaration to BS EN ISO 12572."
     },
     {
@@ -229,7 +229,7 @@
       "densityKgPerM3": 1100,
       "specificHeatCapacityJPerKgK": 1000,
       "vapourResistanceFactorMu": 50000,
-      "source": "TODO(verify)",
+      "source": "TODO(verify). μ: EVIDENCED — the conventional value for bitumen sheet, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 5; for a thin membrane the quantity that actually matters is the declared Sd to BS EN ISO 12572, which comes from the product, not from a generic mu.",
       "notes": "Check against BS EN ISO 10456:2007 Table 3 (bitumen / roofing felt) and take Sd from the product declaration."
     },
     {
@@ -240,7 +240,7 @@
       "densityKgPerM3": 2100,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 100,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone). μ: EVIDENCED — the conventional value for concrete roof tile, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Check against BS EN ISO 10456:2007 Table 3 (tiles, concrete) and BR 443."
     },
     {
@@ -251,7 +251,7 @@
       "densityKgPerM3": 2000,
       "specificHeatCapacityJPerKgK": 840,
       "vapourResistanceFactorMu": 40,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone)",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Brick, concrete and stone). μ: EVIDENCED — the conventional value for fired clay roof tile, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Brick, concrete and stone\". Check against BS EN ISO 10456:2007 Table 3 (tiles, clay) and BR 443."
     }
   ]

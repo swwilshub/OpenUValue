@@ -494,23 +494,37 @@ export function PickerFigure(): JSX.Element {
   );
 }
 
-/** Three dots saying how well sourced a material is. */
+/** The markers saying how well sourced a material is. */
 export function ProvenanceFigure(): JSX.Element {
   const entries = [
-    { className: 'source-cited', label: 'every value cited' },
-    { className: 'source-partial', label: 'partly cited' },
-    { className: 'source-open', label: 'not yet checked' },
+    { className: 'source-cited', label: 'every value read from the standard', mark: 'dot' },
+    { className: 'source-evidenced', label: 'assumed: believed right, not read', mark: 'star' },
+    { className: 'source-partial', label: 'partly cited', mark: 'dot' },
+    { className: 'source-open', label: 'not yet checked', mark: 'dot' },
   ];
   return (
-    <Frame label="The three provenance states a material value can be in">
+    <Frame label="The four provenance states a material value can be in">
       {entries.map((entry, index) => (
         <g
           key={entry.className}
           className="g-reveal"
-          style={{ '--g-delay': `${index * 0.5}s` } as React.CSSProperties}
+          style={{ '--g-delay': `${index * 0.45}s` } as React.CSSProperties}
         >
-          <circle cx={PLOT.x + 12} cy={30 + index * 34} r={6} className={`g-dot ${entry.className}`} />
-          <text x={PLOT.x + 30} y={34 + index * 34} className="g-row-text">
+          {entry.mark === 'star' ? (
+            // Evidenced is the one state carrying a caveat, so it is the one state that
+            // does not ask the reader to tell two coloured discs apart.
+            <text x={PLOT.x + 12} y={35 + index * 30} className="g-dot-star" textAnchor="middle">
+              ∗
+            </text>
+          ) : (
+            <circle
+              cx={PLOT.x + 12}
+              cy={30 + index * 30}
+              r={6}
+              className={`g-dot ${entry.className}`}
+            />
+          )}
+          <text x={PLOT.x + 30} y={34 + index * 30} className="g-row-text">
             {entry.label}
           </text>
         </g>

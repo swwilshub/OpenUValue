@@ -24,11 +24,34 @@ export const MATERIAL_CATEGORIES: readonly MaterialCategory[] = [
 ];
 
 /**
- * Where the values in a record come from. Either a real table reference, or the
- * literal string 'TODO(verify)'. A plausible-looking but unconfirmed citation is
- * worse than an admitted gap, so there is no third option.
+ * Where the values in a record come from. A plausible-looking but unconfirmed citation
+ * is worse than an admitted gap, so a value is never dressed up as something it is not.
+ * Three states, and each says a different thing:
+ *
+ *   a real reference   read from the named standard at the named clause.
+ *   'TODO(verify)'     not attributed at all. A placeholder.
+ *   'EVIDENCED'        the conventional value for the material, agreeing across
+ *                      independent public sources, but **not read from the standard
+ *                      that governs it**.
+ *
+ * EVIDENCED exists because the middle ground was being hidden. A value that every
+ * public source agrees on is not a guess, and filing it with the unattributed
+ * placeholders says less than is actually known about it. Equally it is not a citation:
+ * nobody here has opened the clause. So it is recorded for what it is - an assumption
+ * we expect to hold, pending sight of the standard - and it is marked on screen.
+ *
+ * **The bar.** EVIDENCED is good enough to model with and not good enough to submit.
+ * It never licenses inventing a number, and it is not a way to retire a VERIFY.md row:
+ * an evidenced value stays on the list until someone reads the clause and either
+ * confirms it or corrects it.
  */
 export const UNVERIFIED_SOURCE = 'TODO(verify)' as const;
+
+/**
+ * Marks one property within a source string as evidenced rather than cited, in the same
+ * per-property style as the rest of the field: "mu: EVIDENCED - ...".
+ */
+export const EVIDENCED_MARKER = 'EVIDENCED' as const;
 
 export interface MaterialRecord {
   readonly id: string;
@@ -42,7 +65,10 @@ export interface MaterialRecord {
   readonly specificHeatCapacityJPerKgK: number;
   /** Water vapour resistance factor mu, dimensionless and never below 1. */
   readonly vapourResistanceFactorMu: number;
-  /** A table reference, or 'TODO(verify)'. */
+  /**
+   * Per-property provenance: a table reference, 'TODO(verify)', or 'EVIDENCED'.
+   * See the three states above.
+   */
   readonly source: string;
   /** What to check, and against which authority, when source is 'TODO(verify)'. */
   readonly notes?: string;

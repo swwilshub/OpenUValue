@@ -1,5 +1,12 @@
 import { useRef, useState } from 'react';
-import type { ProfileSection, TemperatureProfile, UValueResult } from '@openuvalue/engine';
+import type {
+  CondensationMarkers,
+  InterfaceCondition,
+  InterfaceMarker,
+  ProfileSection,
+  TemperatureProfile,
+  UValueResult,
+} from '@openuvalue/engine';
 import type { LayerDrawCategory, UiLayer } from '../state/model.js';
 import { bridgePitchMm, layerDrawCategory } from '../state/model.js';
 import { CATEGORY_STYLE } from './hatches.js';
@@ -32,6 +39,150 @@ const AXIS_WIDTH = 46;
  * x = 0, is not cut in half by the edge.
  */
 const VIEWBOX_MIN_X = -7;
+
+/**
+ * Condensation drops: one per plane the vapour calculation wets, sized by how much
+ * water arrives there.
+ *
+ * **Area is proportional to the rate**, so two drops compare by the ink in them rather
+ * than by their width — radius therefore goes as the square root. The reference below
+ * fixes the scale in absolute terms: the same rate always draws the same size, whatever
+ * else is on screen, because a drop that resized itself against the worst plane in the
+ * current build-up would make a trivial amount look alarming the moment it was the only
+ * one.
+ *
+ * **In-house convention.** The reference rate is a drawing constant chosen so that
+ * typical results land in a legible range; it is **not** a threshold from any standard,
+ * and nothing about the drop implies a pass or a fail. BS EN ISO 13788 judges a
+ * build-up on whether it dries out over a year, which a single set of conditions cannot
+ * answer. The figure printed beside each drop is the result; the size is a reading aid,
+ * and it is clamped at both ends, so the number is the thing to trust.
+ */
+const DROP_REFERENCE_RATE_G_PER_M2_DAY = 30;
+const DROP_REFERENCE_RADIUS = 13;
+const DROP_MIN_RADIUS = 7;
+const DROP_MAX_RADIUS = 20;
+
+/**
+ * A unit teardrop: body circle of radius 1 about the origin, drawn up to a point at
+ * y = -1.8. Scaling this by the drop radius keeps the shape identical at every size.
+ */
+const DROP_PATH = 'M 0,-1.8 C 0.55,-1 1,-0.45 1,0 A 1,1 0 0 1 -1,0 C -1,-0.45 -0.55,-1 0,-1.8 Z';
+
+/** Kept between a badge and the temperature line it hangs off. */
+const DROP_CLEARANCE = 14;
+
+/**
+ * Character widths for the badge's two lines, measured in the browser rather than
+ * guessed: 7.08 px/char for the 11px bold headline and 6.18 for the 10.5px rate. SVG
+ * cannot measure text before it is laid out, so the panel behind it has to be sized
+ * from an estimate - and an estimate taken from the real thing, rounded up, is what
+ * keeps the words inside the panel.
+ */
+const BADGE_HEADLINE_CHAR_WIDTH = 7.2;
+const BADGE_RATE_CHAR_WIDTH = 6.3;
+const BADGE_PAD = 9;
+
+function dropRadius(ratePerDayGPerM2: number): number {
+  const scaled =
+    DROP_REFERENCE_RADIUS *
+    Math.sqrt(Math.abs(ratePerDayGPerM2) / DROP_REFERENCE_RATE_G_PER_M2_DAY);
+  return Math.min(DROP_MAX_RADIUS, Math.max(DROP_MIN_RADIUS, scaled));
+}
+
+/** Rates span orders of magnitude, so the label switches unit rather than showing 0.0. */
+function formatRate(ratePerDayGPerM2: number): string {
+  const magnitude = Math.abs(ratePerDayGPerM2);
+  if (magnitude >= 100) {
+    return `${Math.round(magnitude)} g/m²·day`;
+  }
+  if (magnitude >= 1) {
+    return `${magnitude.toFixed(1)} g/m²·day`;
+  }
+  return `${magnitude.toFixed(2)} g/m²·day`;
+}
+
+/**
+ * What each marker means, in the words used beside it. Kept here rather than in the
+ * engine because it is wording, not classification.
+ */
+/**
+ * Marker size by condition. Size is one of three cues that separate them - size, colour
+ * and, for the two loud cases, a second ring - because colour alone is not a signal
+ * everyone can read, and because the old drawing distinguished a flagged node from a
+ * plain one by 1.5 px of radius and a fill.
+ */
+const NODE_RADIUS: Readonly<Record<InterfaceCondition, number>> = {
+  'surface-condensation': 6,
+  condensing: 5.5,
+  evaporating: 4.5,
+  'below-dew-point': 4,
+  dry: 3.5,
+};
+
+/** The short name that goes in the badge on the drawing. */
+const CONDITION_HEADLINE: Readonly<Record<InterfaceCondition, string>> = {
+  'surface-condensation': 'Surface condensation',
+  condensing: 'Condensation',
+  evaporating: 'Drying out',
+  'below-dew-point': 'Cold, staying dry',
+  dry: '',
+};
+
+/**
+ * What is actually happening at a flagged interface, in plain words. This is the part
+ * that turns a marker into information: a reader can see that an interface is marked
+ * without being able to say why it is marked, and hovering for a tooltip is not
+ * discovery - you have to already suspect there is something to find.
+ */
+function explain(marker: InterfaceMarker, isOutermost: boolean): string {
+  switch (marker.condition) {
+    case 'surface-condensation':
+      return (
+        `Room air meets a surface ${marker.belowDewPointK.toFixed(1)} K below its dew ` +
+        'point and gives up water onto it. This is the damp-patch and mould case: it ' +
+        'happens on the face you can see and touch, and unlike a plane inside the ' +
+        'build-up there is no vapour resistance in the way to prevent it. Warming the ' +
+        'surface or lowering the indoor humidity are the two ways out.'
+      );
+    case 'condensing':
+      return (
+        'Vapour diffusing out from inside reaches saturation here and turns to liquid ' +
+        'water inside the build-up, at ' +
+        `${formatRate(marker.ratePerDayGPerM2)} in these conditions. More vapour ` +
+        'resistance on the warm side, or less on the cold side, moves the balance.'
+      );
+    case 'evaporating':
+      return (
+        'This plane is giving water back rather than collecting it, at ' +
+        `${formatRate(marker.ratePerDayGPerM2)} in these conditions.`
+      );
+    case 'below-dew-point':
+      // The outermost face is a different story from an interface buried in the
+      // build-up: nothing is holding vapour back from it, and nothing needs to, because
+      // what arrives there leaves into the outside air instead of collecting.
+      return isOutermost
+        ? `Colder than the room air's dew point, by ${marker.belowDewPointK.toFixed(1)} K, ` +
+          'which is simply what the outside face of a wall is in winter. Vapour ' +
+          'reaching it escapes to the outside air rather than building up, so the ' +
+          'cold here is not the problem — water collecting further in would be.'
+        : `Colder than the room air's dew point, by ${marker.belowDewPointK.toFixed(1)} K, ` +
+          'but the layers inboard hold back enough vapour that it stays dry. Normal ' +
+          'rather than a fault: most of the thickness of a well-insulated element is ' +
+          'below the dew point by design, and being cold only matters if vapour ' +
+          'reaches it.';
+    case 'dry':
+      return 'Above the dew point of the room air.';
+  }
+}
+
+const CONDITION_TEXT: Readonly<Record<InterfaceCondition, string>> = {
+  'surface-condensation': 'Condensation on the room-side surface',
+  condensing: 'Condensation forming here',
+  evaporating: 'Drying out here',
+  'below-dew-point': 'Colder than the internal dew point, but staying dry',
+  dry: 'Above the internal dew point',
+};
 
 /**
  * Callout labels above the drawing: row pitch, the gap kept between two labels sharing a
@@ -124,6 +275,17 @@ export interface CrossSectionProps {
   readonly onReorder?: ((from: number, to: number) => void) | undefined;
   /** Change a layer's thickness by dragging the handle on its outer edge. */
   readonly onResizeLayer?: ((index: number, thicknessMm: number) => void) | undefined;
+  /**
+   * Per-interface conditions from the vapour calculation. Optional: the drawing is
+   * still a drawing without it, and the moisture calculation can fail on a build-up
+   * whose thermal side is fine.
+   *
+   * These do **not** follow the displayed section. The screen behind them is worst-case
+   * across paths and the wet planes come from the assessment's worst path, so the
+   * section selector cannot change what is marked - only which temperature line is
+   * drawn through it.
+   */
+  readonly condensation?: CondensationMarkers | undefined;
 }
 
 export function CrossSection({
@@ -134,6 +296,7 @@ export function CrossSection({
   onSelectLayer,
   onReorder,
   onResizeLayer,
+  condensation,
 }: CrossSectionProps): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null);
   /**
@@ -422,6 +585,25 @@ export function CrossSection({
   // The band from the dew point down to the bottom of the plot: everything drawn
   // inside it is at or below the internal dew point. Tinted rather than outlined so
   // it reads at a glance without hiding the layer hatching underneath.
+  /**
+   * Markers by the node they belong to, so the drawing does not have to re-derive which
+   * profile node a boundary index refers to - the engine already reports it.
+   */
+  const markerByNodeIndex = new Map<number, InterfaceMarker>(
+    (condensation?.markers ?? []).map((marker) => [marker.nodeIndex, marker]),
+  );
+  /** The planes that carry water: the ones that get a drop. */
+  const wetPlanes = (condensation?.markers ?? []).filter(
+    (marker) => marker.rateKgPerM2S !== 0,
+  );
+  /**
+   * Every interface worth a word, inside to outside. Ordinary dry interfaces are left
+   * out: a note against each of them would bury the two or three that matter.
+   */
+  const notes = (condensation?.markers ?? []).filter((marker) => marker.condition !== 'dry');
+  /** The external face, which is cold for reasons of its own. */
+  const outermostBoundaryIndex = condensation?.markers.at(-1)?.boundaryIndex ?? -1;
+
   const dewPointY = toY(profile.internalDewPointTemperatureC);
   const riskBandY = Math.min(Math.max(dewPointY, TOP_PAD), TOP_PAD + PLOT_HEIGHT);
   const riskBandHeight = TOP_PAD + PLOT_HEIGHT - riskBandY;
@@ -865,26 +1047,196 @@ export function CrossSection({
         <polyline points={linePoints} className={`temperature-line-shadow${dragging ? ' is-restating' : ''}`} />
         <polyline points={linePoints} className={`temperature-line${dragging ? ' is-restating' : ''}`} />
 
-        {profile.nodes.map((node, index) => (
-          <g key={`${node.kind}-${index}`}>
-            <circle
-              cx={nodeX(index)}
-              cy={toY(node.temperatureC)}
-              r={node.isBelowInternalDewPoint ? 5 : 3.5}
-              className={node.isBelowInternalDewPoint ? 'node node-risk' : 'node'}
-            >
-              <title>
-                {`${node.label}: ${node.temperatureC.toFixed(2)} °C` +
-                  (node.worstCasePathId === 'n/a'
-                    ? ''
-                    : `\nworst of all paths: ${node.worstCaseTemperatureC.toFixed(2)} °C ` +
-                      `(${node.worstCasePathId})` +
-                      `\nbelow internal dew point: ${node.isBelowInternalDewPoint ? 'yes' : 'no'}` +
-                      `\ncumulative Sd: ${node.cumulativeSdM.toFixed(3)} m`)}
-              </title>
-            </circle>
-          </g>
-        ))}
+        {/*
+          * Condensation drops, one per wet plane, drawn between the temperature line and
+          * the node markers so the line stays readable underneath them.
+          *
+          * These follow the vapour calculation's worst path, not the displayed section:
+          * the drawing says which, below, when the two differ.
+          */}
+        {!dragging &&
+          wetPlanes.map((marker, order) => {
+            const x = nodeX(marker.nodeIndex);
+            const radius = dropRadius(marker.ratePerDayGPerM2);
+            const isDrying = marker.condition === 'evaporating';
+            const lineY = toY(marker.displayedTemperatureC);
+
+            const headline = CONDITION_HEADLINE[marker.condition];
+            const rateText = formatRate(marker.ratePerDayGPerM2);
+            const textWidth = Math.max(
+              headline.length * BADGE_HEADLINE_CHAR_WIDTH,
+              rateText.length * BADGE_RATE_CHAR_WIDTH,
+            );
+            const dropBoxWidth = radius * 2;
+            const badgeWidth = dropBoxWidth + BADGE_PAD * 2 + textWidth + 6;
+            const badgeHeight = Math.max(radius * 2.9, 36);
+
+            /*
+             * A badge goes on whichever side of the temperature line has more room. A
+             * fixed band cannot work: the line runs from warm to cold across the
+             * drawing, so any height that is clear at one interface is straight through
+             * the line at another - and a condensation plane is usually out on the cold
+             * side, where the line is already low.
+             */
+            const placeBelow = TOP_PAD + PLOT_HEIGHT - lineY >= lineY - TOP_PAD;
+            // Stagger where two wet planes sit close enough to overlap.
+            const stagger = order * (badgeHeight + 6);
+            const badgeY = placeBelow
+              ? lineY + DROP_CLEARANCE + stagger
+              : lineY - DROP_CLEARANCE - badgeHeight - stagger;
+            // Keep the panel inside the drawing rather than half off the edge.
+            const badgeX = Math.min(
+              Math.max(x - badgeWidth / 2, 2),
+              totalWidth - badgeWidth - 2,
+            );
+            const centreY = badgeY + badgeHeight / 2;
+            const dropCx = badgeX + BADGE_PAD + radius;
+            const textX = dropCx + radius + BADGE_PAD;
+
+            const title =
+              `${marker.label}\n${CONDITION_TEXT[marker.condition]}\n` +
+              `${rateText}` +
+              `\n${marker.worstCaseTemperatureC.toFixed(2)} °C at this plane` +
+              `\non the ${condensation?.pathLabel ?? 'assessed'} path`;
+
+            return (
+              <g
+                key={`wet-${marker.boundaryIndex}`}
+                className={isDrying ? 'wet-plane is-drying' : 'wet-plane'}
+              >
+                <title>{title}</title>
+                {/*
+                  * The plane itself, marked the full height of the section. This is the
+                  * part that answers "where?" at a glance: a badge alone reads as a
+                  * note about the drawing, a marked plane reads as a place in the wall.
+                  */}
+                <rect
+                  x={x - 2.5}
+                  y={TOP_PAD}
+                  width={5}
+                  height={PLOT_HEIGHT}
+                  className="wet-plane-band"
+                />
+                <line
+                  x1={x}
+                  y1={TOP_PAD}
+                  x2={x}
+                  y2={TOP_PAD + PLOT_HEIGHT}
+                  className="wet-plane-rule"
+                />
+                {/* Leader from the plane to the badge, when the badge had to shift. */}
+                <line x1={x} y1={lineY} x2={dropCx} y2={centreY} className="wet-plane-leader" />
+                <rect
+                  x={badgeX}
+                  y={badgeY}
+                  width={badgeWidth}
+                  height={badgeHeight}
+                  rx={7}
+                  className="wet-plane-badge"
+                />
+                <path
+                  d={DROP_PATH}
+                  transform={`translate(${dropCx} ${centreY + radius * 0.4}) scale(${radius})`}
+                  className="wet-plane-drop"
+                />
+                <text x={textX} y={centreY - 2} className="wet-plane-headline">
+                  {headline}
+                </text>
+                <text x={textX} y={centreY + 11} className="wet-plane-rate">
+                  {rateText}
+                </text>
+              </g>
+            );
+          })}
+
+        {/* One marker per node, drawn by what is actually happening at that interface. */}
+        {profile.nodes.map((node, index) => {
+          const marker = markerByNodeIndex.get(index);
+          /*
+           * The air either side is not a surface, so nothing can form on it: it gets a
+           * plain marker however cold it is. Grading it would put a moisture label on
+           * the outdoor air every winter's day. Where the vapour calculation could not
+           * run, an interface falls back to the temperature screen alone, which is the
+           * most that is known about it then.
+           */
+          const isAirNode = node.kind === 'internal-air' || node.kind === 'external-air';
+          const condition: InterfaceCondition = isAirNode
+            ? 'dry'
+            : (marker?.condition ?? (node.isBelowInternalDewPoint ? 'below-dew-point' : 'dry'));
+          const x = nodeX(index);
+          const y = toY(node.temperatureC);
+          const shortfallK = marker?.belowDewPointK ?? 0;
+          const title =
+            `${node.label}: ${node.temperatureC.toFixed(2)} °C` +
+            `\n${CONDITION_TEXT[condition]}` +
+            (node.worstCasePathId === 'n/a'
+              ? ''
+              : `\nworst of all paths: ${node.worstCaseTemperatureC.toFixed(2)} °C ` +
+                `(${node.worstCasePathId})`) +
+            (shortfallK > 0 ? `\n${shortfallK.toFixed(1)} K below the internal dew point` : '') +
+            (marker !== undefined && marker.rateKgPerM2S !== 0
+              ? `\n${formatRate(marker.ratePerDayGPerM2)}`
+              : '') +
+            `\ncumulative Sd: ${node.cumulativeSdM.toFixed(3)} m`;
+
+          return (
+            <g key={`${node.kind}-${index}`} className={`node-group node-${condition}`}>
+              {/*
+                * Surface condensation is the one case where the shortfall itself is the
+                * finding, so it is drawn as a length: a stem from the node up to the dew
+                * point line it has fallen below, with the gap in kelvin beside it.
+                */}
+              {condition === 'surface-condensation' && !dragging && (
+                <>
+                  <line x1={x} y1={y} x2={x} y2={dewPointY} className="shortfall-stem" />
+                  {shortfallK > 0 && (
+                    /*
+                     * Below the node, not beside the middle of the stem: a small
+                     * shortfall makes a short stem, whose middle is level with the dew
+                     * point line - and that row already carries the dew point's own
+                     * label over on the left.
+                     */
+                    <text x={x + 9} y={y + 15} className="shortfall-label">
+                      {shortfallK.toFixed(1)} K below dew point
+                    </text>
+                  )}
+                </>
+              )}
+              {/*
+                * The two findings get a glyph rather than a disc: a warning triangle
+                * where water forms on the room-side face, a drop where it forms inside
+                * the build-up. A reader should not have to compare the diameter of one
+                * circle against another to see which interface is the problem.
+                */}
+              {condition === 'surface-condensation' ? (
+                <path
+                  d={`M ${x} ${y - 8.5} L ${x + 8} ${y + 5.5} L ${x - 8} ${y + 5.5} Z`}
+                  className="node-glyph node-glyph-warning"
+                >
+                  <title>{title}</title>
+                </path>
+              ) : condition === 'condensing' ? (
+                <path
+                  d={DROP_PATH}
+                  transform={`translate(${x} ${y + 2}) scale(5.2)`}
+                  className="node-glyph node-glyph-drop"
+                >
+                  <title>{title}</title>
+                </path>
+              ) : (
+                <circle cx={x} cy={y} r={NODE_RADIUS[condition]} className="node">
+                  <title>{title}</title>
+                </circle>
+              )}
+              {/* The exclamation inside the warning triangle. */}
+              {condition === 'surface-condensation' && (
+                <text x={x} y={y + 4} textAnchor="middle" className="node-glyph-bang">
+                  !
+                </text>
+              )}
+            </g>
+          );
+        })}
 
         <text x={0} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label">
           inside
@@ -894,6 +1246,60 @@ export function CrossSection({
         </text>
 
       </svg>
+      {/*
+        * What is happening at each marked interface, under the drawing. The markers say
+        * where and how much; this says why, which a tooltip cannot - a reader has to
+        * already suspect there is something to find before they hover over it.
+        */}
+      {notes.length > 0 && (
+        // Stale while a layer is being dragged: the build-up under the pointer is not
+        // the one these were calculated for, and they come back on drop.
+        <ul className={`interface-notes${dragging ? ' is-restating' : ''}`}>
+          {notes.map((marker) => (
+            <li key={marker.boundaryIndex} className={`interface-note note-${marker.condition}`}>
+              <svg viewBox="0 0 16 16" className="note-glyph" aria-hidden="true">
+                {marker.condition === 'surface-condensation' ? (
+                  <path d="M 8 2 L 15 14 L 1 14 Z" className="node-glyph-warning" />
+                ) : marker.condition === 'below-dew-point' ? (
+                  <circle cx={8} cy={8} r={5.4} className="note-ring" />
+                ) : (
+                  <path
+                    d={DROP_PATH}
+                    transform="translate(8 10) scale(5)"
+                    className={
+                      marker.condition === 'evaporating' ? 'note-drop-open' : 'node-glyph-drop'
+                    }
+                  />
+                )}
+              </svg>
+              <div>
+                <p className="note-where">
+                  {marker.label}
+                  <span className="note-headline">
+                    {' — '}
+                    {CONDITION_HEADLINE[marker.condition]}
+                  </span>
+                </p>
+                <p className="note-what">
+                  {explain(marker, marker.boundaryIndex === outermostBoundaryIndex)}
+                </p>
+              </div>
+            </li>
+          ))}
+          {condensation !== undefined && condensation.anyCondensation && (
+            <li className="interface-note note-caveat">
+              <div>
+                <p className="note-what">
+                  These are the rates at the conditions set above, not a verdict on the
+                  build-up. BS EN ISO 13788 asks whether an element dries out again over a
+                  year, which one set of conditions cannot answer — the Moisture tab runs a
+                  wetting and a drying season for that.
+                </p>
+              </div>
+            </li>
+          )}
+        </ul>
+      )}
       <figcaption>
         Layer widths are to scale and captioned in millimetres; the two hatched bands
         are the internal and external surface resistances, which have no thickness and
@@ -911,6 +1317,18 @@ export function CrossSection({
         {lastIncludedIndex < layers.length - 1 &&
           ' The cross-hatched layers beyond the ventilated cavity are disregarded by the calculation.'}
         {hasThinLayer && ' Layers thinner than the line width are drawn as a single line.'}
+        {condensation !== undefined && (
+          <>
+            {' '}
+            A marked plane is one where water forms, and the drop beside it has an{' '}
+            <em>area</em> proportional to the rate — the printed figure is the result, the
+            size only a reading aid. Moisture is assessed on every path and the worst
+            reported
+            {condensation.pathLabel !== '' ? ` (here, ${condensation.pathLabel})` : ''}, so
+            changing what is on display cannot change it. The notes above say what is
+            happening at each marked interface.
+          </>
+        )}
       </figcaption>
     </figure>
   );

@@ -8,10 +8,12 @@ import type {
   ProfileSection,
 } from '@openuvalue/engine';
 import {
+  assessInterstitialCondensation,
   calculateDynamicProperties,
   calculateTemperatureProfile,
   calculateUValue,
   computeCorrections,
+  condensationMarkers,
 } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
@@ -253,6 +255,25 @@ export function App(): JSX.Element {
    * catalogue calls insulation counts; a layer with a typed-in lambda does not, since
    * there is nothing to identify it by.
    */
+  /**
+   * Per-interface moisture conditions for the drawing. Computed here rather than inside
+   * CrossSection so that a failure in the vapour calculation costs the drawing its
+   * drops and nothing else - the thermal side is still worth drawing without it.
+   */
+  const condensation = useMemo(() => {
+    if (profile === undefined || profile === null) {
+      return undefined;
+    }
+    try {
+      return condensationMarkers(
+        profile,
+        assessInterstitialCondensation(element, state.conditions),
+      );
+    } catch {
+      return undefined;
+    }
+  }, [element, state.conditions, profile]);
+
   const corrections = useMemo(() => {
     if (result === undefined || result.uValueWPerM2K === null) {
       return undefined;
@@ -433,6 +454,7 @@ export function App(): JSX.Element {
               onSelectLayer={setSelectedLayerId}
               onReorder={reorderLayers}
               onResizeLayer={setLayerThickness}
+              condensation={condensation}
             />
           ) : (
             <Layup3D

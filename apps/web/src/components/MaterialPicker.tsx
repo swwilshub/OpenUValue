@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MaterialCategory, MaterialRecord } from '@openuvalue/materials';
+import type { SourceStatus } from '@openuvalue/materials';
 import { MATERIALS, findMaterialById, sourceStatus } from '@openuvalue/materials';
 import { type LayerDrawCategory, layerDrawCategory } from '../state/model.js';
 import { CATEGORY_STYLE, MaterialSwatch } from './hatches.js';
@@ -45,6 +46,21 @@ function matches(material: MaterialRecord, query: string): boolean {
     material.category.toLowerCase().includes(needle)
   );
 }
+
+/**
+ * What each provenance state means, in the words shown on hover. Wording lives here
+ * rather than in the data package, which records provenance but does not present it.
+ */
+const SOURCE_STATUS_TEXT: Readonly<Record<SourceStatus, string>> = {
+  cited: 'Read from the standard named below, at the clause named below.',
+  evidenced:
+    'Assumed. This is the conventional value and every public source consulted agrees ' +
+    'on it, but nobody has read the governing clause — so treat it as an assumption ' +
+    'that is expected to hold, not as a checked figure. Good enough to model with; ' +
+    'not good enough to submit.',
+  partial: 'Some values are attributed and some are not. The detail below says which.',
+  open: 'Not attributed. A placeholder value, recorded as such.',
+};
 
 export function MaterialPicker({
   materialId,
@@ -203,12 +219,17 @@ export function MaterialPicker({
                               Whether the values have been traced to a published clause.
                               The database records that honestly; showing it here is what
                               stops an unattributed figure passing for a checked one.
+                              Evidenced carries an asterisk rather than a fourth colour,
+                              so the one state that needs a caveat is the one state that
+                              does not rely on telling two dots apart.
                             */}
                             <span
                               className={`source-dot source-${sourceStatus(material)}`}
-                              title={`Source — ${material.source}`}
-                              aria-label={`Source: ${material.source}`}
-                            />
+                              title={`${SOURCE_STATUS_TEXT[sourceStatus(material)]}\n\n${material.source}`}
+                              aria-label={`Source: ${SOURCE_STATUS_TEXT[sourceStatus(material)]}. ${material.source}`}
+                            >
+                              {sourceStatus(material) === 'evidenced' ? '∗' : ''}
+                            </span>
                           </span>
                         </button>
                       </li>
@@ -219,6 +240,24 @@ export function MaterialPicker({
             ))}
             {grouped.length === 0 && <li className="picker-empty">Nothing matches “{query}”.</li>}
           </ul>
+          {/*
+            Each marker and its wording are one span, so a wrap never leaves a dot on a
+            different line from the label it belongs to.
+          */}
+          <p className="picker-provenance">
+            <span>
+              <span className="source-dot source-cited" /> read from the standard
+            </span>
+            <span>
+              <span className="source-dot source-evidenced">∗</span> assumed, not yet read
+            </span>
+            <span>
+              <span className="source-dot source-partial" /> partly attributed
+            </span>
+            <span>
+              <span className="source-dot source-open" /> not attributed
+            </span>
+          </p>
         </div>
       )}
     </div>
