@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type {
   CondensationMarkers,
+  PeriodAssessment,
   InterfaceCondition,
   InterfaceMarker,
   ProfileSection,
@@ -100,6 +101,12 @@ function formatRate(ratePerDayGPerM2: number): string {
     return `${magnitude.toFixed(1)} g/m²·day`;
   }
   return `${magnitude.toFixed(2)} g/m²·day`;
+}
+
+/** Accumulated water, in the unit that keeps it comparable with the daily rate. */
+function formatMass(kgPerM2: number): string {
+  const grams = kgPerM2 * 1000;
+  return grams >= 1000 ? `${kgPerM2.toFixed(2)} kg/m²` : `${Math.round(grams)} g/m²`;
 }
 
 /**
@@ -286,6 +293,13 @@ export interface CrossSectionProps {
    * drawn through it.
    */
   readonly condensation?: CondensationMarkers | undefined;
+  /**
+   * The two-season dry-out check. Shown beside the rate because the rate on its own
+   * invites the wrong reading: BS EN ISO 13788 asks whether an element clears what it
+   * gains, not whether it condenses in January, and a build-up that wets and dries is
+   * doing what a build-up does.
+   */
+  readonly dryOut?: PeriodAssessment | undefined;
 }
 
 export function CrossSection({
@@ -297,6 +311,7 @@ export function CrossSection({
   onReorder,
   onResizeLayer,
   condensation,
+  dryOut,
 }: CrossSectionProps): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null);
   /**
@@ -603,6 +618,17 @@ export function CrossSection({
   const notes = (condensation?.markers ?? []).filter((marker) => marker.condition !== 'dry');
   /** The external face, which is cold for reasons of its own. */
   const outermostBoundaryIndex = condensation?.markers.at(-1)?.boundaryIndex ?? -1;
+  /*
+   * How long the build-up takes to clear is set by its slowest plane, not its first:
+   * reporting anything less would say a wall was dry while one plane in it still held
+   * water. Undefined where a wet plane never clears at all.
+   */
+  const planeDryingDays = (dryOut?.planes ?? [])
+    .filter((plane) => plane.accumulatedKgPerM2 > 0)
+    .map((plane) => plane.daysToDry);
+  const slowestPlaneDays = planeDryingDays.some((days) => days === undefined)
+    ? undefined
+    : planeDryingDays.reduce<number>((worst, days) => Math.max(worst, days ?? 0), 0);
 
   const dewPointY = toY(profile.internalDewPointTemperatureC);
   const riskBandY = Math.min(Math.max(dewPointY, TOP_PAD), TOP_PAD + PLOT_HEIGHT);
@@ -1286,14 +1312,69 @@ export function CrossSection({
               </div>
             </li>
           ))}
+          {condensation !== undefined && condensation.anyCondensation && dryOut !== undefined && (
+            /*
+             * The rate on its own invites the wrong reading. The standard's question is
+             * whether an element clears what it gains, so the answer to that belongs
+             * next to the number that prompts it, not one tab away.
+             */
+            <li
+              className={`interface-note ${dryOut.driesOut ? 'note-dries' : 'note-does-not-dry'}`}
+            >
+              <svg viewBox="0 0 16 16" className="note-glyph" aria-hidden="true">
+                {dryOut.driesOut ? (
+                  <path d="M 3 8.5 L 6.5 12 L 13 4" className="note-tick" />
+                ) : (
+                  <path d="M 8 2 L 15 14 L 1 14 Z" className="node-glyph-warning" />
+                )}
+              </svg>
+              <div>
+                <p className="note-where">
+                  {dryOut.driesOut ? 'Clears over the year' : 'Does not clear'}
+                  <span className="note-headline">
+                    {' — '}
+                    {formatMass(dryOut.totalAccumulatedKgPerM2)} over {dryOut.wettingPeriod.days}{' '}
+                    days of wetting
+                    {dryOut.driesOut
+                      ? slowestPlaneDays === undefined
+                        ? ''
+                        : `, gone in ${slowestPlaneDays.toFixed(0)}`
+                      : `, ${formatMass(dryOut.totalRemainingKgPerM2)} still there after`}{' '}
+                    {dryOut.driesOut ? '' : `${dryOut.dryingPeriod.days} `}days of drying
+                  </span>
+                </p>
+                <p className="note-what">
+                  {dryOut.driesOut
+                    ? 'What a build-up gains in winter it can give back in summer, and ' +
+                      'this one does, with room to spare. Condensation that clears is ' +
+                      'not by itself a defect — the question BS EN ISO 13788 asks is ' +
+                      'whether an element dries out again, not whether it condenses in ' +
+                      'January.'
+                    : 'Water left at the end of the drying season accumulates year on ' +
+                      'year, which is the case the assessment exists to catch.'}{' '}
+                  These two seasons are our own default, not the standard&rsquo;s method:
+                  BS EN ISO 13788 runs twelve months of a design year against monthly
+                  climate data we do not ship. Change the seasons in the Moisture tab and
+                  this figure follows them.
+                </p>
+              </div>
+            </li>
+          )}
           {condensation !== undefined && condensation.anyCondensation && (
             <li className="interface-note note-caveat">
               <div>
                 <p className="note-what">
-                  These are the rates at the conditions set above, not a verdict on the
-                  build-up. BS EN ISO 13788 asks whether an element dries out again over a
-                  year, which one set of conditions cannot answer — the Moisture tab runs a
-                  wetting and a drying season for that.
+                  <strong>What this calculation leaves out.</strong> The Glaser method
+                  moves vapour by diffusion alone. It does not model rain driven into the
+                  outer leaf, liquid water moving through a material by capillarity, air
+                  carrying moisture through gaps, or the moisture a hygroscopic material
+                  holds and releases. In a masonry outer leaf those dominate — a wall
+                  takes far more water from a day of driving rain than from a season of
+                  this — so a wet plane at the back of a leaf that is built to get wet and
+                  drain is a different proposition from one against insulation or
+                  sheathing, which are not. {/* TODO(verify): the clause in BS EN ISO
+                  13788 that lists what the method does not account for. See VERIFY.md
+                  row V28. */}
                 </p>
               </div>
             </li>

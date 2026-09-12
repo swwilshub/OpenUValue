@@ -41,6 +41,46 @@ const SUMMER = {
   },
 };
 
+describe('a "drying" period that does not dry', () => {
+  it('keeps adding water when the second period still drives vapour outwards', () => {
+    /*
+     * The clearest case to check by hand: run winter conditions as BOTH periods. The
+     * construction cannot tell the two apart, so the plane condenses at one constant
+     * rate for 180 days and must end holding exactly twice what it held at day 90.
+     *
+     * This is the case the old arithmetic got wrong. It took only the evaporating half
+     * of the drying rate, so a plane that was still filling was reported as merely
+     * having failed to empty, and `remaining` came back equal to `accumulated` however
+     * much more water arrived.
+     */
+    const result = assessOverPeriods(INTERNAL_INSULATION, WINTER, { ...WINTER, label: 'Also winter' });
+    const plane = result.planes.find((candidate) => candidate.accumulatedKgPerM2 > 0);
+    expect(plane).toBeDefined();
+    expect(plane?.remainingKgPerM2).toBeCloseTo((plane?.accumulatedKgPerM2 ?? 0) * 2, 10);
+    expect(result.driesOut).toBe(false);
+    // It never clears, so there is no number of days that would clear it.
+    expect(plane?.daysToDry).toBeUndefined();
+  });
+
+  it('scales the extra with the length of the second period', () => {
+    // Same rate, half the days: 90 days of wetting then 45 more gives 1.5x.
+    const result = assessOverPeriods(INTERNAL_INSULATION, WINTER, {
+      ...WINTER,
+      label: 'Half a winter',
+      days: 45,
+    });
+    const plane = result.planes.find((candidate) => candidate.accumulatedKgPerM2 > 0);
+    expect(plane?.remainingKgPerM2).toBeCloseTo((plane?.accumulatedKgPerM2 ?? 0) * 1.5, 10);
+  });
+
+  it('still empties a plane whose second period does evaporate', () => {
+    // The ordinary case must be untouched: winter then summer clears it entirely.
+    const result = assessOverPeriods(INTERNAL_INSULATION, WINTER, SUMMER);
+    expect(result.driesOut).toBe(true);
+    expect(result.totalRemainingKgPerM2).toBe(0);
+  });
+});
+
 describe('accumulation over a wetting period', () => {
   const result = assessOverPeriods(INTERNAL_INSULATION, WINTER, SUMMER);
 

@@ -153,11 +153,17 @@ export function assessOverPeriods(
     const gained = accumulated.get(index) ?? 0;
     const dryingNode = drying.nodes[index];
     const wettingNode = wetting.nodes[index];
-    // A negative rate is evaporation; a positive one means this plane keeps wetting
-    // even in the drying period.
-    const evaporationRate = -(dryingNode?.rateKgPerM2S ?? 0);
-    const evaporated = Math.max(0, evaporationRate) * dryingSeconds;
-    const remaining = Math.max(0, gained - evaporated);
+    /*
+     * A negative rate is evaporation; a positive one means this plane keeps wetting
+     * even in the drying period, which happens whenever the "drying" conditions still
+     * drive vapour outwards. Both cases are the same arithmetic - the net rate over the
+     * period, applied to what the plane already held - and taking only the evaporating
+     * half of it would report a plane that is still filling as though it had merely
+     * failed to empty.
+     */
+    const dryingRateKgPerM2S = dryingNode?.rateKgPerM2S ?? 0;
+    const evaporationRate = -dryingRateKgPerM2S;
+    const remaining = Math.max(0, gained + dryingRateKgPerM2S * dryingSeconds);
     const daysToDry =
       evaporationRate > 0 ? gained / evaporationRate / SECONDS_PER_DAY : undefined;
     planes.push({

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { DryingSettings } from '../state/drying.js';
 import type {
   BuildingElement,
   EnvironmentConditions,
@@ -27,7 +28,6 @@ import { HelpButton } from './guide/Guide.js';
  * numbers chosen to be obviously provisional rather than to look authoritative.
  */
 
-const DEFAULT_PERIOD_DAYS = 90;
 
 export interface MoistureTabProps {
   /** Opens the feature guide at a topic. */
@@ -36,6 +36,12 @@ export interface MoistureTabProps {
   readonly layers: readonly UiLayer[];
   readonly conditions: EnvironmentConditions;
   readonly profile: TemperatureProfile;
+  /**
+   * Held above this tab, because the cross-section reports the same dry-out answer and
+   * the two must not be able to disagree about the same wall.
+   */
+  readonly dryingSettings: DryingSettings;
+  readonly onChangeDryingSettings: (settings: DryingSettings) => void;
 }
 
 export function MoistureTab({
@@ -44,12 +50,20 @@ export function MoistureTab({
   conditions,
   profile,
   onOpenGuide,
+  dryingSettings,
+  onChangeDryingSettings,
 }: MoistureTabProps): JSX.Element {
   const [pathId, setPathId] = useState<string | undefined>(undefined);
-  const [wettingDays, setWettingDays] = useState(DEFAULT_PERIOD_DAYS);
-  const [dryingDays, setDryingDays] = useState(DEFAULT_PERIOD_DAYS);
-  const [dryingExternalC, setDryingExternalC] = useState(18);
-  const [dryingExternalRh, setDryingExternalRh] = useState(55);
+  const { wettingDays, dryingDays, dryingExternalC } = dryingSettings;
+  const dryingExternalRh = dryingSettings.dryingExternalRhPercent;
+  const setWettingDays = (days: number) =>
+    onChangeDryingSettings({ ...dryingSettings, wettingDays: days });
+  const setDryingDays = (days: number) =>
+    onChangeDryingSettings({ ...dryingSettings, dryingDays: days });
+  const setDryingExternalC = (temperatureC: number) =>
+    onChangeDryingSettings({ ...dryingSettings, dryingExternalC: temperatureC });
+  const setDryingExternalRh = (percent: number) =>
+    onChangeDryingSettings({ ...dryingSettings, dryingExternalRhPercent: percent });
 
   const assessment = useMemo(
     () => assessInterstitialCondensation(element, conditions),
@@ -240,15 +254,38 @@ export function MoistureTab({
                   <strong>{plane.label}</strong> — collects{' '}
                   {plane.accumulatedKgPerM2.toFixed(2)} kg/m² at {plane.temperatureC.toFixed(1)}{' '}
                   °C
-                  {plane.daysToDry === undefined
-                    ? ', and nothing evaporates from it under the drying conditions'
-                    : `, and would need ${plane.daysToDry.toFixed(0)} days to clear`}
+                  {plane.daysToDry !== undefined
+                    ? `, and would need ${plane.daysToDry.toFixed(0)} days to clear`
+                    : plane.remainingKgPerM2 > plane.accumulatedKgPerM2
+                      ? `, and goes on gaining under the drying conditions, reaching ` +
+                        `${plane.remainingKgPerM2.toFixed(2)} kg/m² by the end of them`
+                      : ', and nothing evaporates from it under the drying conditions'}
                   .
                 </li>
               ))}
             </ul>
           </>
         )}
+
+        <details className="explain">
+          <summary>What this calculation leaves out</summary>
+          <p className="tour-caveat">
+            The Glaser method moves water vapour by diffusion and nothing else. It does
+            not model rain driven into an outer leaf, liquid water moving through a
+            material by capillarity, air carrying moisture through gaps and joints, or the
+            moisture a hygroscopic material takes up and gives back. Those are not minor
+            corrections: in a masonry outer leaf they dominate, and a wall takes far more
+            water from a day of driving rain than from a season of the rates above.
+          </p>
+          <p className="tour-caveat">
+            So <em>where</em> a wet plane sits matters as much as how much arrives there.
+            The back of a leaf that is built to get wet and drain is a different
+            proposition from the same rate against insulation or sheathing, which are not
+            — and the method cannot tell you which of those you are looking at. You can.
+            {/* TODO(verify): the clause in BS EN ISO 13788 that lists what the method
+            does not account for. See VERIFY.md row V28. */}
+          </p>
+        </details>
 
         <details className="explain">
           <summary>Why there is no pass mark here</summary>
@@ -259,8 +296,11 @@ export function MoistureTab({
             weather and the limit you judge against are all things it cannot attribute to
             a clause, and inventing them would make a made-up number look like a verdict.
             What is calculated here is the arithmetic — rate multiplied by duration, then
-            evaporation over the drying season — on the periods and conditions you set.
-            The numbers are real; deciding what counts as too much is still yours.
+            the net rate over the drying season applied to what the plane already held —
+            on the periods and conditions you set. That second period can add water as
+            well as remove it, and does whenever the conditions you give it still drive
+            vapour outwards. The numbers are real; deciding what counts as too much is
+            still yours.
           </p>
         </details>
       </section>

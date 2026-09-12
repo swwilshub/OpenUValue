@@ -1074,6 +1074,33 @@ button.danger:hover {
   font-weight: 600;
 }
 
+/* The dry-out answer, beside the rate that prompts the question. */
+.note-dries {
+  border-left-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 7%, transparent);
+}
+
+.note-dries .note-headline {
+  color: var(--ok);
+}
+
+.note-glyph .note-tick {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.note-does-not-dry {
+  border-left-color: var(--risk);
+  background: var(--risk-soft);
+}
+
+.note-does-not-dry .note-headline {
+  color: var(--risk);
+}
+
 /* The standing caveat: a rate at one set of conditions is not a verdict. */
 .note-caveat {
   background: transparent;

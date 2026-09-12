@@ -18,6 +18,11 @@ import {
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
+import {
+  DEFAULT_DRYING_SETTINGS,
+  type DryingSettings,
+  assessDryOut,
+} from './state/drying.js';
 import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
 import { SummaryStrip } from './components/SummaryStrip.js';
@@ -256,6 +261,17 @@ export function App(): JSX.Element {
    * there is nothing to identify it by.
    */
   /**
+   * The two seasons the dry-out check runs over, held here so the cross-section and the
+   * Moisture tab cannot report different answers for the same wall.
+   */
+  const [dryingSettings, setDryingSettings] = useState<DryingSettings>(DEFAULT_DRYING_SETTINGS);
+
+  const dryOut = useMemo(
+    () => assessDryOut(element, state.conditions, dryingSettings),
+    [element, state.conditions, dryingSettings],
+  );
+
+  /**
    * Per-interface moisture conditions for the drawing. Computed here rather than inside
    * CrossSection so that a failure in the vapour calculation costs the drawing its
    * drops and nothing else - the thermal side is still worth drawing without it.
@@ -455,6 +471,7 @@ export function App(): JSX.Element {
               onReorder={reorderLayers}
               onResizeLayer={setLayerThickness}
               condensation={condensation}
+              dryOut={dryOut}
             />
           ) : (
             <Layup3D
@@ -526,6 +543,8 @@ export function App(): JSX.Element {
           layers={state.layers}
           conditions={state.conditions}
           profile={profile}
+          dryingSettings={dryingSettings}
+          onChangeDryingSettings={setDryingSettings}
         />
       )}
 
