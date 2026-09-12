@@ -229,6 +229,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
               the dew point. In a well-built wall that only happens out beyond the insulation,
               which is exactly where you want it.
             </p>
+            <p>
+              <strong>Cold is not the same as wet.</strong> An interface only collects water if
+              vapour actually reaches it at saturation, and the layers on the warm side may well
+              hold enough of it back. So being in the tinted band is not by itself a fault — most
+              of the thickness of a well-insulated element is below the dew point by design. The
+              drawing marks the planes where water really does form, with a drop whose area is
+              proportional to how much, and the notes underneath say what is happening at each
+              marked interface.
+            </p>
           </>
         ),
       },

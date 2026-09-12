@@ -655,7 +655,11 @@ button.danger:hover {
   margin: 12px 0 0;
 }
 
-.cross-section svg {
+/*
+ * The drawing itself only. A descendant selector here also caught the small inline
+ * glyphs in the notes under the figure and blew each one up to the width of its row.
+ */
+.cross-section > svg {
   width: 100%;
   height: auto;
   overflow: visible;
@@ -808,6 +812,34 @@ button.danger:hover {
 }
 
 /*
+ * The two findings are glyphs, not discs: a triangle where water forms on the room-side
+ * face, a drop where it forms inside the build-up. Shape carries the meaning, so the
+ * drawing does not rest on comparing one circle's diameter with another's.
+ */
+.node-glyph {
+  stroke: var(--surface);
+  stroke-width: 2;
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+
+.node-glyph-warning {
+  fill: var(--risk);
+}
+
+.node-glyph-drop {
+  fill: var(--temp-cold);
+  stroke-width: 0.34;
+}
+
+.node-glyph-bang {
+  font-size: 9px;
+  font-weight: 800;
+  fill: var(--surface);
+  pointer-events: none;
+}
+
+/*
  * Colder than the internal dew point but staying dry. This is the ordinary state of
  * most of an insulated build-up, so it is drawn as information rather than as an alarm:
  * a cool hollow ring that recedes instead of a red disc that shouts.
@@ -870,46 +902,188 @@ button.danger:hover {
 }
 
 /*
- * A wet plane: a drop whose area is proportional to the rate, on a leader back to the
- * interface it forms at. The halo keeps it legible over any hatching.
+ * A wet plane. Three parts, each answering a different question: the marked plane says
+ * WHERE in the wall, the drop says HOW MUCH by its area, and the panel says WHAT in
+ * words - because a drop alone, over brick hatching, reads as a smudge.
  */
-.wet-plane path {
+.wet-plane-band {
   fill: var(--temp-cold);
-  stroke: var(--surface);
-  stroke-width: 1.5;
-  paint-order: stroke;
+  opacity: 0.3;
+  pointer-events: none;
 }
 
-.wet-plane line {
+.wet-plane-rule {
+  stroke: var(--temp-cold);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.wet-plane-leader {
   stroke: var(--temp-cold);
   stroke-width: 1.25;
-  stroke-dasharray: 2.5 2.5;
-  opacity: 0.75;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
-.wet-plane text {
-  font-size: 10px;
-  font-weight: 600;
+/* An opaque panel, so the words never compete with whatever the layer is hatched in. */
+.wet-plane-badge {
+  fill: var(--surface);
+  stroke: var(--temp-cold);
+  stroke-width: 1.5;
+}
+
+.wet-plane-drop {
   fill: var(--temp-cold);
-  paint-order: stroke;
   stroke: var(--surface);
-  stroke-width: 3.5px;
-  stroke-linejoin: round;
+  stroke-width: 1.25;
+  paint-order: stroke;
+}
+
+.wet-plane-headline {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--temp-cold);
+}
+
+.wet-plane-rate {
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Drying reads as an outline rather than a filled drop: water leaving, not arriving. */
-.wet-plane.is-drying path {
+.wet-plane.is-drying .wet-plane-band {
+  fill: var(--ok);
+}
+
+.wet-plane.is-drying .wet-plane-rule,
+.wet-plane.is-drying .wet-plane-leader,
+.wet-plane.is-drying .wet-plane-badge {
+  stroke: var(--ok);
+}
+
+.wet-plane.is-drying .wet-plane-drop {
   fill: var(--surface);
   stroke: var(--ok);
   stroke-width: 1.75;
 }
 
-.wet-plane.is-drying line {
-  stroke: var(--ok);
+.wet-plane.is-drying .wet-plane-headline {
+  fill: var(--ok);
 }
 
-.wet-plane.is-drying text {
-  fill: var(--ok);
+/*
+ * The note under the drawing for each marked interface. The markers say where and how
+ * much; these say why, which is the half a tooltip cannot carry.
+ */
+.interface-notes {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-width: 92ch;
+}
+
+.interface-note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--ground);
+  border-left: 3px solid var(--line);
+}
+
+.interface-note p {
+  margin: 0;
+}
+
+.note-glyph {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.note-glyph .note-ring {
+  fill: none;
+  stroke: var(--temp-cold);
+  stroke-width: 1.75;
+  stroke-dasharray: 2.6 2.2;
+}
+
+.note-glyph .note-drop-open {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 0.34;
+}
+
+.note-where {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.note-headline {
+  font-weight: 700;
+}
+
+.note-what {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  margin-top: 2px !important;
+}
+
+.note-surface-condensation {
+  border-left-color: var(--risk);
+  background: var(--risk-soft);
+}
+
+.note-surface-condensation .note-headline {
+  color: var(--risk);
+}
+
+.note-condensing {
+  border-left-color: var(--temp-cold);
+}
+
+.note-condensing .note-headline {
+  color: var(--temp-cold);
+}
+
+.note-evaporating {
+  border-left-color: var(--ok);
+}
+
+.note-evaporating .note-headline {
+  color: var(--ok);
+}
+
+.note-below-dew-point {
+  border-left-color: var(--line);
+}
+
+.note-below-dew-point .note-headline {
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+/* The standing caveat: a rate at one set of conditions is not a verdict. */
+.note-caveat {
+  background: transparent;
+  border-left-color: var(--line);
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.note-caveat .note-what {
+  font-style: italic;
 }
 
 .cross-section figcaption {
@@ -1172,7 +1346,7 @@ button.danger:hover {
   margin-bottom: 20px;
 }
 
-.hero-panel .cross-section svg {
+.hero-panel .cross-section > svg {
   /* Taller than it would otherwise be: this is the thing people came to look at. */
   max-height: 62vh;
 }
@@ -2977,7 +3151,7 @@ a:hover {
  * Everything else opts out only while a drag is actually in progress, so a reader can
  * still select and copy a layer name or a calculated figure the rest of the time.
  */
-.cross-section svg,
+.cross-section > svg,
 .drag-handle {
   user-select: none;
   -webkit-user-select: none;
