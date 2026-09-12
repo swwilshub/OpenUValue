@@ -35,6 +35,7 @@ import {
   type UiFasteners,
   type UiLayer,
   type UiState,
+  bridgedPercentFromDimensions,
   conditionsForEnvironment,
   defaultState,
   layerDrawCategory,
@@ -210,6 +211,39 @@ export function App(): JSX.Element {
    * pointer move, which is why the hash is written with replaceState — a drag would
    * otherwise leave a hundred entries in the back button.
    */
+  /**
+   * Widen or narrow the members crossing a layer by dragging an edge in the drawing.
+   *
+   * Where the bridged percentage was derived from the geometry it is recomputed, so the
+   * calculation follows the picture. Where it was stated outright — BR 443's conventional
+   * allowances, which count plates and rails the pattern cannot show — the percentage is
+   * left alone: a drag on a drawn member must not silently overwrite a figure taken from
+   * a standard.
+   */
+  const setMemberWidth = useCallback((index: number, widthMm: number) => {
+    setState((current) => {
+      const layer = current.layers[index];
+      if (layer === undefined || layer.bridgeWidthMm === widthMm) {
+        return current;
+      }
+      const layers = [...current.layers];
+      layers[index] = {
+        ...layer,
+        bridgeWidthMm: widthMm,
+        ...(layer.bridgeSizing === 'dimensions'
+          ? {
+              bridgedPercent: bridgedPercentFromDimensions(
+                widthMm,
+                layer.bridgeSpacingMm,
+                layer.bridgeDistanceBasis,
+              ),
+            }
+          : {}),
+      };
+      return { ...current, layers };
+    });
+  }, []);
+
   const setLayerThickness = useCallback((index: number, thicknessMm: number) => {
     setState((current) => {
       const layer = current.layers[index];
@@ -470,6 +504,7 @@ export function App(): JSX.Element {
               onSelectLayer={setSelectedLayerId}
               onReorder={reorderLayers}
               onResizeLayer={setLayerThickness}
+              onResizeMember={setMemberWidth}
               condensation={condensation}
               dryOut={dryOut}
             />

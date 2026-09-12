@@ -1113,6 +1113,28 @@ button.danger:hover {
   font-style: italic;
 }
 
+/*
+ * The grab area on a member's edge. Invisible until hovered, like the thickness handle:
+ * a drawing covered in permanent grips reads as a control panel rather than a section.
+ */
+.member-grip {
+  fill: transparent;
+  cursor: ns-resize;
+  touch-action: none;
+  /*
+   * The members sit in a group with pointer-events: none, so they never swallow a click
+   * meant for the layer behind them. A grip has to opt back in explicitly, or it
+   * inherits that and silently does nothing.
+   */
+  pointer-events: all;
+}
+
+.member-grip:hover,
+.member-grip.is-active {
+  fill: var(--accent);
+  opacity: 0.45;
+}
+
 .cross-section figcaption {
   margin-top: 8px;
   font-size: 11.5px;

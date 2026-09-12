@@ -47,6 +47,13 @@ export interface UiLayer {
    * 'fraction' is the escape hatch for a conventional whole-wall allowance.
    */
   readonly bridgeSizing: 'dimensions' | 'fraction';
+  /**
+   * How the bridging is laid out, which the drawing needs and the calculation does not.
+   * 'members' is a repeating run — a stud, a rafter, a batten — crossing the whole
+   * layer. 'dabs' is discrete pads with air all round them, which is a different thing
+   * to look at even though both resolve to an area fraction.
+   */
+  readonly bridgePattern: BridgePattern;
   /** Width of one member across the face, mm. Used when bridgeSizing is 'dimensions'. */
   readonly bridgeWidthMm: number;
   /**
@@ -280,6 +287,66 @@ export function bridgePitchMm(
   return basis === 'centres' ? distanceMm : distanceMm + widthMm;
 }
 
+/**
+ * What the drawing should show for a bridged layer, or undefined where there is nothing
+ * honest to draw.
+ *
+ * Deliberately independent of `bridgeSizing`. That field says where the *percentage*
+ * came from; this says whether there is a *geometry* to picture. A layer can have both —
+ * BR 443's batten configuration is 47 mm at 600 mm centres and carries a stated fraction
+ * of 11.8 %, because the standard's figure also counts the top and bottom rails. Refusing
+ * to draw it because the percentage was stated rather than derived would hide a geometry
+ * we know exactly.
+ *
+ * Where the two disagree, `geometricPercent` differs from the layer's `bridgedPercent`,
+ * and the caller is expected to say so rather than let the picture quietly contradict the
+ * number beside it.
+ */
+export interface BridgeGeometry {
+  readonly widthMm: number;
+  readonly pitchMm: number;
+  readonly pattern: BridgePattern;
+  /** The percentage the drawn members alone come to. */
+  readonly geometricPercent: number;
+}
+
+export function bridgeGeometry(layer: UiLayer): BridgeGeometry | undefined {
+  if (layer.bridgedPercent <= 0) {
+    return undefined;
+  }
+  if (layer.bridgePattern === 'dabs') {
+    /*
+     * Dabs have no stated layout, so the pitch is a drawing constant and the pad size
+     * follows from the fraction: pad = fraction x pitch makes the coverage down the
+     * section equal the fraction the calculation uses.
+     */
+    const widthMm = (layer.bridgedPercent / 100) * DAB_NOMINAL_PITCH_MM;
+    return {
+      widthMm,
+      pitchMm: DAB_NOMINAL_PITCH_MM,
+      pattern: 'dabs',
+      geometricPercent: layer.bridgedPercent,
+    };
+  }
+  if (layer.bridgeWidthMm <= 0) {
+    return undefined;
+  }
+  const pitchMm = bridgePitchMm(
+    layer.bridgeWidthMm,
+    layer.bridgeSpacingMm,
+    layer.bridgeDistanceBasis,
+  );
+  if (!(pitchMm > 0)) {
+    return undefined;
+  }
+  return {
+    widthMm: layer.bridgeWidthMm,
+    pitchMm,
+    pattern: 'members',
+    geometricPercent: (layer.bridgeWidthMm / pitchMm) * 100,
+  };
+}
+
 export function bridgedPercentFromDimensions(
   widthMm: number,
   distanceMm: number,
@@ -380,6 +447,17 @@ export const BR443_BATTEN_THICKNESS_MM = 22;
 /** Softwood, BR 443 (2019) 3.9 — the same value the stud default uses. */
 export const SOFTWOOD_LAMBDA_W_PER_MK = 0.13;
 
+export type BridgePattern = 'members' | 'dabs';
+
+/**
+ * Nominal pitch used to draw plaster dabs. BR 443 gives their area fraction and nothing
+ * about their layout, so this is a **drawing convention only**: the pads are pitched at
+ * this spacing and their size is then set from the fraction, so the coverage down the
+ * section is the fraction the calculation actually uses. The arrangement is indicative
+ * and the caption says so; no number in the result depends on it.
+ */
+export const DAB_NOMINAL_PITCH_MM = 300;
+
 export const DEFAULT_STUD_WIDTH_MM = 38;
 export const DEFAULT_STUD_SPACING_MM = 400;
 
@@ -393,6 +471,7 @@ export function blankSolidLayer(): UiLayer {
     lambdaWPerMK: 0.5,
     vapourResistanceFactorMu: 10,
     bridgedPercent: 0,
+    bridgePattern: 'members',
     bridgeLabel: 'Timber stud',
     bridgeMaterialId: 'softwood-structural',
     bridgeLambdaWPerMK: 0.13,

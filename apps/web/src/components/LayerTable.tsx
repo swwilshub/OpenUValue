@@ -214,6 +214,7 @@ export function LayerTable({
       bridgeWidthMm: BR443_BATTEN_WIDTH_MM,
       bridgeSpacingMm: BR443_BATTEN_SPACING_MM,
       bridgeDistanceBasis: 'centres',
+      bridgePattern: 'members',
       bridgedPercent: BR443_BATTEN_PERCENT,
     });
   };
@@ -230,6 +231,7 @@ export function LayerTable({
       bridgeMaterialId: null,
       bridgeLambdaWPerMK: BR443_DAB_LAMBDA_W_PER_MK,
       bridgeSizing: 'fraction',
+      bridgePattern: 'dabs',
       bridgedPercent: BR443_DAB_PERCENT,
     });
   };
@@ -237,6 +239,7 @@ export function LayerTable({
   const addStuds = (index: number): void => {
     update(index, {
       bridgeSizing: 'dimensions',
+      bridgePattern: 'members',
       bridgeWidthMm: DEFAULT_STUD_WIDTH_MM,
       bridgeSpacingMm: DEFAULT_STUD_SPACING_MM,
       bridgeDistanceBasis: 'centres',

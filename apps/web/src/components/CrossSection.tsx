@@ -9,7 +9,11 @@ import type {
   UValueResult,
 } from '@openuvalue/engine';
 import type { LayerDrawCategory, UiLayer } from '../state/model.js';
-import { bridgePitchMm, layerDrawCategory } from '../state/model.js';
+import {
+  BR443_ADDITIONAL_TIMBER_ALLOWANCE,
+  bridgeGeometry,
+  layerDrawCategory,
+} from '../state/model.js';
 import { CATEGORY_STYLE } from './hatches.js';
 import { temperatureIntervalC } from '../format.js';
 
@@ -201,6 +205,19 @@ const CALLOUT_GAP = 12;
 const CALLOUT_MAX_WIDTH = 210;
 /** Approximate advance width of one character at the callout's 10.5px size. */
 const CALLOUT_CHAR_WIDTH = 5.6;
+/**
+ * Limits for dragging a member's width. A member narrower than 10 mm is not a member,
+ * and one wider than 300 mm has stopped being a stud and become a wall; the step keeps
+ * the drag landing on the round numbers timber is actually sold in.
+ */
+const MIN_MEMBER_WIDTH_MM = 10;
+const MAX_MEMBER_WIDTH_MM = 300;
+const MEMBER_RESIZE_STEP_MM = 1;
+/** A member may fill at most this much of its own pitch before it stops being one. */
+const MAX_MEMBER_SHARE_OF_PITCH = 0.9;
+/** Half-height of a member edge's grab area. */
+const MEMBER_GRIP_HALF = 4;
+
 /** Half-width of a resize handle's grab area, and the least thickness a drag may set. */
 const RESIZE_GRAB_HALF_WIDTH = 6;
 const MIN_THICKNESS_MM = 1;
@@ -284,6 +301,12 @@ export interface CrossSectionProps {
   /** Change a layer's thickness by dragging the handle on its outer edge. */
   readonly onResizeLayer?: ((index: number, thicknessMm: number) => void) | undefined;
   /**
+   * Change the width of the members crossing a layer by dragging one of their edges.
+   * Vertical, because the drawing's height is a length of wall: a member's width runs
+   * down the section, so that is the direction its edge moves in.
+   */
+  readonly onResizeMember?: ((index: number, widthMm: number) => void) | undefined;
+  /**
    * Per-interface conditions from the vapour calculation. Optional: the drawing is
    * still a drawing without it, and the moisture calculation can fail on a build-up
    * whose thermal side is fine.
@@ -311,6 +334,7 @@ export function CrossSection({
   onSelectLayer,
   onReorder,
   onResizeLayer,
+  onResizeMember,
   condensation,
   dryOut,
 }: CrossSectionProps): JSX.Element {
@@ -445,17 +469,34 @@ export function CrossSection({
     return boxes.map((box) => {
       const bridged = box.layer.bridgedPercent;
       const text = fitLabel(box.layer.label, CALLOUT_MAX_WIDTH, CALLOUT_CHAR_WIDTH);
+      const geometry = bridged > 0 ? bridgeGeometry(box.layer) : undefined;
+      /*
+       * Where the drawn geometry implies a different percentage from the one being
+       * calculated, both are named. BR 443's batten case is exactly that: 47 mm at
+       * 600 mm centres is 7.8 % of the face, and its 11.8 % also counts the top and
+       * bottom rails, which have no place in a repeating pattern. Showing only one of
+       * the two would let the picture contradict the number beside it.
+       */
+      /*
+       * Only where the counted figure exceeds the drawn members by more than BR 443's
+       * standing allowance for noggings, which every dimensioned layer already carries.
+       * Flagging that one point of difference would put "counted as" on every stud in
+       * the drawing and make the words mean nothing where they matter — BR 443's batten
+       * case, 7.8 % of drawn members against a counted 11.8 %.
+       */
+      const understated =
+        geometry !== undefined &&
+        geometry.pattern === 'members' &&
+        bridged - geometry.geometricPercent > BR443_ADDITIONAL_TIMBER_ALLOWANCE * 100 + 0.5;
       const detail =
         bridged > 0
-          ? box.layer.kind === 'solid' &&
-            box.layer.bridgeSizing === 'dimensions' &&
-            box.layer.bridgeWidthMm > 0
-            ? `${box.layer.bridgeWidthMm} @ ${bridgePitchMm(
-                box.layer.bridgeWidthMm,
-                box.layer.bridgeSpacingMm,
-                box.layer.bridgeDistanceBasis,
-              ).toFixed(0)} crs · ${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
-            : `${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
+          ? geometry === undefined || geometry.pattern === 'dabs'
+            ? `${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
+            : understated
+              ? `${geometry.widthMm} @ ${geometry.pitchMm.toFixed(0)} crs · ` +
+                `${box.layer.bridgeLabel}, counted as ${bridged.toFixed(1)}%`
+              : `${geometry.widthMm} @ ${geometry.pitchMm.toFixed(0)} crs · ` +
+                `${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
           : undefined;
       const width =
         Math.max(text.length, detail === undefined ? 0 : detail.length * 0.88) *
@@ -546,23 +587,13 @@ export function CrossSection({
    * draw, and inventing a spacing for it would be a drawing that says more than is known.
    */
   const studColumns = boxes
-    .filter(
-      (box) =>
-        box.included &&
-        box.layer.kind === 'solid' &&
-        box.layer.bridgedPercent > 0 &&
-        box.layer.bridgeSizing === 'dimensions' &&
-        box.layer.bridgeWidthMm > 0,
-    )
-    .map((box) => ({
-      box,
-      widthMm: box.layer.bridgeWidthMm,
-      pitchMm: bridgePitchMm(
-        box.layer.bridgeWidthMm,
-        box.layer.bridgeSpacingMm,
-        box.layer.bridgeDistanceBasis,
-      ),
-    }))
+    .flatMap((box) => {
+      if (!box.included) {
+        return [];
+      }
+      const geometry = bridgeGeometry(box.layer);
+      return geometry === undefined ? [] : [{ box, ...geometry }];
+    })
     .filter((column) => column.pitchMm > 0);
 
   const hasDrawableStuds = studColumns.length > 0;
@@ -650,6 +681,87 @@ export function CrossSection({
       return 0;
     }
     return VIEWBOX_MIN_X + ((clientX - rect.left) / rect.width) * viewBoxWidth;
+  };
+
+  /** The same mapping down the drawing, for dragging a member's edge. */
+  const toUserY = (clientY: number): number => {
+    const svg = svgRef.current;
+    if (svg === null) {
+      return 0;
+    }
+    const rect = svg.getBoundingClientRect();
+    if (rect.height === 0) {
+      return 0;
+    }
+    return viewBoxMinY + ((clientY - rect.top) / rect.height) * (viewBoxHeight - viewBoxMinY);
+  };
+
+  /**
+   * Dragging a member's edge. `startWidthMm` is what it was when the press landed, and
+   * the pointer's vertical travel is converted back to millimetres of wall through the
+   * same mm-to-pixel scale the members are drawn at.
+   */
+  const [memberResize, setMemberResize] = useState<{
+    readonly index: number;
+    readonly startClientY: number;
+    readonly startWidthMm: number;
+    readonly frozenMmToY: number;
+    readonly pitchMm: number;
+    /** +1 when dragging the lower edge, -1 the upper: both grow the member outward. */
+    readonly sign: number;
+  } | null>(null);
+
+  const beginMemberResize = (
+    event: React.PointerEvent<SVGRectElement>,
+    index: number,
+    widthMm: number,
+    pitchMm: number,
+    sign: number,
+  ): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setMemberResize({
+      index,
+      startClientY: event.clientY,
+      startWidthMm: widthMm,
+      frozenMmToY: mmToY,
+      pitchMm,
+      sign,
+    });
+  };
+
+  const continueMemberResize = (event: React.PointerEvent<SVGRectElement>): void => {
+    if (memberResize === null || onResizeMember === undefined || memberResize.frozenMmToY <= 0) {
+      return;
+    }
+    event.stopPropagation();
+    const deltaUserY = toUserY(event.clientY) - toUserY(memberResize.startClientY);
+    // Both edges are dragged outward to widen, so the lower edge grows with a positive
+    // delta and the upper with a negative one; each edge moves half the total width.
+    const deltaMm = ((deltaUserY * memberResize.sign) / memberResize.frozenMmToY) * 2;
+    /*
+     * A member cannot be wider than the gap it repeats in — at the pitch it would be a
+     * solid layer, not a bridged one — so the pitch caps the drag as well as the
+     * absolute limit.
+     */
+    const pitchCapMm =
+      memberResize.pitchMm > 0 ? memberResize.pitchMm * MAX_MEMBER_SHARE_OF_PITCH : Infinity;
+    const next = Math.min(
+      MAX_MEMBER_WIDTH_MM,
+      pitchCapMm,
+      Math.max(
+        MIN_MEMBER_WIDTH_MM,
+        Math.round((memberResize.startWidthMm + deltaMm) / MEMBER_RESIZE_STEP_MM) *
+          MEMBER_RESIZE_STEP_MM,
+      ),
+    );
+    onResizeMember(memberResize.index, Number(next.toFixed(1)));
+  };
+
+  const endMemberResize = (event: React.PointerEvent<SVGRectElement>): void => {
+    event.stopPropagation();
+    setMemberResize(null);
   };
 
   const beginResize = (
@@ -882,29 +994,85 @@ export function CrossSection({
                     if (column === undefined) {
                       return null;
                     }
+                    const isDabs = column.pattern === 'dabs';
+                    /*
+                     * A dab is a pad with air all round it, not a run crossing the layer,
+                     * so it is drawn inset from both faces and rounded. A reader should be
+                     * able to tell at a glance which of the two they are looking at.
+                     */
+                    const inset = isDabs ? Math.min(3, box.width * 0.18) : 0;
+                    const memberFill = isDabs
+                      ? CATEGORY_STYLE['plaster-and-render']
+                      : CATEGORY_STYLE['timber-and-board'];
                     return studRects(column.widthMm, column.pitchMm).map((rect, memberIndex) => (
-                      <g key={`member-${memberIndex}`} className="stud-group">
+                      <g
+                        key={`member-${memberIndex}`}
+                        className={isDabs ? 'stud-group is-dabs' : 'stud-group'}
+                      >
                         <rect
-                          x={drawX}
+                          x={drawX + inset}
                           y={rect.y}
-                          width={box.width}
+                          width={Math.max(0.5, box.width - inset * 2)}
                           height={rect.h}
-                          fill={CATEGORY_STYLE['timber-and-board'].fill}
+                          rx={isDabs ? Math.min(2.5, rect.h / 2) : 0}
+                          fill={memberFill.fill}
                         />
                         <rect
-                          x={drawX}
+                          x={drawX + inset}
                           y={rect.y}
-                          width={box.width}
+                          width={Math.max(0.5, box.width - inset * 2)}
                           height={rect.h}
-                          fill={`url(#${CATEGORY_STYLE['timber-and-board'].hatch ?? ''})`}
+                          rx={isDabs ? Math.min(2.5, rect.h / 2) : 0}
+                          fill={`url(#${memberFill.hatch ?? ''})`}
                         />
                         <rect
-                          x={drawX}
+                          x={drawX + inset}
                           y={rect.y}
-                          width={box.width}
+                          width={Math.max(0.5, box.width - inset * 2)}
                           height={rect.h}
+                          rx={isDabs ? Math.min(2.5, rect.h / 2) : 0}
                           className="stud-member"
                         />
+                        {/*
+                          * Grab either edge to change the member's width. Only on the
+                          * first member of a run: they are all the same size, so one pair
+                          * of handles changes all of them, and a handle on every member
+                          * would be a row of targets that all do the same thing. Dabs are
+                          * left alone — their size is derived from the area fraction, so
+                          * dragging one would be editing the fraction through a picture.
+                          */}
+                        {onResizeMember !== undefined &&
+                          !isDabs &&
+                          memberIndex === 0 &&
+                          [-1, 1].map((sign) => (
+                            <rect
+                              key={`grip-${sign}`}
+                              x={drawX}
+                              y={(sign === -1 ? rect.y : rect.y + rect.h) - MEMBER_GRIP_HALF}
+                              width={box.width}
+                              height={MEMBER_GRIP_HALF * 2}
+                              className={`member-grip${
+                                memberResize?.index === index ? ' is-active' : ''
+                              }`}
+                              onPointerDown={(event) =>
+                                beginMemberResize(
+                                  event,
+                                  index,
+                                  column.widthMm,
+                                  column.pitchMm,
+                                  sign,
+                                )
+                              }
+                              onPointerMove={continueMemberResize}
+                              onPointerUp={endMemberResize}
+                              onPointerCancel={endMemberResize}
+                            >
+                              <title>
+                                {`Drag to change the ${box.layer.bridgeLabel} width ` +
+                                  `(now ${column.widthMm} mm)`}
+                              </title>
+                            </rect>
+                          ))}
                       </g>
                     ));
                   })()}

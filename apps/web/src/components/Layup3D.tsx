@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { bridgePitchMm, layerDrawCategory } from '../state/model.js';
+import { bridgeGeometry, layerDrawCategory } from '../state/model.js';
 import type { UiLayer } from '../state/model.js';
 import { CATEGORY_STYLE } from './hatches.js';
 
@@ -146,18 +146,8 @@ export function Layup3D({
    * reads rather than a single lonely one.
    */
   const widestPitchMm = layers.reduce((widest, layer) => {
-    if (
-      layer.kind !== 'solid' ||
-      layer.bridgedPercent <= 0 ||
-      layer.bridgeSizing !== 'dimensions' ||
-      layer.bridgeWidthMm <= 0
-    ) {
-      return widest;
-    }
-    return Math.max(
-      widest,
-      bridgePitchMm(layer.bridgeWidthMm, layer.bridgeSpacingMm, layer.bridgeDistanceBasis),
-    );
+    const geometry = bridgeGeometry(layer);
+    return geometry === undefined ? widest : Math.max(widest, geometry.pitchMm);
   }, 0);
   /*
    * Enough panel to read the stud rhythm, but no more: every extra millimetre of wall
@@ -286,6 +276,7 @@ export function Layup3D({
   };
 
   const timberFill = CATEGORY_STYLE['timber-and-board'].fill;
+  const dabFill = CATEGORY_STYLE['plaster-and-render'].fill;
 
   const faces: DrawnFace[] = [];
   const badges: { index: number; x: number; y: number; id: string }[] = [];
@@ -306,35 +297,33 @@ export function Layup3D({
     const fill = slab.included ? style.fill : 'var(--excluded-hatch)';
     const whole = [{ x0: 0, x1: slab.widthMm, fill, isMember: false }];
 
-    if (
-      slab.layer.kind !== 'solid' ||
-      slab.layer.bridgedPercent <= 0 ||
-      slab.layer.bridgeSizing !== 'dimensions' ||
-      slab.layer.bridgeWidthMm <= 0
-    ) {
+    /*
+     * Same geometry decision as the section drawing, from the same helper, so the two
+     * views cannot disagree about what is in a layer. A bridged cavity counts: battens
+     * behind a dry lining are as much a part of the build-up to look at as a stud is.
+     */
+    const geometry = bridgeGeometry(slab.layer);
+    if (geometry === undefined) {
       return whole;
     }
-    const pitchMm = bridgePitchMm(
-      slab.layer.bridgeWidthMm,
-      slab.layer.bridgeSpacingMm,
-      slab.layer.bridgeDistanceBasis,
-    );
+    const pitchMm = geometry.pitchMm;
     if (!(pitchMm > 0)) {
       return whole;
     }
+    const memberFill = geometry.pattern === 'dabs' ? dabFill : timberFill;
 
     const out: { x0: number; x1: number; fill: string; isMember: boolean }[] = [];
     let cursor = 0;
     for (let centre = pitchMm / 2; centre < slab.widthMm; centre += pitchMm) {
-      const m0 = Math.max(cursor, centre - slab.layer.bridgeWidthMm / 2);
-      const m1 = Math.min(slab.widthMm, centre + slab.layer.bridgeWidthMm / 2);
+      const m0 = Math.max(cursor, centre - geometry.widthMm / 2);
+      const m1 = Math.min(slab.widthMm, centre + geometry.widthMm / 2);
       if (m1 <= m0) {
         continue;
       }
       if (m0 > cursor) {
         out.push({ x0: cursor, x1: m0, fill, isMember: false });
       }
-      out.push({ x0: m0, x1: m1, fill: timberFill, isMember: true });
+      out.push({ x0: m0, x1: m1, fill: memberFill, isMember: true });
       cursor = m1;
     }
     if (cursor < slab.widthMm) {
