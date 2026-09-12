@@ -182,13 +182,25 @@ function toSlab(
       ? sections.bridgedM2KPerW
       : sections.unbridgedM2KPerW;
 
-  if (layer.kind !== 'solid') {
-    // An air cavity and a declared-resistance product store no heat worth counting.
+  /*
+   * A cavity stores no heat, but a batten or a stud crossing one does, so on the bridged
+   * path of a bridged cavity the slab is the member: its thickness is the cavity's, and
+   * its mass is its own. Treating that path as massless would drop real thermal mass out
+   * of a dry-lined wall.
+   */
+  const bridgedCavityMaterial =
+    layer.kind === 'air' && useBridging ? layer.bridging?.material : undefined;
+
+  if (layer.kind !== 'solid' && bridgedCavityMaterial === undefined) {
+    // An empty cavity and a declared-resistance product store no heat worth counting.
     return { kind: 'massless', layerId: layer.id, resistanceM2KPerW };
   }
 
   const material: MaterialProperties =
-    useBridging && layer.bridging !== undefined ? layer.bridging.material : layer.material;
+    bridgedCavityMaterial ??
+    (useBridging && layer.kind === 'solid' && layer.bridging !== undefined
+      ? layer.bridging.material
+      : (layer as { readonly material: MaterialProperties }).material);
   const rho = material.densityKgPerM3;
   const c = material.specificHeatCapacityJPerKgK;
 
@@ -373,7 +385,7 @@ export function calculateDynamicProperties(
 
   const bridgedLayers = element.layers.filter(
     (layer) =>
-      layer.kind === 'solid' &&
+      (layer.kind === 'solid' || layer.kind === 'air') &&
       layer.bridging !== undefined &&
       layer.bridging.areaFraction > 0 &&
       layer.bridging.areaFraction < 1,
@@ -393,7 +405,7 @@ export function calculateDynamicProperties(
    * layer is bridged, because the mixed paths in between are not enumerated.
    */
   const bridgingFractions = bridgedLayers.map((layer) =>
-    layer.kind === 'solid' ? (layer.bridging?.areaFraction ?? 0) : 0,
+    layer.kind === 'solid' || layer.kind === 'air' ? (layer.bridging?.areaFraction ?? 0) : 0,
   );
   const unbridgedAreaFraction = bridgingFractions.reduce(
     (total, fraction) => total * (1 - fraction),

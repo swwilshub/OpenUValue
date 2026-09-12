@@ -443,7 +443,7 @@ export function CrossSection({
   const callouts = (() => {
     const rowRightEdge: number[] = [];
     return boxes.map((box) => {
-      const bridged = box.layer.kind === 'solid' ? box.layer.bridgedPercent : 0;
+      const bridged = box.layer.bridgedPercent;
       const text = fitLabel(box.layer.label, CALLOUT_MAX_WIDTH, CALLOUT_CHAR_WIDTH);
       const detail =
         bridged > 0
@@ -595,7 +595,7 @@ export function CrossSection({
 
   const hasThinLayer = layers.some((layer) => layer.thicknessMm * scale < 2);
   const hasBridgedLayer = boxes.some(
-    (box) => box.layer.kind === 'solid' && box.layer.bridgedPercent > 0,
+    (box) => box.layer.bridgedPercent > 0,
   );
 
   // The band from the dew point down to the bottom of the plot: everything drawn
@@ -803,7 +803,7 @@ export function CrossSection({
         {/* Layers, strictly to scale. */}
         {drawOrder.map((box) => {
           const style = CATEGORY_STYLE[box.category];
-          const bridgedPercent = box.layer.kind === 'solid' ? box.layer.bridgedPercent : 0;
+          const bridgedPercent = box.layer.bridgedPercent;
           const isSelected = box.layer.id === selectedLayerId;
           /*
            * The layer's position in the build-up, not in the draw order: the two differ

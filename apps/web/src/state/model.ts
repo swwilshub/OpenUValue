@@ -358,6 +358,28 @@ export const BR443_TIMBER_FRACTION_DEFAULTS: readonly TimberFractionDefault[] = 
 ];
 
 /** A common UK stud size and spacing, used when studs are first added to a layer. */
+/**
+ * BR 443 (2006) 4.7, plasterboard wall lining, in the units the UI works in.
+ *
+ * 4.7.1 plaster dabs: fraction 0.20, lambda 0.43 W/(m*K), 15 mm thick, over a 15 mm
+ * airspace of 0.17 m2K/W. 4.7.2 plasterboard on battens: 47 mm timber at 600 mm centres
+ * plus top and bottom rail for a 2400 mm room height, giving 47/600 + 2 x 47/2400 =
+ * 0.118, at 22 mm thick over an airspace of 0.18 m2K/W.
+ *
+ * These are the 2006 edition's clause numbers. The 2019 edition renumbers this material
+ * — its 4.7 is airspaces — so TODO(verify) the 2019 clauses and whether the figures
+ * moved. VERIFY.md row V30.
+ */
+export const BR443_DAB_PERCENT = 20;
+export const BR443_DAB_LAMBDA_W_PER_MK = 0.43;
+export const BR443_DAB_THICKNESS_MM = 15;
+export const BR443_BATTEN_PERCENT = 11.8;
+export const BR443_BATTEN_WIDTH_MM = 47;
+export const BR443_BATTEN_SPACING_MM = 600;
+export const BR443_BATTEN_THICKNESS_MM = 22;
+/** Softwood, BR 443 (2019) 3.9 — the same value the stud default uses. */
+export const SOFTWOOD_LAMBDA_W_PER_MK = 0.13;
+
 export const DEFAULT_STUD_WIDTH_MM = 38;
 export const DEFAULT_STUD_SPACING_MM = 400;
 
@@ -589,14 +611,43 @@ function massProperties(materialId: string | null): {
 export function toBuildingElement(state: UiState): BuildingElement {
   const layers: Layer[] = state.layers.map((layer) => {
     if (layer.kind === 'air') {
-      return {
-        kind: 'air',
+      const air = {
+        kind: 'air' as const,
         id: layer.id,
         label: layer.label,
         thicknessM: millimetresToMetres(layer.thicknessMm),
         ventilation: layer.ventilation,
         openingAreaMm2PerM: layer.openingAreaMm2PerM,
         emissivity: layer.emissivity,
+      };
+      if (layer.bridgedPercent <= 0) {
+        return air;
+      }
+      /*
+       * Battens, studs or dabs crossing the cavity. The clear span between members is
+       * what decides whether the pockets left between them are still air layers
+       * (BR 443 2006 4.8.1), and it is only known when the user gave dimensions rather
+       * than a bare percentage - so it is passed only then, and the engine skips the
+       * check rather than inventing a spacing.
+       */
+      const clearWidthMm =
+        layer.bridgeSizing === 'dimensions'
+          ? bridgePitchMm(layer.bridgeWidthMm, layer.bridgeSpacingMm, layer.bridgeDistanceBasis) -
+            layer.bridgeWidthMm
+          : undefined;
+      return {
+        ...air,
+        bridging: {
+          label: layer.bridgeLabel,
+          areaFraction: percentToFraction(layer.bridgedPercent),
+          material: {
+            ...massProperties(layer.bridgeMaterialId),
+            lambdaWPerMK: layer.bridgeLambdaWPerMK,
+          },
+          ...(clearWidthMm === undefined || clearWidthMm <= 0
+            ? {}
+            : { clearWidthM: millimetresToMetres(clearWidthMm) }),
+        },
       };
     }
     const solid = {
@@ -661,6 +712,6 @@ export function layerDrawCategory(materialId: string | null, kind: 'solid' | 'ai
 /** True when any layer is genuinely bridged, i.e. the section toggle is meaningful. */
 export function hasBridging(state: UiState): boolean {
   return state.layers.some(
-    (layer) => layer.kind === 'solid' && layer.bridgedPercent > 0 && layer.bridgedPercent < 100,
+    (layer) => layer.bridgedPercent > 0 && layer.bridgedPercent < 100,
   );
 }

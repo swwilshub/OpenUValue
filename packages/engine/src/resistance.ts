@@ -2,7 +2,7 @@ import { unventilatedAirLayerResistanceM2KPerW } from './airLayer.js';
 import { assertFraction, assertNonNegative, assertPositive } from './errors.js';
 import type { HeatFlowDirection, Layer } from './types.js';
 import type { Metres, SquareMetreKelvinPerWatt, WattsPerMetreKelvin } from './units.js';
-import { type Warning, mergeWarnings } from './warnings.js';
+import { type Warning, mergeWarnings, warning } from './warnings.js';
 
 /**
  * Thermal resistance of a homogeneous solid layer, BS EN ISO 6946: R = d / lambda.
@@ -28,9 +28,64 @@ export interface LayerSectionResistances {
 }
 
 /**
- * Resistances of the one or two sections of a single layer. An air layer is not
- * treated as bridgeable in this model: a stud crossing a cavity divides it into
- * separate cavities, which is a different build-up rather than a bridged air layer.
+ * BR 443 (2006) 4.8.1: an airspace counts as an air layer while "the thickness (in the
+ * heat flow direction) is less than one-tenth of its width or height". Below that it is
+ * an air void, which the standard resolves differently, and this model does not yet
+ * implement - VERIFY.md row V27.
+ */
+export const AIR_LAYER_MAX_THICKNESS_TO_WIDTH_RATIO = 0.1;
+
+/**
+ * Checks a bridged cavity against the test above, and against the one combination that
+ * does nothing.
+ *
+ * The width test runs only when the caller supplies the clear span between members: a
+ * guessed spacing would produce a warning about a wall nobody described. Note that
+ * BR 443's wording is "its width **or** height", and a batten or stud usually runs the
+ * full storey height, so a pocket that fails on width may still pass on height. The
+ * warning therefore reports what failed rather than declaring the layer wrong.
+ */
+function bridgedAirLayerWarnings(
+  layerId: string,
+  label: string,
+  thicknessM: Metres,
+  bridging: { readonly areaFraction: number; readonly clearWidthM?: Metres },
+): readonly Warning[] {
+  const clearWidthM = bridging.clearWidthM;
+  if (clearWidthM === undefined || clearWidthM <= 0) {
+    return [];
+  }
+  if (thicknessM < clearWidthM * AIR_LAYER_MAX_THICKNESS_TO_WIDTH_RATIO) {
+    return [];
+  }
+  return [
+    warning(
+      'value-needs-verification',
+      `Cavity "${label}" is ${(thicknessM * 1000).toFixed(0)} mm deep with only ` +
+        `${(clearWidthM * 1000).toFixed(0)} mm clear between the members crossing it. ` +
+        `BR 443 (2006) 4.8.1 treats an airspace as an air layer while its thickness is ` +
+        `less than a tenth of its width or height, and this fails on width. It may ` +
+        `still pass on height, since a member running the full storey height leaves a ` +
+        `tall pocket — but if it does not, the space is an air void and takes a ` +
+        `different resistance from the one used here.`,
+      layerId,
+    ),
+  ];
+}
+
+/**
+ * Resistances of the one or two sections of a single layer.
+ *
+ * An air layer **is** bridgeable. This used to be refused on the grounds that a member
+ * crossing a cavity divides it into separate cavities rather than bridging one, but
+ * BR 443 (2006) 4.8.1 settles it the other way: "An airspace for which the thickness
+ * (in the heat flow direction) is less than one-tenth of its width or height is also
+ * treated as an air layer; examples include the space between the battens in a
+ * dry-lined wall". The pockets between the members are air layers in their own right,
+ * so the layer is inhomogeneous in the ordinary way and the combined method resolves
+ * it. Where that test fails the pocket is an air void instead, which is a different
+ * calculation - see VERIFY.md row V27 - and a warning says so rather than the number
+ * quietly being the wrong one.
  */
 export function layerSectionResistances(
   layer: Layer,
@@ -64,10 +119,29 @@ export function layerSectionResistances(
         layer.id,
         layer.emissivity ?? 'high',
       );
+      const bridging = layer.bridging;
+      if (bridging === undefined) {
+        return {
+          unbridgedM2KPerW: air.resistanceM2KPerW,
+          bridgingAreaFraction: 0,
+          warnings: air.warnings,
+        };
+      }
+      assertFraction(bridging.areaFraction, `layer[${layer.id}].bridging.areaFraction`);
       return {
         unbridgedM2KPerW: air.resistanceM2KPerW,
-        bridgingAreaFraction: 0,
-        warnings: air.warnings,
+        // The member spans the cavity, so its section is a solid layer of the cavity's
+        // own thickness. A dab or a batten thinner than the cavity is a different
+        // build-up, not a thinner bridge: the plasterboard would have nothing to bear on.
+        bridgedM2KPerW: solidLayerResistanceM2KPerW(
+          layer.thicknessM,
+          bridging.material.lambdaWPerMK,
+        ),
+        bridgingAreaFraction: bridging.areaFraction,
+        warnings: [
+          ...air.warnings,
+          ...bridgedAirLayerWarnings(layer.id, layer.label, layer.thicknessM, bridging),
+        ],
       };
     }
     case 'fixed-resistance': {

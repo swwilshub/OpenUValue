@@ -43,6 +43,18 @@ export interface LayerBridging {
   /** Fraction of the element area occupied by the bridging section, 0..1. */
   readonly areaFraction: Fraction;
   readonly material: MaterialProperties;
+  /**
+   * Clear distance between adjacent bridging members, metres. Optional, and used for
+   * one thing only: deciding whether the pockets left in a **bridged air layer** are
+   * still air layers. BR 443 (2006) 4.8.1 sets the test - an airspace whose thickness
+   * is less than a tenth of its width or height is treated as an air layer - and names
+   * the space between battens in a dry-lined wall as an example that passes it.
+   *
+   * Supply it and a bridged cavity is checked; leave it out and the check is skipped
+   * rather than guessed at. It has no meaning on a solid layer, where the bridging
+   * member displaces material rather than dividing a cavity.
+   */
+  readonly clearWidthM?: Metres;
 }
 
 export interface SolidLayer {
@@ -61,8 +73,10 @@ export interface SolidLayer {
  *   unventilated        - openings below the slightly-ventilated threshold
  *   slightly ventilated - between the two thresholds
  *   well ventilated     - at or above the well-ventilated threshold
- * TODO(verify): the two opening-area thresholds (understood to be 500 mm^2/m and
- * 1500 mm^2/m per metre of length for walls) and their clause in BS EN ISO 6946.
+ *
+ * The thresholds are 500 and 1500 mm^2 per metre of length horizontally for a vertical
+ * air layer, and per square metre of surface for a horizontal one. BR 443 (2019) 4.7
+ * states both, and VERIFY.md row V6 carries the wording.
  */
 export type AirLayerVentilation = 'unventilated' | 'slightly-ventilated' | 'well-ventilated';
 
@@ -87,6 +101,19 @@ export interface AirLayer {
   readonly emissivity?: AirLayerEmissivity;
   /** Area of openings to the outside per metre of length. Required when slightly ventilated. */
   readonly openingAreaMm2PerM?: number;
+  /**
+   * Members crossing the cavity - timber battens behind a dry lining, plaster dabs, a
+   * stud through a service void.
+   *
+   * BR 443 (2006) 4.8.1 is explicit that this is an ordinary inhomogeneous layer rather
+   * than a special case: "An airspace for which the thickness (in the heat flow
+   * direction) is less than one-tenth of its width or height is also treated as an air
+   * layer; examples include the space between the battens in a dry-lined wall". So the
+   * air between the members keeps an air layer's resistance, the members carry their own
+   * conductivity, and the combined method resolves the two - exactly as for a stud
+   * through insulation. 4.7.1 and 4.7.2 then give the data for the two common cases.
+   */
+  readonly bridging?: LayerBridging;
 }
 
 /** A declared product resistance used as-is, with thickness only for drawing to scale. */

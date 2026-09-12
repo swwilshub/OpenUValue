@@ -100,7 +100,7 @@ export function assessInterstitialCondensation(
 
   const hasBridging = element.layers.some(
     (layer) =>
-      layer.kind === 'solid' &&
+      (layer.kind === 'solid' || layer.kind === 'air') &&
       layer.bridging !== undefined &&
       layer.bridging.areaFraction > 0 &&
       layer.bridging.areaFraction < 1,

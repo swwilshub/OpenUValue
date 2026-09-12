@@ -16,7 +16,15 @@ import {
   type BridgeDistanceBasis,
   bridgePitchMm,
   DEFAULT_STUD_SPACING_MM,
+  BR443_BATTEN_PERCENT,
+  BR443_BATTEN_SPACING_MM,
+  BR443_BATTEN_THICKNESS_MM,
+  BR443_BATTEN_WIDTH_MM,
+  BR443_DAB_LAMBDA_W_PER_MK,
+  BR443_DAB_PERCENT,
+  BR443_DAB_THICKNESS_MM,
   DEFAULT_STUD_WIDTH_MM,
+  SOFTWOOD_LAMBDA_W_PER_MK,
   type UiLayer,
   blankAirLayer,
   blankSolidLayer,
@@ -183,6 +191,49 @@ export function LayerTable({
   };
 
   /** Start bridging a layer, at a common stud size and spacing. */
+  /**
+   * BR 443 (2006) 4.7.2: "the typical configuration of 47 mm timber battens at 600 mm
+   * centres plus top and bottom rail for room height 2400 mm", timber fraction 0.118,
+   * batten thickness 22 mm.
+   *
+   * The fraction is taken from the standard rather than derived from the width and
+   * centres, because 47/600 alone is 7.8 % and the standard's 11.8 % also counts the top
+   * and bottom rails. Deriving it would quietly drop them. The width and centres are
+   * still recorded so they can be seen and edited; the consequence is that the cavity
+   * keeps a stated fraction rather than a measured one, so the air-layer width check in
+   * the engine is skipped for this preset rather than run against a spacing the
+   * percentage does not actually come from.
+   */
+  const addBattens = (index: number): void => {
+    update(index, {
+      thicknessMm: BR443_BATTEN_THICKNESS_MM,
+      bridgeLabel: 'Timber batten',
+      bridgeMaterialId: 'softwood-structural',
+      bridgeLambdaWPerMK: SOFTWOOD_LAMBDA_W_PER_MK,
+      bridgeSizing: 'fraction',
+      bridgeWidthMm: BR443_BATTEN_WIDTH_MM,
+      bridgeSpacingMm: BR443_BATTEN_SPACING_MM,
+      bridgeDistanceBasis: 'centres',
+      bridgedPercent: BR443_BATTEN_PERCENT,
+    });
+  };
+
+  /**
+   * BR 443 (2006) 4.7.1: plaster dabs at an area fraction of 0.20, lambda 0.43 W/(m*K),
+   * 15 mm thick. Dabs are dots rather than a repeating member, so the fraction is the
+   * standard's figure directly and there is no width and spacing to derive it from.
+   */
+  const addDabs = (index: number): void => {
+    update(index, {
+      thicknessMm: BR443_DAB_THICKNESS_MM,
+      bridgeLabel: 'Plaster dabs',
+      bridgeMaterialId: null,
+      bridgeLambdaWPerMK: BR443_DAB_LAMBDA_W_PER_MK,
+      bridgeSizing: 'fraction',
+      bridgedPercent: BR443_DAB_PERCENT,
+    });
+  };
+
   const addStuds = (index: number): void => {
     update(index, {
       bridgeSizing: 'dimensions',
@@ -555,20 +606,40 @@ export function LayerTable({
               </div>
             </div>
 
-            {layer.kind === 'solid' && layer.bridgedPercent <= 0 && (
+            {layer.bridgedPercent <= 0 && (
               <div className="layer-actions">
-                <button type="button" onClick={() => addStuds(index)}>
-                  + studs or rafters
-                </button>
+                {layer.kind === 'air' ? (
+                  <>
+                    {/*
+                      * A cavity crossed by members is an ordinary inhomogeneous layer,
+                      * not a special case: BR 443 (2006) 4.8.1 names the space between
+                      * battens in a dry-lined wall as an air layer. The two presets are
+                      * that document's own configurations from 4.7.1 and 4.7.2.
+                      */}
+                    <button type="button" onClick={() => addBattens(index)}>
+                      + battens
+                    </button>
+                    <button type="button" onClick={() => addDabs(index)}>
+                      + plaster dabs
+                    </button>
+                    <button type="button" onClick={() => addStuds(index)}>
+                      + studs
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => addStuds(index)}>
+                    + studs or rafters
+                  </button>
+                )}
                 <HelpButton
                   topicId="layer-bridging"
-                  label="studs and rafters"
+                  label={layer.kind === 'air' ? 'members crossing a cavity' : 'studs and rafters'}
                   onOpen={onOpenGuide}
                 />
               </div>
             )}
 
-            {layer.kind === 'solid' && layer.bridgedPercent > 0 && (
+            {layer.bridgedPercent > 0 && (
               <div className="bridging-block">
                 <div className="bridging-head">
                   <input

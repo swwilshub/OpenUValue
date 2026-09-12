@@ -248,3 +248,33 @@ export const RESISTANCE_REPORTING_DECIMAL_PLACES = 3;
 
 /** BS EN ISO 6946:2017, 6.5.2. */
 export const U_VALUE_REPORTING_SIGNIFICANT_FIGURES = 2;
+
+/**
+ * BR 443 (2006) 4.7, plasterboard wall lining. Two configurations, both of which are a
+ * cavity crossed by members and therefore a bridged air layer.
+ *
+ * Quoted from the 2006 edition, whose 4.7.1 and 4.7.2 carry these tables verbatim. The
+ * 2019 edition renumbers this material — its 4.7 is airspaces — so the clause numbers
+ * here are the 2006 ones and are labelled as such. TODO(verify): the corresponding
+ * clause numbers and whether the figures changed in BR 443 (2019). VERIFY.md row V30.
+ */
+
+/** 4.7.1 Plasterboard on dabs. */
+export const PLASTER_DAB_AREA_FRACTION = 0.2;
+export const PLASTER_DAB_LAMBDA_W_PER_MK = 0.43;
+export const PLASTER_DAB_THICKNESS_M = 0.015;
+/** The cavity left between the dabs. Matches our 15 mm table entry. */
+export const PLASTER_DAB_AIRSPACE_RESISTANCE_M2K_PER_W = 0.17;
+
+/**
+ * 4.7.2 Plasterboard on battens, for "the typical configuration of 47 mm timber battens
+ * at 600 mm centres plus top and bottom rail for room height 2400 mm". The fraction is
+ * the standard's own arithmetic, 47/600 + (2 x 47/2400), and is reproduced rather than
+ * recomputed so that a change to it is visible as a change.
+ */
+export const PLASTERBOARD_BATTEN_AREA_FRACTION = 0.118;
+export const PLASTERBOARD_BATTEN_WIDTH_M = 0.047;
+export const PLASTERBOARD_BATTEN_SPACING_M = 0.6;
+export const PLASTERBOARD_BATTEN_THICKNESS_M = 0.022;
+/** The cavity between the battens. Our table interpolates 0.177 at 22 mm, which rounds here. */
+export const PLASTERBOARD_BATTEN_AIRSPACE_RESISTANCE_M2K_PER_W = 0.18;

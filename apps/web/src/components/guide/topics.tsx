@@ -540,7 +540,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
       },
       {
         id: 'layer-bridging',
-        title: 'Studs and rafters',
+        title: 'Studs, rafters and members crossing a cavity',
         figure: <StudFigure />,
         body: (
           <>
@@ -548,6 +548,23 @@ export const CHAPTERS: readonly GuideChapter[] = [
               Insulation between timbers is not one material — it is quilt for most of the area
               and wood where the studs are, and wood conducts about four times better. Ignoring
               them can under-state a wall's U-value by a fifth.
+            </p>
+            <p>
+              <strong>A cavity can be bridged too.</strong> Battens behind a dry lining,
+              plaster dabs, or a stud through a service void are the same situation: the
+              layer is air over most of its area and something more conductive where the
+              members are. BR 443 is explicit that the pockets left between them still
+              count as air layers — it names the space between battens in a dry-lined wall
+              as its own example — so the air keeps a cavity&rsquo;s resistance and the
+              members carry their own. Two presets set the standard&rsquo;s own figures:
+              dabs at 20 % of the face, and 47 mm battens at 600 mm centres, whose 11.8 %
+              is more than 47 ÷ 600 because the top and bottom rails count as well.
+            </p>
+            <p>
+              That only holds while the pockets stay shallow relative to their width. Once
+              a cavity is deep and the members are close, the space stops being an air
+              layer and becomes an air <em>void</em>, which takes a different resistance —
+              so the calculation says so rather than carrying on quietly.
             </p>
             <p>
               Give the member's width and the distance between members and the bridged
