@@ -12,6 +12,14 @@ import { CATEGORY_STYLE } from './hatches.js';
  * does not exist. What makes each one visible is the stepped cutaway, which is how a
  * cutaway drawing has always worked: the material is removed, not moved.
  *
+ * **A cavity is the exception, because a cavity really is a gap.** Its air is drawn as
+ * nothing at all rather than as a grey slab standing in for air, so the opening shows as
+ * a recess into the stack and what appears at the back of it is the next layer's own
+ * face. Anything crossing the cavity — a batten, a stud, a dab — keeps its box and stands
+ * in the opening, with the sides that the air leaves exposed drawn rather than buried.
+ * This is not the separation the paragraph above rules out: the layers either side of a
+ * cavity are exactly as far apart as the cavity is thick.
+ *
  * Real geometry, rotated and projected here rather than drawn as a fixed picture. Each
  * layer is a box of eight vertices; the view rotates them about two axes, drops the back
  * faces, sorts what is left by depth and shades each face by how it lies to the light.
@@ -292,10 +300,14 @@ export function Layup3D({
     readonly x1: number;
     readonly fill: string;
     readonly isMember: boolean;
+    /** Nothing is there. An air layer's air, as opposed to the members crossing it. */
+    readonly isVoid: boolean;
   }[] => {
     const style = CATEGORY_STYLE[layerDrawCategory(slab.layer.materialId, slab.layer.kind)];
     const fill = slab.included ? style.fill : 'var(--excluded-hatch)';
-    const whole = [{ x0: 0, x1: slab.widthMm, fill, isMember: false }];
+    // A cavity is empty, so its air carries no box at all - see the loop below.
+    const isCavity = slab.layer.kind === 'air';
+    const whole = [{ x0: 0, x1: slab.widthMm, fill, isMember: false, isVoid: isCavity }];
 
     /*
      * Same geometry decision as the section drawing, from the same helper, so the two
@@ -312,7 +324,13 @@ export function Layup3D({
     }
     const memberFill = geometry.pattern === 'dabs' ? dabFill : timberFill;
 
-    const out: { x0: number; x1: number; fill: string; isMember: boolean }[] = [];
+    const out: {
+      x0: number;
+      x1: number;
+      fill: string;
+      isMember: boolean;
+      isVoid: boolean;
+    }[] = [];
     let cursor = 0;
     for (let centre = pitchMm / 2; centre < slab.widthMm; centre += pitchMm) {
       const m0 = Math.max(cursor, centre - geometry.widthMm / 2);
@@ -321,13 +339,13 @@ export function Layup3D({
         continue;
       }
       if (m0 > cursor) {
-        out.push({ x0: cursor, x1: m0, fill, isMember: false });
+        out.push({ x0: cursor, x1: m0, fill, isMember: false, isVoid: isCavity });
       }
-      out.push({ x0: m0, x1: m1, fill: memberFill, isMember: true });
+      out.push({ x0: m0, x1: m1, fill: memberFill, isMember: true, isVoid: false });
       cursor = m1;
     }
     if (cursor < slab.widthMm) {
-      out.push({ x0: cursor, x1: slab.widthMm, fill, isMember: false });
+      out.push({ x0: cursor, x1: slab.widthMm, fill, isMember: false, isVoid: isCavity });
     }
     return out.length > 0 ? out : whole;
   };
@@ -335,11 +353,25 @@ export function Layup3D({
   for (const slab of stack) {
     const segments = segmentsOf(slab);
     segments.forEach((segment, segmentIndex) => {
+      /*
+       * A cavity is a gap, so its air gets no box. What shows through the opening is the
+       * near face of whatever is behind it, which is already being drawn — the void reads
+       * as a recess into the stack rather than as a grey slab pretending to be air.
+       */
+      if (segment.isVoid) {
+        return;
+      }
       const skip: number[] = [];
-      if (segmentIndex > 0) {
+      /*
+       * A side face is buried only where something is actually there to bury it. A batten
+       * standing in a cavity has air on both sides, so both of its sides are exposed and
+       * must be drawn; skipping them on the old "is there a neighbouring segment" rule
+       * would leave the member looking hollow.
+       */
+      if (segmentIndex > 0 && segments[segmentIndex - 1]?.isVoid === false) {
         skip.push(5); // left face, buried against the segment before it
       }
-      if (segmentIndex < segments.length - 1) {
+      if (segmentIndex < segments.length - 1 && segments[segmentIndex + 1]?.isVoid === false) {
         skip.push(4); // right face, buried against the next one
       }
       faces.push(
@@ -484,7 +516,9 @@ export function Layup3D({
         them, as built; what makes each one visible is that it is cut back a little further
         than the one in front. A bridged layer is built the way it is built — members with
         the layer's material packed between them — so the studs show in the cut rather than
-        being buried. It is an indicator rather than a construction drawing: no junctions,
+        being buried. A <strong>cavity is drawn as the gap it is</strong>: the air is left
+        empty and you see through to the face behind it, while battens, studs or dabs
+        crossing it stand in the opening. It is an indicator rather than a construction drawing: no junctions,
         fixings or detailing, and nothing in it feeds the calculation. Layers thinner than
         the drawing can show are given a minimum thickness.{' '}
         <strong>Cross battens are not drawn yet</strong> — a second set of members running
