@@ -505,7 +505,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
       },
       {
         id: 'layer-provenance',
-        title: 'The coloured dot beside a material',
+        title: 'The marker beside a material',
         figure: <ProvenanceFigure />,
         body: (
           <>
@@ -515,8 +515,16 @@ export const CHAPTERS: readonly GuideChapter[] = [
               rather than inventing a reference.
             </p>
             <p>
+              An asterisk means <strong>assumed</strong>: the conventional value for that material,
+              which every public source we could reach agrees on, but which nobody here has read in
+              the standard that governs it. It is believed right and it is not verified — good
+              enough to model with, not good enough to submit. Most vapour resistance factors are
+              in this state, because the tables that would settle them are not published free.
+            </p>
+            <p>
               Hover for the source. This is the same honesty as VERIFY.md, brought to the point of
-              choosing — an unattributed figure should never pass for a checked one.
+              choosing — an unattributed figure should never pass for a checked one, and an assumed
+              one should never pass for a read one.
             </p>
           </>
         ),

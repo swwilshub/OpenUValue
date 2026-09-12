@@ -82,9 +82,19 @@ methods. See `CLAUDE.md`.
 
 **10 of 23 records now have their thermal conductivity traced to a clause**, and 10
 more have their specific heat capacity cited with λ still open. Three are entirely
-unattributed. The picker shows this per material as a coloured dot — filled green for
-cited, amber for partial, dashed outline for open — so an unchecked figure cannot pass
-for a checked one on screen.
+unattributed. The picker shows this per material as a marker — filled green for cited,
+an asterisk for evidenced, amber for partial, dashed outline for open — so an unchecked
+figure cannot pass for a checked one on screen.
+
+**Evidenced (∗) is a third state, added deliberately.** It means the conventional value,
+agreeing across every independent public source consulted, *not* read from the standard
+that governs it — believed right, not verified. It exists because the middle ground was
+being hidden: filing a value that every source agrees on alongside pure placeholders
+says less than is actually known. The bar is **good enough to model with, not good
+enough to submit**, and it is explicitly *not* a way to retire a row here — an evidenced
+value stays on this list until someone reads the clause and confirms or corrects it.
+`unverifiedMaterialIds()` counts it as outstanding for exactly that reason, and a test
+asserts an evidenced record can never be reported as cited.
 
 What closed them was **BR 443 (2019)**, which BRE publishes and CIBSE hosts openly. It
 states outright:
@@ -108,10 +118,20 @@ states outright:
   licensed copy is needed. Insulation λ is product-specific and declared under the
   relevant harmonised standard in any case (BS EN 13162 mineral wool, 13163 EPS, 13165
   PIR, 13171 wood fibre), so a generic figure can only ever be a placeholder.
-- **μ for everything.** Neither BR 443 nor anything else consulted gives vapour
-  resistance factors; ISO 10456 Table 3 does, including whether the dry or wet value
-  applies. **This matters more than it used to**: μ now drives the interstitial
-  condensation verdict, not just a displayed number.
+- **μ for everything — now carried as evidenced, not silently.** Neither BR 443 nor
+  anything else consulted gives vapour resistance factors; ISO 10456 Table 3 does,
+  including whether the dry or wet value applies. **This matters more than it used to**:
+  μ now drives the interstitial condensation verdict, not just a displayed number.
+
+  Until now every record carried a μ with **no provenance statement of any kind** — a
+  number with nothing said about where it came from, which is the one thing this file
+  exists to prevent. All 23 now state it: the conventional value for the material,
+  agreeing across the public sources consulted, not read from the clause. Two caveats
+  travel with them. ISO 10456 Table 3 gives μ as a **dry-cup and wet-cup pair**, and we
+  carry a single figure, so even a confirmed value leaves the question of which of the
+  two applies — for softwood the two differ widely enough to change a result. And for a
+  membrane the number that matters is the declared S_d to BS EN ISO 12572, which comes
+  from the product rather than from a generic μ at all.
 
   *Searched and not found (2026-09).* Every trail for μ ends at a copyrighted standard
   with no lawful free full text, so this is a licence to buy rather than a search to
@@ -156,6 +176,7 @@ closed.**
 | `concrete-medium-density` | Concrete, medium density | 1.35 | 2000 | 1000 | 100 | Check lambda, c and mu against BS EN ISO 10456:2007 Table 3, which tabulates concrete by density. |
 | `concrete-reinforced` | Concrete, reinforced (1 % steel) | 2.3 | 2300 | 1000 | 130 | Check against BS EN ISO 10456:2007 Table 3, which lists reinforced concrete separately by steel content. |
 | `gypsum-plasterboard` | Gypsum plasterboard | 0.25 | 900 | 1000 | 10 | Check lambda, rho, c and mu against BS EN ISO 10456:2007 Table 3 (gypsum plasterboard, 900 kg/m3). |
+| `gypsum-plasterboard-dense` | Gypsum plasterboard, acoustic or fire resistant | 0.25 | 900 | 840 | 10 | λ and ρ from BR 443 (2019) 3.8, c from BR 443 (2019) 16. Carries the same λ and ρ as the standard board while taking the **840 J/(kg·K)** specific heat rather than 1000 — check that this is right, since a board sold for acoustic or fire performance is denser in practice and BR 443 3.8 may not intend its figures to cover it. μ evidenced, not read: confirm against BS EN ISO 10456:2007 Table 3. |
 | `gypsum-plaster` | Gypsum plaster, dense | 0.57 | 1300 | 1000 | 10 | Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density. |
 | `cement-sand-render` | Cement:sand render | 1.0 | 1800 | 1000 | 25 | Check against BS EN ISO 10456:2007 Table 3 (cement mortar / plaster) and BR 443. |
 | `sand-cement-screed` | Sand:cement screed | 1.15 | 2000 | 1000 | 30 | Check against BS EN ISO 10456:2007 Table 3 and BR 443. |

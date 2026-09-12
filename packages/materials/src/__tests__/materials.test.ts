@@ -6,10 +6,11 @@ import {
   MATERIAL_DATABASE,
   findMaterialById,
   materialsByCategory,
+  sourceStatus,
   toEngineMaterial,
   unverifiedMaterialIds,
 } from '../catalogue.js';
-import { MATERIAL_CATEGORIES, UNVERIFIED_SOURCE } from '../types.js';
+import { EVIDENCED_MARKER, MATERIAL_CATEGORIES, UNVERIFIED_SOURCE } from '../types.js';
 import {
   MaterialValidationError,
   parseMaterialDatabase,
@@ -52,14 +53,57 @@ describe('the seeded database', () => {
 });
 
 describe('provenance', () => {
-  it('gives every record either a real reference or exactly TODO(verify)', () => {
-    // There is no third state. A record may not carry a vague or invented citation.
+  it('gives every record a reference, TODO(verify), or a marked assumption', () => {
+    // Three states, and no fourth: a record may not carry a vague or invented citation.
+    // EVIDENCED is not a loophole for one - it still has to name the standard it has
+    // *not* been read from, so the claim it makes stays checkable.
     for (const material of MATERIALS) {
       expect(material.source.length).toBeGreaterThan(0);
       if (material.source !== UNVERIFIED_SOURCE) {
         // A real citation must name a standard, not just say "standard values".
         expect(material.source).toMatch(/\b(BS|EN|ISO|BR|DIN|CIBSE)\b/);
       }
+    }
+  });
+
+  it('says of every evidenced value which standard would settle it', () => {
+    for (const material of MATERIALS) {
+      if (!material.source.includes(EVIDENCED_MARKER)) {
+        continue;
+      }
+      // The point of the state is that it admits what it has not done. A marker with
+      // no standard behind it would be an unattributed number wearing a label.
+      const [, ...afterMarker] = material.source.split(EVIDENCED_MARKER);
+      expect(afterMarker.join(EVIDENCED_MARKER)).toMatch(/\b(BS|EN|ISO|BR|DIN|CIBSE)\b/);
+      expect(material.source).toMatch(/not read from|not yet read/i);
+    }
+  });
+
+  it('ranks provenance worst-first', () => {
+    // A record with an open value and an evidenced one is 'partial': the weakest value
+    // in it is the one a reader needs to be told about.
+    for (const material of MATERIALS) {
+      const status = sourceStatus(material);
+      if (material.source === UNVERIFIED_SOURCE) {
+        expect(status).toBe('open');
+      } else if (material.source.includes(UNVERIFIED_SOURCE)) {
+        expect(status).toBe('partial');
+      } else if (material.source.includes(EVIDENCED_MARKER)) {
+        expect(status).toBe('evidenced');
+      } else {
+        expect(status).toBe('cited');
+      }
+    }
+  });
+
+  it('does not let an evidenced record count as cited', () => {
+    // The failure this guards against is an evidenced value quietly dropping off the
+    // list in VERIFY.md because everything else in its record gained a citation.
+    const evidenced = MATERIALS.filter((material) => sourceStatus(material) === 'evidenced');
+    expect(evidenced.length).toBeGreaterThan(0);
+    const listed = unverifiedMaterialIds();
+    for (const material of evidenced) {
+      expect(listed).toContain(material.id);
     }
   });
 
