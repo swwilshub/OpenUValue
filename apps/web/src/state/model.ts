@@ -54,6 +54,22 @@ export interface UiLayer {
    * to look at even though both resolve to an area fraction.
    */
   readonly bridgePattern: BridgePattern;
+  /**
+   * Which cavity preset was picked, for air layers.
+   *
+   * Needed because the choice is not recoverable from the values: a clear masonry
+   * cavity, the residual gap of a partial fill and a batten void all resolve to the same
+   * unventilated, high-emissivity airspace, and the calculation is right to treat them
+   * alike. What differs is what the user is describing, which is worth keeping — without
+   * it the picker could only ever highlight the first of the three.
+   */
+  readonly cavityPresetId?: string | undefined;
+  /**
+   * True while the cavity type was inferred from the layup rather than chosen. Drives a
+   * note on the picker, and clears the moment anyone picks one — a guess that stops
+   * announcing itself is just an assertion.
+   */
+  readonly wasCavityGuessed?: boolean | undefined;
   /** Width of one member across the face, mm. Used when bridgeSizing is 'dimensions'. */
   readonly bridgeWidthMm: number;
   /**
@@ -636,14 +652,91 @@ export function cavityPreset(id: string): CavityPreset | undefined {
 }
 
 /** Which preset a cavity currently matches, if any. */
+/**
+ * Which preset a cavity is set to.
+ *
+ * The recorded choice wins where there is one. Falling back to matching on the values
+ * covers a build-up that arrived by link or predates the field, and can only ever return
+ * the first preset that fits — which is the right answer when nothing better is known.
+ */
 export function matchingCavityPreset(layer: UiLayer): CavityPreset | undefined {
-  return CAVITY_PRESETS.find(
-    (preset) =>
-      preset.ventilation === layer.ventilation &&
-      preset.emissivity === layer.emissivity &&
-      (preset.ventilation !== 'slightly-ventilated' ||
-        preset.openingAreaMm2PerM === layer.openingAreaMm2PerM),
+  const recorded =
+    layer.cavityPresetId === undefined ? undefined : cavityPreset(layer.cavityPresetId);
+  if (recorded !== undefined && presetFitsLayer(recorded, layer)) {
+    return recorded;
+  }
+  return CAVITY_PRESETS.find((preset) => presetFitsLayer(preset, layer));
+}
+
+/** Whether a preset's settings are the ones the layer currently carries. */
+function presetFitsLayer(preset: CavityPreset, layer: UiLayer): boolean {
+  return (
+    preset.ventilation === layer.ventilation &&
+    preset.emissivity === layer.emissivity &&
+    (preset.ventilation !== 'slightly-ventilated' ||
+      preset.openingAreaMm2PerM === layer.openingAreaMm2PerM)
   );
+}
+
+/**
+ * A first guess at what kind of cavity is being added, from what sits either side of it.
+ *
+ * The layup already says most of it. A gap outboard of insulation board is the residual
+ * gap of a partial fill; a gap behind a dry lining is a service void; a gap with tile
+ * hanging or boarding outside it is ventilated to the outdoors. Guessing spares the user
+ * a decision they often cannot make confidently, and the ones it gets wrong are one click
+ * from being corrected — so it is offered as a starting point and labelled as a guess,
+ * never applied silently as though it were known.
+ *
+ * `index` is where the cavity sits in the build-up, inside to outside.
+ */
+export function guessCavityPreset(
+  layers: readonly UiLayer[],
+  index: number,
+): CavityPreset | undefined {
+  const categoryAt = (at: number): LayerDrawCategory | undefined => {
+    const layer = layers[at];
+    return layer === undefined ? undefined : layerDrawCategory(layer.materialId, layer.kind);
+  };
+  const inboard = categoryAt(index - 1);
+  const outboard = categoryAt(index + 1);
+  const inboardLayer = layers[index - 1];
+
+  /*
+   * Nothing outboard, or only a covering: the gap is open to the outside. A rainscreen,
+   * boarding or hanging tiles all sit on battens over a vented cavity, and BR 443 4.7.1
+   * names that case specifically.
+   */
+  if (outboard === undefined || outboard === 'covering') {
+    return cavityPreset('well-ventilated-rainscreen');
+  }
+
+  /*
+   * A gap in front of insulation board is a partial fill's residual cavity. Where that
+   * board is foil-faced the foil looks into this gap, which roughly doubles it — the one
+   * case where guessing wrong costs a real amount of resistance, so it keys off the
+   * material rather than the category.
+   */
+  if (inboard === 'insulation') {
+    return cavityPreset(
+      inboardLayer?.materialId === 'pir-board' ? 'unventilated-low-e' : 'partial-fill-residual',
+    );
+  }
+
+  /* A gap behind a dry lining is a service or batten void. */
+  if (inboard === 'plaster-and-render') {
+    return cavityPreset('service-void');
+  }
+
+  /*
+   * A gap in a timber-framed wall has to be drained and vented, which BR 443 4.7.1 works
+   * through. Recognised by sheathing board on the inboard side of the cavity.
+   */
+  if (inboard === 'timber-and-board') {
+    return cavityPreset('slightly-ventilated-timber-frame');
+  }
+
+  return cavityPreset('unventilated-masonry');
 }
 
 export function blankAirLayer(): UiLayer {

@@ -1856,6 +1856,18 @@ button.danger:hover {
   stroke-linejoin: round;
 }
 
+/* A guess, flagged as one until somebody confirms or replaces it. */
+.cavity-guessed {
+  margin: 7px 0 0;
+  padding: 7px 9px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
 .cavity-custom,
 .cavity-note {
   margin: 7px 0 0;

@@ -130,5 +130,9 @@ visible to a user rather than silently absent.
     (the air-layer table basis, and the treatment of slightly ventilated cavities).
 14. **Worked examples from the standards** as regression tests, once printed copies
     are to hand.
+
+    *The web app now has tests of its own* — `apps/web` runs vitest over the pure
+    functions in `state/`, which is where being wrong is silent. Component rendering is
+    still uncovered.
 15. **Element library** of common UK build-ups, authored by us.
 16. **Import/export** of build-ups as JSON, alongside the existing URL sharing.

@@ -152,6 +152,13 @@ export function CavityPicker({ layer, direction, onApply }: CavityPickerProps): 
           );
         })}
       </ul>
+      {layer.wasCavityGuessed === true && current !== undefined && (
+        <p className="cavity-guessed">
+          <strong>Guessed from the layers either side.</strong> {current.where} Check it
+          against what you are actually building — picking any option above settles it and
+          this note goes away.
+        </p>
+      )}
       {current === undefined && (
         <p className="cavity-custom">
           This cavity does not match any of the above — its ventilation, opening area or

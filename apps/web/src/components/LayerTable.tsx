@@ -24,6 +24,7 @@ import {
   SOFTWOOD_LAMBDA_W_PER_MK,
   type UiLayer,
   blankAirLayer,
+  guessCavityPreset,
   blankSolidLayer,
   bridgedPercentFromDimensions,
 } from '../state/model.js';
@@ -310,6 +311,34 @@ export function LayerTable({
     onChange(next);
   };
 
+  /**
+   * Add a cavity immediately outboard of a layer, already set to whatever the layup
+   * suggests it is.
+   *
+   * The guess is made against the build-up the cavity will be *in*, so the new layer is
+   * spliced in first and the neighbours read from that — guessing against the old list
+   * would look at whatever used to be next to it.
+   */
+  const insertCavityBehind = (index: number): void => {
+    const at = index + 1;
+    const next = [...layers];
+    next.splice(at, 0, blankAirLayer());
+    const guess = guessCavityPreset(next, at);
+    const placed = next[at];
+    if (guess !== undefined && placed !== undefined) {
+      next[at] = {
+        ...placed,
+        thicknessMm: guess.thicknessMm,
+        ventilation: guess.ventilation,
+        openingAreaMm2PerM: guess.openingAreaMm2PerM,
+        emissivity: guess.emissivity,
+        cavityPresetId: guess.id,
+        wasCavityGuessed: true,
+      };
+    }
+    onChange(next);
+  };
+
   return (
     <div className="layer-table">
       <div className="layer-table-head">
@@ -432,6 +461,9 @@ export function LayerTable({
                         ventilation: preset.ventilation,
                         openingAreaMm2PerM: preset.openingAreaMm2PerM,
                         emissivity: preset.emissivity,
+                        cavityPresetId: preset.id,
+                        // Chosen rather than guessed, so the note comes off.
+                        wasCavityGuessed: false,
                       })
                     }
                   />
@@ -846,6 +878,11 @@ export function LayerTable({
               <button type="button" onClick={() => insert(index + 1, blankSolidLayer())}>
                 insert below
               </button>
+              {layer.kind !== 'air' && (
+                <button type="button" onClick={() => insertCavityBehind(index)}>
+                  + cavity behind
+                </button>
+              )}
               <button type="button" className="danger" onClick={() => remove(index)}>
                 delete
               </button>
