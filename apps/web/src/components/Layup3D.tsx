@@ -372,6 +372,44 @@ export function Layup3D({
   };
 
   for (const slab of stack) {
+    /*
+     * Dabs are pads on a grid, not runs across the wall, so they are built as a grid of
+     * small boxes rather than by splitting the slab along x. The cavity round them is
+     * void, as any cavity is, which is what lets them read as separate blobs standing in
+     * a gap — the thing a dot-and-dab wall actually looks like behind the board.
+     */
+    const dabs = bridgeGeometry(slab.layer);
+    if (dabs !== undefined && dabs.pattern === 'dabs' && dabs.dabPadMm !== undefined) {
+      const pad = dabs.dabPadMm;
+      const pitch = dabs.pitchMm;
+      const fill = slab.included ? dabFill : 'var(--excluded-hatch)';
+      for (let cx = pitch / 2; cx < slab.widthMm; cx += pitch) {
+        for (let cy = pitch / 2; cy < slab.heightMm; cy += pitch) {
+          const x0 = Math.max(0, cx - pad / 2);
+          const x1 = Math.min(slab.widthMm, cx + pad / 2);
+          const y0 = Math.max(0, cy - pad / 2);
+          const y1 = Math.min(slab.heightMm, cy + pad / 2);
+          if (x1 <= x0 || y1 <= y0) {
+            continue;
+          }
+          faces.push(
+            ...boxFaces(
+              `${slab.layer.id}-dab-${cx.toFixed(0)}-${cy.toFixed(0)}`,
+              fill,
+              corners(x0, x1, y0, y1, slab.z0, slab.z1),
+              // Free-standing: every face of a dab is exposed to the cavity around it.
+              [],
+              { x: (x0 + x1) / 2, z: (slab.z0 + slab.z1) / 2 },
+            ),
+          );
+        }
+      }
+      const badgeAt = place({ x: slab.widthMm, y: slab.heightMm, z: slab.z1 });
+      const [bx, by] = toScreen(badgeAt);
+      badges.push({ index: slab.index, x: bx, y: by, id: slab.layer.id });
+      continue;
+    }
+
     const segments = segmentsOf(slab);
     segments.forEach((segment, segmentIndex) => {
       /*

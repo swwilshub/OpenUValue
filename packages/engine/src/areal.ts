@@ -18,6 +18,11 @@ import type { Metres } from './units.js';
  * this. The total is still worth showing: it is what sets how much heat a construction
  * can absorb in absolute terms, and it is honestly labelled as the total.
  *
+ * **Mass is area-weighted across a bridged layer**: the unbridged section for the part
+ * of the area it occupies, the bridging member for the rest. A dabbed cavity is the case
+ * that makes this matter most, since its unbridged section is air and counting only that
+ * would give the layer no mass at all.
+ *
  * **Mass is the dry mass** of the materials as specified. It makes no allowance for
  * moisture content, fixings, finishes or the structure behind, so it indicates what a
  * build-up weighs rather than being a figure to size a lintel from.
@@ -63,17 +68,46 @@ export function arealQuantities(element: BuildingElement): ArealQuantities {
       layersMissingMu.push(layer.id);
     }
 
-    if (layer.kind === 'air') {
-      // An air layer weighs nothing worth counting and stores no useful heat. That is a
-      // physical fact rather than missing data, so it is not reported as a gap.
-      continue;
-    }
-
     if (layer.kind === 'fixed-resistance') {
       // A declared-resistance product carries no material properties at all, so its mass
       // and heat capacity are unknown rather than zero.
       layersMissingDensity.push(layer.id);
       layersMissingHeatCapacity.push(layer.id);
+      continue;
+    }
+
+    /*
+     * A layer weighs what its two sections weigh, in the proportion they occupy. Timber
+     * studs are denser than the quilt between them and plaster dabs are a great deal
+     * denser than the cavity around them, so counting only the unbridged section
+     * under-states a bridged wall - by about 5 % on a timber frame, and by everything at
+     * all on a dabbed cavity, where the unbridged section is air.
+     */
+    const bridging = layer.bridging;
+    const bridgedFraction =
+      bridging === undefined ? 0 : Math.min(1, Math.max(0, bridging.areaFraction));
+
+    if (layer.kind === 'air') {
+      /*
+       * The air itself weighs nothing worth counting and stores no useful heat - a
+       * physical fact rather than missing data, so an empty cavity is not reported as a
+       * gap. Anything crossing it is a different matter.
+       */
+      if (bridging !== undefined && bridgedFraction > 0) {
+        const memberDensity = bridging.material.densityKgPerM3;
+        const memberHeat = bridging.material.specificHeatCapacityJPerKgK;
+        if (memberDensity === undefined) {
+          layersMissingDensity.push(layer.id);
+          layersMissingHeatCapacity.push(layer.id);
+        } else {
+          massPerAreaKgPerM2 += bridgedFraction * memberDensity * layer.thicknessM;
+          if (memberHeat === undefined) {
+            layersMissingHeatCapacity.push(layer.id);
+          } else {
+            heatCapacityJPerM2K += bridgedFraction * memberDensity * layer.thicknessM * memberHeat;
+          }
+        }
+      }
       continue;
     }
 
@@ -86,14 +120,31 @@ export function arealQuantities(element: BuildingElement): ArealQuantities {
       continue;
     }
 
-    massPerAreaKgPerM2 += density * layer.thicknessM;
+    massPerAreaKgPerM2 += (1 - bridgedFraction) * density * layer.thicknessM;
 
     if (specificHeat === undefined) {
       layersMissingHeatCapacity.push(layer.id);
-      continue;
+    } else {
+      heatCapacityJPerM2K +=
+        (1 - bridgedFraction) * density * layer.thicknessM * specificHeat;
     }
 
-    heatCapacityJPerM2K += density * layer.thicknessM * specificHeat;
+    if (bridging === undefined || bridgedFraction <= 0) {
+      continue;
+    }
+    const memberDensity = bridging.material.densityKgPerM3;
+    const memberHeat = bridging.material.specificHeatCapacityJPerKgK;
+    if (memberDensity === undefined) {
+      layersMissingDensity.push(layer.id);
+      layersMissingHeatCapacity.push(layer.id);
+      continue;
+    }
+    massPerAreaKgPerM2 += bridgedFraction * memberDensity * layer.thicknessM;
+    if (memberHeat === undefined) {
+      layersMissingHeatCapacity.push(layer.id);
+      continue;
+    }
+    heatCapacityJPerM2K += bridgedFraction * memberDensity * layer.thicknessM * memberHeat;
   }
 
   return {

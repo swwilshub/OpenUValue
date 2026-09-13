@@ -101,6 +101,17 @@
       "notes": "c 840 J/(kg·K) is BR 443 16, \"Gypsum, plasters and renders, plasterboard\". Check against BS EN ISO 10456:2007 Table 3, which tabulates gypsum plaster by density."
     },
     {
+      "id": "plaster-dabs",
+      "name": "Plaster dabs (dot and dab adhesive)",
+      "category": "plaster-and-render",
+      "lambdaWPerMK": 0.43,
+      "densityKgPerM3": 1300,
+      "specificHeatCapacityJPerKgK": 840,
+      "vapourResistanceFactorMu": 10,
+      "source": "λ: BR 443 (2006) 4.7.1, which tabulates plaster dabs at 0.43 W/(m·K), 15 mm thick and 0.20 of the face. c: BR 443 (2019) 16 (Gypsum, plasters and renders, plasterboard). ρ: TODO(verify) — BR 443 gives the conductivity, thickness and area fraction of a dab but no density, so this carries the same 1300 kg/m³ as set gypsum plaster, which is what a dab is. Beware the figure on an adhesive datasheet: the density quoted there is usually the dry powder in the bag, around 500 kg/m³, and not the set material. μ: EVIDENCED — the conventional value for gypsum plaster, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3.",
+      "notes": "Used as the bridging member of a dot-and-dab cavity rather than as a layer in its own right. Its thickness is the cavity's, since the dab spans it."
+    },
+    {
       "id": "cement-sand-render",
       "name": "Cement:sand render",
       "category": "plaster-and-render",

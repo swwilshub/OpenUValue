@@ -319,11 +319,29 @@ export function bridgePitchMm(
  * number beside it.
  */
 export interface BridgeGeometry {
+  /**
+   * Width of one member across a **section**, mm. For dabs this is not the size of a
+   * dab: see `dabPadMm`.
+   */
   readonly widthMm: number;
   readonly pitchMm: number;
   readonly pattern: BridgePattern;
   /** The percentage the drawn members alone come to. */
   readonly geometricPercent: number;
+  /**
+   * Side of one dab on a **face**, mm, for a view that shows the wall rather than a cut
+   * through it. Undefined for continuous members, which look the same either way.
+   *
+   * It differs from `widthMm` because the two views are answering different questions,
+   * and the same area fraction gives different answers to them. Dabs sit on a grid at
+   * pitch p. Seen face on, pads of side s cover s²/p² of the area, so matching a
+   * fraction f needs s = p·√f. Cut through, a section that happens to pass along a row
+   * of dabs meets them for s/p of its length — but averaged over where the cut falls,
+   * the coverage is f, which is what `widthMm = f·p` represents. Using the face size in
+   * the section would show a section through the dabs every time, which is one
+   * particular cut rather than the average one.
+   */
+  readonly dabPadMm?: number;
 }
 
 export function bridgeGeometry(layer: UiLayer): BridgeGeometry | undefined {
@@ -336,12 +354,13 @@ export function bridgeGeometry(layer: UiLayer): BridgeGeometry | undefined {
      * follows from the fraction: pad = fraction x pitch makes the coverage down the
      * section equal the fraction the calculation uses.
      */
-    const widthMm = (layer.bridgedPercent / 100) * DAB_NOMINAL_PITCH_MM;
+    const fraction = layer.bridgedPercent / 100;
     return {
-      widthMm,
+      widthMm: fraction * DAB_NOMINAL_PITCH_MM,
       pitchMm: DAB_NOMINAL_PITCH_MM,
       pattern: 'dabs',
       geometricPercent: layer.bridgedPercent,
+      dabPadMm: Math.sqrt(fraction) * DAB_NOMINAL_PITCH_MM,
     };
   }
   if (layer.bridgeWidthMm <= 0) {

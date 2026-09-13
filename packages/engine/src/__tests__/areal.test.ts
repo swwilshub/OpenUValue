@@ -105,3 +105,93 @@ describe('arealQuantities', () => {
     expect(areal.totalSdM).toBe(0);
   });
 });
+
+describe('a bridged layer weighs what both its sections weigh', () => {
+  const QUILT = { lambdaWPerMK: 0.035, densityKgPerM3: 20, specificHeatCapacityJPerKgK: 1030 };
+  const TIMBER = { lambdaWPerMK: 0.13, densityKgPerM3: 500, specificHeatCapacityJPerKgK: 1600 };
+  const DABS = { lambdaWPerMK: 0.43, densityKgPerM3: 1300, specificHeatCapacityJPerKgK: 840 };
+
+  it('area-weights a stud through insulation', () => {
+    /*
+     * 140 mm of quilt at 20 kg/m3, bridged 15 % by softwood at 500:
+     *   0.85 * 20 * 0.14  = 2.38 kg/m2
+     *   0.15 * 500 * 0.14 = 10.50 kg/m2
+     *                     = 12.88 kg/m2
+     * Counting only the quilt would give 2.80 — the timber is most of the weight of a
+     * timber-framed wall's insulation layer, not a rounding error on it.
+     */
+    const result = arealQuantities(
+      element([
+        solid('ins', 'Quilt', 0.14, QUILT, {
+          label: 'Stud',
+          areaFraction: 0.15,
+          material: TIMBER,
+        }),
+      ]),
+    );
+    expect(result.massPerAreaKgPerM2).toBeCloseTo(12.88, 10);
+    // 0.85 * 20 * 0.14 * 1030 + 0.15 * 500 * 0.14 * 1600 = 2451.4 + 16800 = 19251.4 J
+    expect(result.totalHeatCapacityKJPerM2K).toBeCloseTo(19.2514, 10);
+  });
+
+  it('gives a dabbed cavity the weight of its dabs', () => {
+    /*
+     * The case that makes this matter: the unbridged section is air, so counting only
+     * that gives the layer no mass at all. 15 mm of cavity dabbed 20 % at 1300 kg/m3:
+     *   0.20 * 1300 * 0.015 = 3.90 kg/m2
+     */
+    const result = arealQuantities(
+      element([
+        {
+          kind: 'air',
+          id: 'cav',
+          label: 'Cavity',
+          thicknessM: 0.015,
+          ventilation: 'unventilated',
+          bridging: { label: 'Plaster dabs', areaFraction: 0.2, material: DABS },
+        },
+      ]),
+    );
+    expect(result.massPerAreaKgPerM2).toBeCloseTo(3.9, 10);
+    // 0.20 * 1300 * 0.015 * 840 = 3276 J -> 3.276 kJ
+    expect(result.totalHeatCapacityKJPerM2K).toBeCloseTo(3.276, 10);
+    expect(result.layersMissingDensity).toEqual([]);
+  });
+
+  it('still counts an empty cavity as weightless rather than as a gap', () => {
+    const result = arealQuantities(
+      element([
+        {
+          kind: 'air',
+          id: 'cav',
+          label: 'Cavity',
+          thicknessM: 0.05,
+          ventilation: 'unventilated',
+        },
+      ]),
+    );
+    expect(result.massPerAreaKgPerM2).toBe(0);
+    expect(result.layersMissingDensity).toEqual([]);
+  });
+
+  it('reports a member with no density as a gap, not as nothing', () => {
+    const result = arealQuantities(
+      element([
+        {
+          kind: 'air',
+          id: 'cav',
+          label: 'Cavity',
+          thicknessM: 0.05,
+          ventilation: 'unventilated',
+          bridging: {
+            label: 'Unknown member',
+            areaFraction: 0.1,
+            material: { lambdaWPerMK: 0.2 },
+          },
+        },
+      ]),
+    );
+    expect(result.massPerAreaKgPerM2).toBe(0);
+    expect(result.layersMissingDensity).toEqual(['cav']);
+  });
+});

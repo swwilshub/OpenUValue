@@ -231,7 +231,9 @@ export function LayerTable({
     update(index, {
       thicknessMm: BR443_DAB_THICKNESS_MM,
       bridgeLabel: 'Plaster dabs',
-      bridgeMaterialId: null,
+      // A real catalogue record now, so the dab carries a density and a specific heat
+      // and contributes its own thermal mass instead of being counted as weightless.
+      bridgeMaterialId: 'plaster-dabs',
       bridgeLambdaWPerMK: BR443_DAB_LAMBDA_W_PER_MK,
       bridgeSizing: 'fraction',
       bridgePattern: 'dabs',
