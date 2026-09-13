@@ -1,4 +1,6 @@
 import { unventilatedAirLayerResistanceM2KPerW } from './airLayer.js';
+import { airspaceResistance } from './airspace.js';
+import { LOW_EMISSIVITY_TABULATED } from './constants.js';
 import { assertFraction, assertNonNegative, assertPositive } from './errors.js';
 import type { HeatFlowDirection, Layer } from './types.js';
 import type { Metres, SquareMetreKelvinPerWatt, WattsPerMetreKelvin } from './units.js';
@@ -25,6 +27,11 @@ export interface LayerSectionResistances {
   readonly bridgedM2KPerW?: SquareMetreKelvinPerWatt;
   readonly bridgingAreaFraction: number;
   readonly warnings: readonly Warning[];
+}
+
+/** The emissivity each tabulated class stands for. BR 443 (2019) 4.7.2 tabulates 0,2. */
+function emissivityValue(kind: 'high' | 'low'): number {
+  return kind === 'low' ? LOW_EMISSIVITY_TABULATED : 0.9;
 }
 
 /**
@@ -62,12 +69,14 @@ function bridgedAirLayerWarnings(
     warning(
       'value-needs-verification',
       `Cavity "${label}" is ${(thicknessM * 1000).toFixed(0)} mm deep with only ` +
-        `${(clearWidthM * 1000).toFixed(0)} mm clear between the members crossing it. ` +
-        `BR 443 (2006) 4.8.1 treats an airspace as an air layer while its thickness is ` +
-        `less than a tenth of its width or height, and this fails on width. It may ` +
-        `still pass on height, since a member running the full storey height leaves a ` +
-        `tall pocket — but if it does not, the space is an air void and takes a ` +
-        `different resistance from the one used here.`,
+        `${(clearWidthM * 1000).toFixed(0)} mm clear between the members crossing it, ` +
+        `so on width it is an air void rather than an air layer (BR 443 2006 4.8.1: an ` +
+        `airspace counts as a layer while its thickness is under a tenth of its width ` +
+        `or height). It has been calculated as a void, to ISO/DIS 6946 Annex D.4, which ` +
+        `gives it slightly more resistance than a layer of the same thickness because ` +
+        `its two faces see less of one another. It may still pass the test on height, ` +
+        `since a member running the full storey leaves a tall pocket — in which case a ` +
+        `layer's resistance would be the right one and this is the cautious answer.`,
       layerId,
     ),
   ];
@@ -128,8 +137,28 @@ export function layerSectionResistances(
         };
       }
       assertFraction(bridging.areaFraction, `layer[${layer.id}].bridging.areaFraction`);
+      /*
+       * Where the members divide the cavity into pockets narrow enough to stop being air
+       * layers, the pockets are computed as air voids to ISO/DIS 6946 Annex D.4 rather
+       * than borrowing an air layer's tabulated resistance. A narrow pocket's two faces
+       * see less of each other, so it resists slightly *more* - treating it as a layer
+       * under-states it.
+       */
+      const pocket =
+        bridging.clearWidthM !== undefined && bridging.clearWidthM > 0
+          ? airspaceResistance({
+              thicknessM: layer.thicknessM,
+              direction,
+              widthM: bridging.clearWidthM,
+              emissivityWarm: emissivityValue(layer.emissivity ?? 'high'),
+              emissivityCold: emissivityValue(layer.emissivity ?? 'high'),
+            })
+          : undefined;
       return {
-        unbridgedM2KPerW: air.resistanceM2KPerW,
+        unbridgedM2KPerW:
+          pocket !== undefined && pocket.isAirVoid
+            ? pocket.resistanceM2KPerW
+            : air.resistanceM2KPerW,
         // The member spans the cavity, so its section is a solid layer of the cavity's
         // own thickness. A dab or a batten thinner than the cavity is a different
         // build-up, not a thinner bridge: the plasterboard would have nothing to bear on.

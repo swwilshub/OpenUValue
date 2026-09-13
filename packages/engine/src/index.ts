@@ -18,6 +18,7 @@ export * from './vapour.js';
 export * from './rounding.js';
 export * from './surfaceResistance.js';
 export * from './airLayer.js';
+export * from './airspace.js';
 export * from './resistance.js';
 export * from './assembly.js';
 export * from './inhomogeneous.js';
