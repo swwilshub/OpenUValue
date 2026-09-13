@@ -629,6 +629,7 @@ export function App(): JSX.Element {
             ) : (
               <LayerTable
                 onOpenGuide={openGuide}
+                heatFlowDirection={state.heatFlowDirection}
                 layers={state.layers}
                 result={result}
                 onChange={setLayers}

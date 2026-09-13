@@ -511,45 +511,87 @@ export function layerFromMaterial(materialId: string, thicknessMm: number): UiLa
  */
 export interface CavityPreset {
   readonly id: string;
+  /** Named for the construction, not for the classification it resolves to. */
   readonly label: string;
+  /** Where you would meet it, in one line. */
+  readonly where: string;
   readonly thicknessMm: number;
   readonly ventilation: AirLayerVentilation;
   readonly openingAreaMm2PerM: number;
   readonly emissivity: AirLayerEmissivity;
   readonly note: string;
+  /** Which small section drawing stands for it. */
+  readonly icon: CavityIcon;
 }
+
+/**
+ * The five cases worth drawing. Named for what is in the picture rather than for the
+ * standard's classes, because the classes are the answer and the picture is the question.
+ */
+export type CavityIcon =
+  | 'clear'
+  | 'partial-fill'
+  | 'partial-fill-foil'
+  | 'ventilated'
+  | 'service-void';
 
 export const CAVITY_PRESETS: readonly CavityPreset[] = [
   {
     id: 'unventilated-masonry',
-    label: 'Unventilated cavity, ordinary surfaces',
+    label: 'Clear cavity, nothing in it',
+    where: 'An uninsulated masonry cavity wall, or the whole cavity of one.',
     thicknessMm: 50,
     ventilation: 'unventilated',
     openingAreaMm2PerM: 0,
     emissivity: 'high',
+    icon: 'clear',
     note:
       'Still air between ordinary building surfaces. BR 443 (2019) 4.7.1: "Cavities in ' +
-      'unventilated masonry wall constructions normally have R = 0.18 m²K/W."',
+      'unventilated masonry wall constructions normally have R = 0.18 m²K/W." Weep holes ' +
+      'and the odd open perpend do not make it ventilated: that needs 500 mm² per metre ' +
+      'of length, and open perps at 900 mm centres come to about 720 mm² only on the ' +
+      'courses that have them.',
+  },
+  {
+    id: 'partial-fill-residual',
+    label: 'Residual gap, partial fill',
+    where: 'The clear gap left in front of insulation board fixed to the inner leaf.',
+    thicknessMm: 50,
+    ventilation: 'unventilated',
+    openingAreaMm2PerM: 0,
+    emissivity: 'high',
+    icon: 'partial-fill',
+    note:
+      'A partial-fill wall has two things in the cavity: the board, which is an ' +
+      'insulation layer, and the gap left in front of it, which is this. Enter them as ' +
+      'two layers. The gap is there to keep rain off the insulation and is not ventilated ' +
+      'to outside, so it takes an unventilated air layer resistance like any other.',
   },
   {
     id: 'unventilated-low-e',
-    label: 'Unventilated cavity, one reflective face',
+    label: 'Residual gap facing a foil',
+    where: 'The same gap, where the board facing it is foil-faced.',
     thicknessMm: 25,
     ventilation: 'unventilated',
     openingAreaMm2PerM: 0,
     emissivity: 'low',
+    icon: 'partial-fill-foil',
     note:
       'A foil face looking into the cavity cuts the radiation across it and roughly ' +
       'doubles its resistance — 0.44 m²K/W in a wall against 0.18. BR 443 (2019) 4.7.2, ' +
-      'at e = 0.2 and at least 25 mm wide. The foil only counts if it faces the air space.',
+      'at ε = 0.2 and at least 25 mm wide. The foil only counts if it faces the air ' +
+      'space: a foil buried against masonry, or against another board, does nothing at ' +
+      'all, which is the mistake this option exists to prevent.',
   },
   {
     id: 'slightly-ventilated-timber-frame',
-    label: 'Slightly ventilated cavity, timber frame',
+    label: 'Drained and vented cavity, timber frame',
+    where: 'The cavity of a timber-framed wall, which has to be drained and vented.',
     thicknessMm: 50,
     ventilation: 'slightly-ventilated',
     openingAreaMm2PerM: 580,
     emissivity: 'high',
+    icon: 'clear',
     note:
       'BR 443 (2019) 4.7.1 works this one through: a timber framed wall has to be drained ' +
       'and vented, and the NHBC requirement of an open perpend every 1.2 m comes to about ' +
@@ -558,16 +600,34 @@ export const CAVITY_PRESETS: readonly CavityPreset[] = [
   },
   {
     id: 'well-ventilated-rainscreen',
-    label: 'Well ventilated cavity, behind cladding',
+    label: 'Behind cladding or tile hanging',
+    where: 'An open rainscreen, boarding, or hanging tiles.',
     thicknessMm: 50,
     ventilation: 'well-ventilated',
     openingAreaMm2PerM: 1500,
     emissivity: 'high',
+    icon: 'ventilated',
     note:
       'A cavity behind tile hanging, boarding or a rainscreen. BR 443 (2019) 4.7.1 calls ' +
       'this out as a well ventilated cavity: the air in it is at outdoor temperature, so ' +
       'it and everything outboard of it are disregarded, and the outer surface resistance ' +
       'rises because the cladding shelters the wall.',
+  },
+  {
+    id: 'service-void',
+    label: 'Batten or service void',
+    where: 'Behind a dry lining on battens, or a service zone inside the airtight layer.',
+    thicknessMm: 25,
+    ventilation: 'unventilated',
+    openingAreaMm2PerM: 0,
+    emissivity: 'high',
+    icon: 'service-void',
+    note:
+      'BR 443 (2006) 4.8.1 names "the space between the battens in a dry-lined wall" as ' +
+      'an air layer, so it is treated like any other unventilated cavity. Add the battens ' +
+      'crossing it as members: they bridge it, and if they divide it into pockets deeper ' +
+      'than a tenth of their spacing it becomes an air void instead, which is calculated ' +
+      'differently.',
   },
 ];
 

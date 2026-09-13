@@ -1745,6 +1745,136 @@ button.danger:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* ----------------------------------------------------------- cavity picker ---
+ * Cards rather than a dropdown, because the options are constructions to recognise
+ * rather than classes to know.
+ */
+/*
+ * Prose, not a control label. `label` sets text-transform: uppercase for the small caps
+ * captions, and everything inside inherits it — which turned the note below into a
+ * paragraph of shouting. Reset once at the top of the picker rather than per element.
+ */
+.cavity-picker {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.cavity-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.cavity-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cavity-option:hover {
+  border-color: var(--accent);
+}
+
+.cavity-option.is-current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cavity-option-text {
+  display: block;
+  min-width: 0;
+}
+
+.cavity-option strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.cavity-option em {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--ink-faint);
+  line-height: 1.4;
+}
+
+/* What the choice resolves to, which is the part that makes it concrete. */
+.cavity-option-result {
+  margin-top: 2px;
+  color: var(--accent) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.cavity-icon {
+  width: 44px;
+  height: 30px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.cav-leaf {
+  fill: var(--cat-masonry);
+  stroke: var(--layer-edge);
+  stroke-width: 0.8;
+}
+
+.cav-board {
+  fill: var(--cat-insulation);
+  stroke: var(--cat-insulation-ink);
+  stroke-width: 0.8;
+}
+
+.cav-cladding {
+  fill: var(--cat-covering);
+  stroke: var(--cat-covering-ink);
+  stroke-width: 0.8;
+}
+
+/* The reflective face: the one thing that has to read as different at this size. */
+.cav-foil {
+  stroke: var(--temp-warm);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.cav-air {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cavity-custom,
+.cavity-note {
+  margin: 7px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.cavity-note {
+  padding: 7px 9px;
+  border-left: 3px solid var(--warn);
+  background: var(--warn-soft);
+  border-radius: 0 6px 6px 0;
+}
+
+.cavity-field {
+  grid-column: 1 / -1;
+}
+
 /* Provenance of a material's values, at a glance. */
 .source-dot {
   width: 8px;

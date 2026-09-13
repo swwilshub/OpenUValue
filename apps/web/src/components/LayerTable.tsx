@@ -10,9 +10,6 @@ import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
 import { MaterialPicker } from './MaterialPicker.js';
 import {
   BR443_TIMBER_FRACTION_DEFAULTS,
-  CAVITY_PRESETS,
-  cavityPreset,
-  matchingCavityPreset,
   type BridgeDistanceBasis,
   bridgePitchMm,
   DEFAULT_STUD_SPACING_MM,
@@ -31,6 +28,8 @@ import {
   bridgedPercentFromDimensions,
 } from '../state/model.js';
 import { HelpButton } from './guide/Guide.js';
+import { CavityPicker } from './CavityPicker.js';
+import type { HeatFlowDirection } from '@openuvalue/engine';
 
 export interface LayerTableProps {
   /** Opens the feature guide at a topic. */
@@ -39,6 +38,8 @@ export interface LayerTableProps {
   readonly result: UValueResult;
   readonly onChange: (layers: readonly UiLayer[]) => void;
   /** Layer highlighted from the cross-section, so the two views stay in step. */
+  /** Needed to quote each cavity option's resistance, which depends on it. */
+  readonly heatFlowDirection: HeatFlowDirection;
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
 }
@@ -68,6 +69,7 @@ const VENTILATION_LABELS = {
 export function LayerTable({
   layers,
   result,
+  heatFlowDirection,
   onChange,
   selectedLayerId,
   onSelectLayer,
@@ -413,37 +415,27 @@ export function LayerTable({
                   onSelect={(id) => applyMaterial(index, id)}
                 />
               ) : (
-                <label>
-                  Cavity type
-                  <HelpButton
-                    topicId="layer-cavity"
-                    label="cavity type and ventilation"
-                    onOpen={onOpenGuide}
-                  />
-                  <select
-                    value={matchingCavityPreset(layer)?.id ?? 'custom'}
-                    onChange={(event) => {
-                      const preset = cavityPreset(event.target.value);
-                      if (preset === undefined) {
-                        return;
-                      }
+                <div className="field cavity-field">
+                  <span className="field-caption">
+                    Cavity type
+                    <HelpButton
+                      topicId="layer-cavity"
+                      label="cavity type and ventilation"
+                      onOpen={onOpenGuide}
+                    />
+                  </span>
+                  <CavityPicker
+                    layer={layer}
+                    direction={heatFlowDirection}
+                    onApply={(preset) =>
                       update(index, {
                         ventilation: preset.ventilation,
                         openingAreaMm2PerM: preset.openingAreaMm2PerM,
                         emissivity: preset.emissivity,
-                      });
-                    }}
-                  >
-                    {CAVITY_PRESETS.map((preset) => (
-                      <option key={preset.id} value={preset.id} title={preset.note}>
-                        {preset.label}
-                      </option>
-                    ))}
-                    {matchingCavityPreset(layer) === undefined && (
-                      <option value="custom">Custom</option>
-                    )}
-                  </select>
-                </label>
+                      })
+                    }
+                  />
+                </div>
               )}
 
               <label>
