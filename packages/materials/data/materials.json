@@ -185,7 +185,7 @@
       "densityKgPerM3": 20,
       "specificHeatCapacityJPerKgK": 1450,
       "vapourResistanceFactorMu": 60,
-      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene). μ: EVIDENCED — the conventional value for expanded polystyrene, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
+      "source": "λ: TODO(verify). c: BR 443 (2019) 16 (Mineral wool, expanded and extruded polystyrene). μ: EVIDENCED — the conventional value for expanded polystyrene, agreeing across the independent public sources consulted; μ is grade-dependent and ours sits high. EUMEPS's EPS White Book, tabulating EN 13163 Annex D.2 as revised, gives μ 20–40 for EPS 30–80, 30–70 for EPS 90–150 and 40–100 for EPS 200 and above. Our 60 is inside the EPS 90–150 band and outside the EPS 70 one, so it does not suit a common wall board. Not read from BS EN ISO 10456:2007 Table 3. See VERIFY.md row V31.",
       "notes": "c 1450 J/(kg·K) is BR 443 16, \"Mineral wool, expanded and extruded polystyrene\". Generic value only; lambda is product-specific and declared to BS EN 13163. Check c and mu against BS EN ISO 10456:2007 Table 3 (EPS)."
     },
     {
@@ -207,7 +207,7 @@
       "densityKgPerM3": 140,
       "specificHeatCapacityJPerKgK": 2100,
       "vapourResistanceFactorMu": 5,
-      "source": "TODO(verify). μ: EVIDENCED — the conventional value for wood fibre insulation board, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, which tabulates mu as a dry-cup and a wet-cup pair and would also settle which of the two applies here.",
+      "source": "TODO(verify). μ: EVIDENCED — the conventional value for wood fibre insulation board, agreeing across the independent public sources consulted; not read from BS EN ISO 10456:2007 Table 3, though a manufacturer's datasheet that declares its own rated conductivity “according to EN ISO 10456, Table 3” gives the same μ = 5 and c = 2100 J/(kg·K) we carry (STEICO isorel, GBR/IRL_en_V1_20250512). That is a product declaration rather than the table, and for a 230 kg/m³ board rather than our 140 kg/m³ one, so it corroborates μ and c without settling λ.",
       "notes": "Generic value only; lambda is product-specific and declared to BS EN 13171. Check c and mu against ISO 10456 and product declarations."
     },
     {
