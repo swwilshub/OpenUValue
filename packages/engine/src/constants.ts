@@ -49,6 +49,22 @@ export const SURFACE_RESISTANCES_M2K_PER_W: {
  */
 export const REDUCED_AIR_CIRCULATION_RSI_M2K_PER_W: SquareMetreKelvinPerWatt = 0.25;
 
+/**
+ * Internal surface resistance for a **surface condensation or mould** assessment,
+ * m^2*K/W. BS EN ISO 13788 4.4.1 requires this figure for an opaque surface; its Table 2
+ * values (0,10 / 0,13 / 0,17) are for interstitial condensation and for windows and
+ * doors, and BS EN ISO 6946's tabulated values are for the U-value.
+ *
+ * The same number as the reduced-air-circulation case above, reached by a different
+ * route: that one is a DIN convention the user may choose, this one is required whatever
+ * the user chooses. Kept as its own constant so the two can move apart if either
+ * attribution turns out to be wrong.
+ *
+ * TODO(verify): the clause number and whether 4.4.1 states it for every heat-flow
+ * direction. VERIFY.md row V26.
+ */
+export const ISO13788_SURFACE_ASSESSMENT_RSI_M2K_PER_W: SquareMetreKelvinPerWatt = 0.25;
+
 /* -------------------------------------------------------------- air layers ---- */
 
 /**

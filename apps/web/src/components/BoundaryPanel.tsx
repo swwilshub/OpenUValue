@@ -45,6 +45,34 @@ function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
 }
 
+/**
+ * A small picture of each case, because "air circulation at the surface" describes a
+ * thing most people have never had to name, and two words of label cannot carry it. One
+ * shows the room's air sweeping the wall; the other shows something parked against it.
+ */
+function SurfaceConditionIcon({ kind }: { readonly kind: InternalSurfaceCondition }): JSX.Element {
+  return (
+    <svg viewBox="0 0 34 26" className="surface-icon" aria-hidden="true">
+      {/* The wall, in section, with its inside face on the right. */}
+      <rect x={1} y={2} width={7} height={22} className="surface-icon-wall" />
+      {kind === 'normal-air-circulation' ? (
+        <>
+          {/* Air moving freely past the face. */}
+          {[6, 13, 20].map((y) => (
+            <path key={y} d={`M 12 ${y} q 6 -3 11 0 q 5 3 9 0`} className="surface-icon-air" />
+          ))}
+        </>
+      ) : (
+        <>
+          {/* Something standing against it, with the air stalled in the gap behind. */}
+          <rect x={17} y={4} width={15} height={18} className="surface-icon-block" />
+          <path d="M 11 13 q 2 -2 4 0" className="surface-icon-air" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function BoundaryPanel({
   heatFlowDirection,
   conditions,
@@ -116,8 +144,15 @@ export function BoundaryPanel({
                 onOpen={onOpenGuide}
               />
             </legend>
+            <p className="choice-lead">
+              Still air clings to the inside face of a wall in a thin film, and that film
+              insulates — on a wall it is worth about as much as 8 mm of plasterboard. Park
+              a sofa or a wardrobe against the wall and the room&rsquo;s air stops sweeping
+              it away: the film thickens and the surface behind it runs colder. That is the
+              only thing these two settings change.
+            </p>
             {INTERNAL_SURFACE_CONDITIONS.map((condition) => (
-              <label key={condition.kind} className="choice">
+              <label key={condition.kind} className="choice choice-with-icon">
                 <input
                   type="radio"
                   name="internal-surface-condition"
@@ -125,13 +160,31 @@ export function BoundaryPanel({
                   checked={condition.kind === internalCondition}
                   onChange={() => onInternalSurfaceConditionChange(condition.kind)}
                 />
+                <SurfaceConditionIcon kind={condition.kind} />
                 <span>
                   <strong>{condition.label}</strong>
                   <em>{condition.summary}</em>
+                  <em className="choice-figure">
+                    surface resistance {condition.fixedRsiM2KPerW ?? 'from the standard'}
+                    {condition.fixedRsiM2KPerW === undefined ? '' : ' m²K/W'}
+                    {condition.departsFromIso6946 ? ' · not a BR 443 U-value' : ' · BR 443'}
+                  </em>
                 </span>
               </label>
             ))}
           </fieldset>
+          {/*
+            * The one thing a reader most needs to know about this control is what it does
+            * NOT do, since the obvious guess is that the cautious setting is the one that
+            * catches damp.
+            */}
+          <p className="choice-note">
+            <strong>The damp and mould check ignores this setting.</strong> BS EN ISO 13788
+            requires a fixed 0.25 m²K/W for that, which stands for the worst corner of the
+            room, so the verdict is worked out at that figure whichever option is chosen
+            here — and on the coldest path through the wall. This control changes the
+            U-value and the temperature line, nothing else.
+          </p>
           {/* The reasoning is a click away rather than a wall of text by default. */}
           <details className="explain">
             <summary>What does this change?</summary>

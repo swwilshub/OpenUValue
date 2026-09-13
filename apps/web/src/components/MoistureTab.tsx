@@ -7,9 +7,9 @@ import type {
 } from '@openuvalue/engine';
 import {
   MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT,
+  assessSurfaceCondensation,
   assessInterstitialCondensation,
   assessOverPeriods,
-  surfaceRelativeHumidityPercent,
 } from '@openuvalue/engine';
 import type { UiLayer } from '../state/model.js';
 import { GlaserChart } from './GlaserChart.js';
@@ -89,17 +89,22 @@ export function MoistureTab({
     [element, conditions, wettingDays, dryingDays, dryingExternalC, dryingExternalRh],
   );
 
-  const internalSurface = profile.nodes.find((node) => node.kind === 'internal-surface');
-  const surfaceHumidity =
-    internalSurface === undefined
-      ? undefined
-      : surfaceRelativeHumidityPercent(
-          conditions.internalAirTemperatureC,
-          conditions.internalRelativeHumidityPercent,
-          internalSurface.worstCaseTemperatureC,
-        );
-  const mouldRisk =
-    surfaceHumidity !== undefined && surfaceHumidity >= MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT;
+  /*
+   * The damp and mould verdict comes from the assessment, not from the profile on
+   * screen. BS EN ISO 13788 4.4.1 requires Rsi = 0.25 m2K/W for this, whatever the
+   * U-value is using and whatever the user picked for the drawing - so the verdict is
+   * calculated at that figure, on the coldest path, and cannot be softened by a choice
+   * made somewhere else.
+   */
+  const surface = useMemo(() => {
+    try {
+      return assessSurfaceCondensation(element, conditions);
+    } catch {
+      return undefined;
+    }
+  }, [element, conditions]);
+  const surfaceHumidity = surface?.surfaceRelativeHumidityPercent;
+  const mouldRisk = surface?.mouldRisk ?? false;
 
   return (
     <div className="moisture-tab">
@@ -317,7 +322,7 @@ export function MoistureTab({
           <>
             <p className={mouldRisk ? 'verdict verdict-risk' : 'verdict verdict-ok'}>
               The internal surface sits at{' '}
-              <strong>{internalSurface?.worstCaseTemperatureC.toFixed(1)} °C</strong>, which
+              <strong>{surface?.temperatureC.toFixed(1)} °C</strong>, which
               puts the air against it at <strong>{surfaceHumidity.toFixed(0)} % humidity</strong>{' '}
               even though the room is at {conditions.internalRelativeHumidityPercent} %.{' '}
               {mouldRisk ? (

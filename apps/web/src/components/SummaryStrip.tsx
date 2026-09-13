@@ -5,17 +5,16 @@ import type {
   DynamicResult,
   EnvironmentConditions,
   PartLContext,
-  TemperatureProfile,
   UValueResult,
 } from '@openuvalue/engine';
 import {
   MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT,
+  assessSurfaceCondensation,
   arealQuantities,
   assessInterstitialCondensation,
   checkAgainstPartL,
   partLElementKindForDirection,
   ratePerDayGPerM2,
-  surfaceRelativeHumidityPercent,
   vapourClassForSd,
 } from '@openuvalue/engine';
 import { HelpButton } from './guide/Guide.js';
@@ -73,7 +72,6 @@ export interface SummaryStripProps {
   readonly element: BuildingElement;
   readonly result: UValueResult;
   readonly corrections: CorrectionResult | undefined;
-  readonly profile: TemperatureProfile;
   readonly conditions: EnvironmentConditions;
   /** BS EN ISO 13786 figures, absent when the dynamic calculation could not run. */
   readonly dynamic: DynamicResult | undefined;
@@ -83,7 +81,6 @@ export function SummaryStrip({
   element,
   result,
   corrections,
-  profile,
   conditions,
   dynamic,
   onOpenGuide,
@@ -114,17 +111,22 @@ export function SummaryStrip({
           partLElementKindForDirection(element.heatFlowDirection),
         ).find((check) => check.context === partLContext);
 
-  const internalSurface = profile.nodes.find((node) => node.kind === 'internal-surface');
-  const surfaceHumidity =
-    internalSurface === undefined
-      ? undefined
-      : surfaceRelativeHumidityPercent(
-          conditions.internalAirTemperatureC,
-          conditions.internalRelativeHumidityPercent,
-          internalSurface.worstCaseTemperatureC,
-        );
-  const mouldRisk =
-    surfaceHumidity !== undefined && surfaceHumidity >= MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT;
+  /*
+   * The damp and mould verdict comes from the assessment, not from the profile on
+   * screen. BS EN ISO 13788 4.4.1 requires Rsi = 0.25 m2K/W for this, whatever the
+   * U-value is using and whatever the user picked for the drawing - so the verdict is
+   * calculated at that figure, on the coldest path, and cannot be softened by a choice
+   * made somewhere else.
+   */
+  const surface = useMemo(() => {
+    try {
+      return assessSurfaceCondensation(element, conditions);
+    } catch {
+      return undefined;
+    }
+  }, [element, conditions]);
+  const surfaceHumidity = surface?.surfaceRelativeHumidityPercent;
+  const mouldRisk = surface?.mouldRisk ?? false;
 
   const condensationRateGPerM2Day =
     condensation === undefined
@@ -202,14 +204,20 @@ export function SummaryStrip({
           title="Equivalent air layer thickness of the whole build-up: the depth of still air that would resist vapour as much as this does."
         />
 
-        {surfaceHumidity !== undefined && internalSurface !== undefined && (
+        {surfaceHumidity !== undefined && surface !== undefined && (
           <Metric
             label="Inside surface"
-            value={internalSurface.worstCaseTemperatureC.toFixed(1)}
+            value={surface.temperatureC.toFixed(1)}
             unit="°C"
             verdict={mouldRisk ? 'risk' : 'ok'}
             note={`${surfaceHumidity.toFixed(0)} % RH at the surface`}
-            title={`Mould grows from about ${MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT} % surface humidity, per BS EN ISO 13788.`}
+            title={
+              `Mould grows from about ${MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT} % surface ` +
+              `humidity, per BS EN ISO 13788. Assessed at the Rsi of ` +
+              `${surface.rsiM2KPerW} m²K/W that §4.4.1 requires for damp and mould, which ` +
+              `is a colder surface than the U-value's ${surface.uValueRsiM2KPerW} m²K/W ` +
+              `gives — so this figure is deliberately not the one on the temperature line.`
+            }
           />
         )}
 

@@ -33,3 +33,4 @@ export * from './condensation/glaser.js';
 export * from './condensation/iso13788.js';
 export * from './condensation/periodAssessment.js';
 export * from './condensation/severity.js';
+export * from './condensation/surfaceAssessment.js';

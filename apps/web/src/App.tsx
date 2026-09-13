@@ -578,7 +578,6 @@ export function App(): JSX.Element {
           element={element}
           result={result}
           corrections={corrections}
-          profile={profile}
           conditions={state.conditions}
           dynamic={dynamic}
         />

@@ -22,9 +22,13 @@ import type { HeatFlowDirection } from './types.js';
  *   for a U-value calculation to BR 443.
  * - `reduced-air-circulation` raises Rsi to account for furniture, curtains,
  *   decoration, corners and niches obstructing the surface. It lowers the internal
- *   surface temperature and is the unfavourable case for moisture protection and for
- *   panel heating. See REDUCED_AIR_CIRCULATION_RSI_M2K_PER_W for the DIN 4108-3
- *   attribution and its TODO(verify).
+ *   surface temperature and is the unfavourable case for panel heating. See
+ *   REDUCED_AIR_CIRCULATION_RSI_M2K_PER_W for the DIN 4108-3 attribution and its
+ *   TODO(verify).
+ *
+ * Neither of them reaches the damp and mould verdict. That is assessed at the fixed Rsi
+ * BS EN ISO 13788 4.4.1 requires, in condensation/surfaceAssessment.ts, precisely so
+ * that a choice made for a drawing cannot soften a safety result.
  */
 export type InternalSurfaceCondition = 'normal-air-circulation' | 'reduced-air-circulation';
 
@@ -58,14 +62,15 @@ export const INTERNAL_SURFACE_CONDITIONS: readonly InternalSurfaceConditionDefin
     kind: 'reduced-air-circulation',
     label: 'Reduced air circulation',
     summary:
-      'Furniture, curtains, a corner or a niche against the surface. The cautious ' +
-      'case for damp and mould.',
+      'Furniture, curtains, a corner or a niche against the surface. Shows a colder ' +
+      'surface on the drawing.',
     description:
       'Furniture, decoration, corners and niches hinder air exchange at the internal ' +
-      'surface. The most unfavourable case for panel heating and for moisture ' +
-      'protection, and the case DIN 4108-3 assesses. Raises Rsi, which lowers the ' +
-      'internal surface temperature and also raises the total resistance, so the ' +
-      'U-value it produces is not a BR 443 U-value.',
+      'surface. Raises Rsi, which lowers the internal surface temperature on the ' +
+      'drawing and also raises the total resistance, so the U-value it produces is ' +
+      'not a BR 443 U-value. It is the case DIN 4108-3 assesses. It does **not** make ' +
+      'the damp and mould verdict more cautious: BS EN ISO 13788 4.4.1 requires a ' +
+      'fixed 0,25 m2K/W for that, which is applied whichever option is chosen here.',
     fixedRsiM2KPerW: REDUCED_AIR_CIRCULATION_RSI_M2K_PER_W,
     departsFromIso6946: true,
   },
