@@ -18,6 +18,7 @@ import {
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
+import { EnergyTab } from './components/EnergyTab.js';
 import {
   DEFAULT_DRYING_SETTINGS,
   type DryingSettings,
@@ -59,11 +60,12 @@ const TOUR_SEEN_KEY = 'openuvalue.tour.seen';
  * The cross-section stays above the tabs, because it is the thing being worked on
  * whichever analysis is open. The tabs switch what is said *about* it.
  */
-type TabId = 'buildup' | 'moisture';
+type TabId = 'buildup' | 'moisture' | 'energy';
 
 const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
   { id: 'buildup', label: 'Build-up and U-value' },
   { id: 'moisture', label: 'Moisture' },
+  { id: 'energy', label: 'Energy and carbon' },
 ];
 
 const SECTION_LABELS: Record<ProfileSection, string> = {
@@ -597,6 +599,14 @@ export function App(): JSX.Element {
           </button>
         ))}
       </nav>
+
+      {tab === 'energy' && result !== undefined && (
+        <EnergyTab
+          onOpenGuide={openGuide}
+          result={result}
+          internalTemperatureC={state.conditions.internalAirTemperatureC}
+        />
+      )}
 
       {tab === 'moisture' && result !== undefined && profile !== undefined && (
         <MoistureTab

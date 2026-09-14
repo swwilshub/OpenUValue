@@ -19,6 +19,8 @@ export * from './rounding.js';
 export * from './surfaceResistance.js';
 export * from './airLayer.js';
 export * from './airspace.js';
+export * from './climate.js';
+export * from './heatSource.js';
 export * from './resistance.js';
 export * from './assembly.js';
 export * from './inhomogeneous.js';

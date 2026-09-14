@@ -52,13 +52,17 @@ and `iso13788.ts`, and the diagram in the results.
 
 **Still outstanding**, and the reason the above is not a BS EN ISO 13788 *assessment*:
 
-0. **Monthly climate data.** The standard's assessment runs the construction for each
-   of twelve months and passes an element only if what condenses in winter evaporates
-   again within the year. That needs mean monthly external temperature and humidity for
-   the location. OpenUValue ships none and will not invent any. Until a dataset with a
-   citable source is added — or the UI lets a user paste twelve months of their own —
-   the annual verdict cannot be given. The accumulation loop itself is small; the data
-   is the blocker.
+0. **Monthly climate data.** ~~The blocker.~~ **Half solved.** SAP 10.2 Appendix U,
+   Table U1 gives mean monthly external temperature for 21 UK regions plus a UK average,
+   free and official, and is now in `engine/src/climate.ts`. The temperature side of the
+   annual assessment is therefore available.
+
+   **Still missing: monthly external humidity.** Table U1 carries temperature, and U2
+   and U3 carry wind speed and solar radiation, but SAP has no use for external humidity
+   and does not tabulate it. The Glaser construction needs it to get an external vapour
+   pressure for each month. Until that is found the twelve-month loop can be written but
+   not run honestly — so the two-season approximation stands, and the accumulation loop
+   remains small while the data remains the blocker.
 
 4. **BS EN ISO 13788 monthly (Glaser) interstitial condensation assessment**:
    monthly climate data, condensation and evaporation over an annual cycle, and the

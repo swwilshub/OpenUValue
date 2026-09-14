@@ -3708,3 +3708,109 @@ body.is-dragging * {
     opacity: 0.45;
   }
 }
+
+
+/* ------------------------------------------------------- energy and carbon ---
+ * Figures first, then the month-by-month shape of them.
+ */
+.energy-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.energy-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 9px;
+  margin: 12px 0;
+}
+
+.energy-figure {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.energy-figure-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+}
+
+.energy-figure strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 20px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.energy-figure-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.energy-figure em {
+  display: block;
+  margin-top: 3px;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.month-bars {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+  max-width: 68ch;
+}
+
+.month-bars li {
+  display: grid;
+  grid-template-columns: 34px 1fr 108px 56px;
+  align-items: center;
+  gap: 9px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.month-bars li.is-off-season {
+  color: var(--ink-faint);
+}
+
+.month-name {
+  font-weight: 600;
+}
+
+.month-bar-track {
+  height: 11px;
+  background: var(--ground);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.month-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--temp-warm);
+  border-radius: 3px;
+}
+
+.is-off-season .month-bar-fill {
+  background: var(--line);
+}
+
+.month-temp {
+  text-align: right;
+  color: var(--ink-faint);
+}
