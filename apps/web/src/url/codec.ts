@@ -1,4 +1,5 @@
 import type {
+  ExposureZoneId,
   AirGapLevel,
   AirLayerVentilation,
   ExternalEnvironmentKind,
@@ -6,7 +7,7 @@ import type {
   InternalSurfaceCondition,
   ProfileSection,
 } from '@openuvalue/engine';
-import { EXTERNAL_ENVIRONMENTS, INTERNAL_SURFACE_CONDITIONS } from '@openuvalue/engine';
+import { EXPOSURE_ZONES, EXTERNAL_ENVIRONMENTS, INTERNAL_SURFACE_CONDITIONS } from '@openuvalue/engine';
 import {
   type UiFasteners,
   type UiLayer,
@@ -62,6 +63,8 @@ interface EncodedState {
   readonly g?: AirGapLevel;
   /** Fasteners as [chi, per m², recessedFlatRoof, bothEndsInMetalSheets]. */
   readonly f?: readonly [number, number, number, number];
+  /** Wind-driven rain exposure zone. Absent in links written before it existed. */
+  readonly x?: ExposureZoneId;
 }
 
 /**
@@ -110,6 +113,7 @@ function fromBase64Url(encoded: string): string {
 export function encodeState(state: UiState): string {
   const payload: EncodedState = {
     n: state.name,
+    x: state.exposureZoneId,
     d: state.heatFlowDirection,
     s: state.section,
     c: [
@@ -267,6 +271,16 @@ export function decodeState(hash: string): DecodeResult {
     return {
       state: {
         name: typeof parsed['n'] === 'string' ? parsed['n'] : fallback.name,
+        /*
+         * Exposure is a site property rather than a property of the build-up, so a link
+         * that predates it falls back rather than failing. It changes no number: it
+         * decides whether a warning about filling the cavity is shown.
+         */
+        exposureZoneId:
+          typeof parsed['x'] === 'string' &&
+          EXPOSURE_ZONES.some((zone) => zone.id === parsed['x'])
+            ? (parsed['x'] as UiState['exposureZoneId'])
+            : fallback.exposureZoneId,
         heatFlowDirection:
           typeof direction === 'string' &&
           HEAT_FLOW_DIRECTIONS.includes(direction as HeatFlowDirection)

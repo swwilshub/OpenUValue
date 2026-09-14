@@ -19,6 +19,7 @@ import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
 import { EnergyTab } from './components/EnergyTab.js';
+import { RetrofitTab } from './components/RetrofitTab.js';
 import {
   DEFAULT_DRYING_SETTINGS,
   type DryingSettings,
@@ -60,12 +61,13 @@ const TOUR_SEEN_KEY = 'openuvalue.tour.seen';
  * The cross-section stays above the tabs, because it is the thing being worked on
  * whichever analysis is open. The tabs switch what is said *about* it.
  */
-type TabId = 'buildup' | 'moisture' | 'energy';
+type TabId = 'buildup' | 'moisture' | 'energy' | 'retrofit';
 
 const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
   { id: 'buildup', label: 'Build-up and U-value' },
   { id: 'moisture', label: 'Moisture' },
   { id: 'energy', label: 'Energy and carbon' },
+  { id: 'retrofit', label: 'Retrofit' },
 ];
 
 const SECTION_LABELS: Record<ProfileSection, string> = {
@@ -608,6 +610,8 @@ export function App(): JSX.Element {
         />
       )}
 
+      {tab === 'retrofit' && <RetrofitTab onOpenGuide={openGuide} state={state} />}
+
       {tab === 'moisture' && result !== undefined && profile !== undefined && (
         <MoistureTab
           onOpenGuide={openGuide}
@@ -655,6 +659,11 @@ export function App(): JSX.Element {
               heatFlowDirection={state.heatFlowDirection}
               conditions={state.conditions}
               internalSurfaceCondition={state.internalSurfaceCondition}
+              exposureZoneId={state.exposureZoneId}
+              onExposureZoneChange={(exposureZoneId) =>
+                setState((current) => ({ ...current, exposureZoneId }))
+              }
+              layers={state.layers}
               externalEnvironmentKind={state.externalEnvironment}
               result={result}
               onDirectionChange={setDirection}

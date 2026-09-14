@@ -1,4 +1,5 @@
 import type {
+  ExposureZoneId,
   AirGapLevel,
   AirLayerEmissivity,
   AirLayerVentilation,
@@ -110,6 +111,11 @@ export interface UiState {
    * element is built rather than of the weather, so it lives with the build-up.
    */
   readonly airGapLevel: AirGapLevel;
+  /**
+   * Wind-driven rain exposure, picked off the published map rather than derived from a
+   * location we do not ask for. Decides whether a cavity may be filled.
+   */
+  readonly exposureZoneId: ExposureZoneId;
   /**
    * Mechanical fasteners through the insulation, BR 443 (2019) 4.8.3. Undefined means
    * the user has not told us about any, which is **not** the same as "there are none":
@@ -782,6 +788,7 @@ export function defaultState(): UiState {
     externalEnvironment: 'outside-air',
     // BR 443 (2019) 4.8.1: level 1 unless the conditions for level 0 are met.
     airGapLevel: DEFAULT_AIR_GAP_LEVEL,
+    exposureZoneId: 'moderate',
   };
 }
 
@@ -818,6 +825,7 @@ export function timberFrameExample(): UiState {
     externalEnvironment: 'outside-air',
     // BR 443 (2019) 4.8.1: level 1 unless the conditions for level 0 are met.
     airGapLevel: DEFAULT_AIR_GAP_LEVEL,
+    exposureZoneId: 'moderate',
   };
 }
 
@@ -965,4 +973,32 @@ export function hasBridging(state: UiState): boolean {
   return state.layers.some(
     (layer) => layer.bridgedPercent > 0 && layer.bridgedPercent < 100,
   );
+}
+
+/**
+ * Whether the build-up fills a masonry cavity wall-to-wall.
+ *
+ * The case Approved Document C restricts by exposure zone: insulation sitting directly
+ * between two masonry leaves with no clear cavity in front of it. A partial fill has an
+ * air layer outboard of the insulation and is a different construction, so the test is
+ * for masonry on both sides *and* no cavity between the insulation and the outer leaf.
+ *
+ * Deliberately narrow. It answers "is this the construction the exposure rule is about",
+ * not "is this wall risky" — a timber frame, a solid wall or an externally insulated one
+ * are all outside the rule and get no warning rather than a vague one.
+ */
+export function hasFullFillCavity(layers: readonly UiLayer[]): boolean {
+  const categories = layers.map((layer) => layerDrawCategory(layer.materialId, layer.kind));
+  return layers.some((_layer, index) => {
+    if (categories[index] !== 'insulation') {
+      return false;
+    }
+    const before = categories.slice(0, index);
+    const after = categories.slice(index + 1);
+    const masonryInboard = before.some((c) => c === 'masonry' || c === 'concrete');
+    const masonryOutboard = after.some((c) => c === 'masonry' || c === 'concrete');
+    // A cavity anywhere between this insulation and the outside makes it a partial fill.
+    const cavityOutboard = after.includes('air');
+    return masonryInboard && masonryOutboard && !cavityOutboard;
+  });
 }

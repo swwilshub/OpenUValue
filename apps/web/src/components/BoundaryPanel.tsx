@@ -17,6 +17,9 @@ import {
   conditionsForEnvironment,
 } from '../state/model.js';
 import { HelpButton } from './guide/Guide.js';
+import { ExposurePicker } from './ExposurePicker.js';
+import type { ExposureZoneId } from '@openuvalue/engine';
+import type { UiLayer } from '../state/model.js';
 
 const DIRECTION_LABELS: Record<HeatFlowDirection, string> = {
   horizontal: 'Horizontal — wall',
@@ -30,6 +33,10 @@ export interface BoundaryPanelProps {
   readonly heatFlowDirection: HeatFlowDirection;
   readonly conditions: EnvironmentConditions;
   readonly internalSurfaceCondition: InternalSurfaceCondition;
+  readonly exposureZoneId: ExposureZoneId;
+  readonly onExposureZoneChange: (zoneId: ExposureZoneId) => void;
+  /** Needed only to spot a fully filled cavity, which the zone may rule out. */
+  readonly layers: readonly UiLayer[];
   readonly externalEnvironmentKind: ExternalEnvironmentKind;
   readonly result: UValueResult;
   readonly onDirectionChange: (direction: HeatFlowDirection) => void;
@@ -77,6 +84,9 @@ export function BoundaryPanel({
   heatFlowDirection,
   conditions,
   internalSurfaceCondition: internalCondition,
+  exposureZoneId,
+  onExposureZoneChange,
+  layers,
   externalEnvironmentKind,
   result,
   onDirectionChange,
@@ -134,6 +144,22 @@ export function BoundaryPanel({
             <span className="side-chip side-chip-inside">Inside</span>
             <HelpButton topicId="conditions-inside" label="inside conditions" onOpen={onOpenGuide} />
           </h3>
+
+          <fieldset className="choice-group">
+            <legend>
+              Wind-driven rain exposure
+              <HelpButton
+                topicId="conditions-exposure"
+                label="wind-driven rain exposure"
+                onOpen={onOpenGuide}
+              />
+            </legend>
+            <ExposurePicker
+              zoneId={exposureZoneId}
+              onChange={onExposureZoneChange}
+              layers={layers}
+            />
+          </fieldset>
 
           <fieldset className="choice-group">
             <legend>
