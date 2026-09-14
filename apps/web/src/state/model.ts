@@ -425,7 +425,7 @@ export const BR443_TIMBER_FRACTION_DEFAULTS: readonly TimberFractionDefault[] = 
     note:
       'Default for timber frame, based on 38 mm timbers at 600 mm centres. Additional ' +
       'heat losses at corners, window surrounds and between floors are not counted in ' +
-      'the timber fraction — they belong to the junction ψ-values.',
+      'the timber fraction, because they belong to the junction ψ-values.',
   },
   {
     id: 'timber-frame-improved',
@@ -619,7 +619,7 @@ export const CAVITY_PRESETS: readonly CavityPreset[] = [
     icon: 'partial-fill-foil',
     note:
       'A foil face looking into the cavity cuts the radiation across it and roughly ' +
-      'doubles its resistance — 0.44 m²K/W in a wall against 0.18. BR 443 (2019) 4.7.2, ' +
+      'doubles its resistance, to 0.44 m²K/W in a wall against 0.18. BR 443 (2019) 4.7.2, ' +
       'at ε = 0.2 and at least 25 mm wide. The foil only counts if it faces the air ' +
       'space: a foil buried against masonry, or against another board, does nothing at ' +
       'all, which is the mistake this option exists to prevent.',
@@ -636,7 +636,7 @@ export const CAVITY_PRESETS: readonly CavityPreset[] = [
     note:
       'BR 443 (2019) 4.7.1 works this one through: a timber framed wall has to be drained ' +
       'and vented, and the NHBC requirement of an open perpend every 1.2 m comes to about ' +
-      '580 mm² per metre — over the 500 mm² threshold, so the cavity is slightly ' +
+      '580 mm² per metre, over the 500 mm² threshold, so the cavity is slightly ' +
       'ventilated rather than unventilated.',
   },
   {

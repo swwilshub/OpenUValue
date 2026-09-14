@@ -162,7 +162,7 @@ export function GlaserChart({ assessment, path }: GlaserChartProps): JSX.Element
           <tspan baselineShift="sub" fontSize="7">
             d
           </tspan>
-          {' '}— equivalent air layer thickness, m
+          {' '}equivalent air layer thickness, m
         </text>
       </svg>
 
@@ -186,7 +186,7 @@ export function GlaserChart({ assessment, path }: GlaserChartProps): JSX.Element
             .filter((node) => node.condensationOccurs && node.rateKgPerM2S > 0)
             .map((node) => (
               <li key={node.boundaryIndex}>
-                <strong>{node.label}</strong> — {ratePerDayGPerM2(node.rateKgPerM2S).toFixed(1)}{' '}
+                <strong>{node.label}</strong>, {ratePerDayGPerM2(node.rateKgPerM2S).toFixed(1)}{' '}
                 g/m² per day, at S<sub>d</sub> {node.cumulativeSdM.toFixed(2)} m
               </li>
             ))}

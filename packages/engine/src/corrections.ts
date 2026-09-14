@@ -54,7 +54,7 @@ export const AIR_GAP_LEVELS: readonly AirGapLevelDefinition[] = [
     deltaUWPerM2K: 0.0,
     description:
       'No air voids within the insulation, or only minor ones with no significant ' +
-      'effect — gaps not exceeding 5 mm penetrating the layer. Applies to double-layer ' +
+      'effect: gaps not exceeding 5 mm penetrating the layer. Applies to double-layer ' +
       'insulation, and to single-layer boards with lapped or sealed joints or with ' +
       'tolerances tight enough that no gap will exceed 5 mm.',
   },

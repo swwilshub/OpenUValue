@@ -52,7 +52,7 @@ export const EXPOSURE_ZONES: readonly ExposureZone[] = [
     minLitresPerM2PerSpell: 0,
     maxLitresPerM2PerSpell: 33,
     rangeText: 'less than 33 litres/m² per spell',
-    where: 'Inland and low-lying — much of central and eastern England.',
+    where: 'Inland and low-lying, much of central and eastern England.',
     cavityAdvice:
       'Full fill is ordinarily acceptable here, subject to the insulation being suitable ' +
       'for the purpose and properly installed.',
@@ -92,8 +92,9 @@ export const EXPOSURE_ZONES: readonly ExposureZone[] = [
     where: 'Exposed western and northern coasts, the highest ground, the islands.',
     cavityAdvice:
       'Fair-faced masonry with a fully filled cavity is not accepted in this zone. The ' +
-      'cavity has to stay clear, or the wall has to be protected — rendered, clad or ' +
-      'tile-hung — so that water crossing the cavity is not relied upon to be absent.',
+      'cavity has to stay clear, or the wall has to be protected by render, cladding ' +
+      'or tile hanging, so that water crossing the cavity is not relied upon to be ' +
+      'absent.',
     rulesOutFullFill: true,
   },
 ];

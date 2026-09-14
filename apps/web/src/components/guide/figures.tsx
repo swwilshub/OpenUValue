@@ -742,7 +742,7 @@ export function ShareFigure(): JSX.Element {
         openuvalue/#n=Wall&amp;l=pb,12.5…
       </text>
       <text x={W / 2} y={H - 4} className="g-caption" textAnchor="middle">
-        no account, no server — the link is the file
+        no account, no server, the link is the file
       </text>
     </Frame>
   );
@@ -781,9 +781,9 @@ export function CombinedFigure(): JSX.Element {
 /** Heat leaving through a roof, a wall and a floor, at very different rates. */
 export function DirectionFigure(): JSX.Element {
   const cases = [
-    { label: 'roof — upward', y: 30, speed: '1.1s' },
-    { label: 'wall — horizontal', y: 66, speed: '1.7s' },
-    { label: 'floor — downward', y: 102, speed: '3.2s' },
+    { label: 'roof, upward', y: 30, speed: '1.1s' },
+    { label: 'wall, horizontal', y: 66, speed: '1.7s' },
+    { label: 'floor, downward', y: 102, speed: '3.2s' },
   ];
   return (
     <Frame label="Heat escaping upward, sideways and downward at different rates">

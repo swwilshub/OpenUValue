@@ -152,21 +152,22 @@ function explain(marker: InterfaceMarker, isOutermost: boolean): string {
     case 'surface-condensation':
       return (
         `Room air meets a surface ${temperatureIntervalC(marker.belowDewPointK)} below its dew ` +
-        'point and gives up water onto it. This is the damp-patch and mould case: it ' +
-        'happens on the face you can see and touch, and unlike a plane inside the ' +
-        'build-up there is no vapour resistance in the way to prevent it. Warming the ' +
-        'surface or lowering the indoor humidity are the two ways out.'
+        'point and gives up water onto it. This is the case that shows up as damp ' +
+        'patches and mould, on the face you can see and touch. Nothing stands in the ' +
+        'way of it here, the way a vapour layer would inside the build-up. Warming the ' +
+        'surface or lowering the indoor humidity will both stop it.'
       );
     case 'condensing':
       return (
         'Vapour diffusing out from inside reaches saturation here and turns to liquid ' +
         'water inside the build-up, at ' +
-        `${formatRate(marker.ratePerDayGPerM2)} in these conditions. More vapour ` +
-        'resistance on the warm side, or less on the cold side, moves the balance.'
+        `${formatRate(marker.ratePerDayGPerM2)} in these conditions. Adding vapour ` +
+        'resistance on the warm side, or taking some away on the cold side, will ' +
+        'reduce it.'
       );
     case 'evaporating':
       return (
-        'This plane is giving water back rather than collecting it, at ' +
+        'This plane is giving water back instead of collecting it, at ' +
         `${formatRate(marker.ratePerDayGPerM2)} in these conditions.`
       );
     case 'below-dew-point':
@@ -175,14 +176,13 @@ function explain(marker: InterfaceMarker, isOutermost: boolean): string {
       // what arrives there leaves into the outside air instead of collecting.
       return isOutermost
         ? `Colder than the room air's dew point, by ${temperatureIntervalC(marker.belowDewPointK)}, ` +
-          'which is simply what the outside face of a wall is in winter. Vapour ' +
-          'reaching it escapes to the outside air rather than building up, so the ' +
-          'cold here is not the problem — water collecting further in would be.'
+          'which is what the outside face of a wall is in winter. Vapour that reaches ' +
+          'it escapes into the outside air instead of building up. Being cold on this ' +
+          'face does no harm. What matters is whether water collects further in.'
         : `Colder than the room air's dew point, by ${temperatureIntervalC(marker.belowDewPointK)}, ` +
-          'but the layers inboard hold back enough vapour that it stays dry. Normal ' +
-          'rather than a fault: most of the thickness of a well-insulated element is ' +
-          'below the dew point by design, and being cold only matters if vapour ' +
-          'reaches it.';
+          'but the layers inboard hold back enough vapour that it stays dry. This is ' +
+          'normal. Most of the thickness of a well-insulated element is below the dew ' +
+          'point by design, and being cold only matters if vapour reaches it.';
     case 'dry':
       return 'Above the dew point of the room air.';
   }
@@ -960,7 +960,7 @@ export function CrossSection({
               }}
             >
               <title>
-                {`${box.layer.label} — ${box.layer.thicknessMm} mm`}
+                {`${box.layer.label} · ${box.layer.thicknessMm} mm`}
                 {box.layer.kind === 'solid'
                   ? `, \u03bb ${box.layer.lambdaWPerMK} W/(m\u00b7K)`
                   : ''}
@@ -1474,7 +1474,7 @@ export function CrossSection({
                 <p className="note-where">
                   {marker.label}
                   <span className="note-headline">
-                    {' — '}
+                    {' · '}
                     {CONDITION_HEADLINE[marker.condition]}
                   </span>
                 </p>
@@ -1504,7 +1504,7 @@ export function CrossSection({
                 <p className="note-where">
                   {dryOut.driesOut ? 'Clears over the year' : 'Does not clear'}
                   <span className="note-headline">
-                    {' — '}
+                    {' · '}
                     {formatMass(dryOut.totalAccumulatedKgPerM2)} over {dryOut.wettingPeriod.days}{' '}
                     days of wetting
                     {dryOut.driesOut
@@ -1519,11 +1519,10 @@ export function CrossSection({
                   {dryOut.driesOut
                     ? 'What a build-up gains in winter it can give back in summer, and ' +
                       'this one does, with room to spare. Condensation that clears is ' +
-                      'not by itself a defect — the question BS EN ISO 13788 asks is ' +
-                      'whether an element dries out again, not whether it condenses in ' +
-                      'January.'
+                      'not by itself a defect. BS EN ISO 13788 asks whether an element ' +
+                      'dries out again, not whether it condenses in January.'
                     : 'Water left at the end of the drying season accumulates year on ' +
-                      'year, which is the case the assessment exists to catch.'}{' '}
+                      'year, which is the case this assessment is for.'}{' '}
                   These two seasons are our own default, not the standard&rsquo;s method:
                   BS EN ISO 13788 runs twelve months of a design year against monthly
                   climate data we do not ship. Change the seasons in the Moisture tab and
@@ -1540,9 +1539,9 @@ export function CrossSection({
                   moves vapour by diffusion alone. It does not model rain driven into the
                   outer leaf, liquid water moving through a material by capillarity, air
                   carrying moisture through gaps, or the moisture a hygroscopic material
-                  holds and releases. In a masonry outer leaf those dominate — a wall
+                  holds and releases. In a masonry outer leaf those dominate. A wall
                   takes far more water from a day of driving rain than from a season of
-                  this — so a wet plane at the back of a leaf that is built to get wet and
+                  this, so a wet plane at the back of a leaf that is built to get wet and
                   drain is a different proposition from one against insulation or
                   sheathing, which are not. {/* TODO(verify): the clause in BS EN ISO
                   13788 that lists what the method does not account for. See VERIFY.md
@@ -1559,13 +1558,13 @@ export function CrossSection({
         are drawn at a fixed width. Names sit above the drawing with a line to the layer
         each one belongs to, the hatching shows what a layer is made of, and the tinted
         band is everything at or below the internal dew point. Drag a layer sideways to
-        reorder it — it comes with you at its real width while the rest open a gap — drag
-        the grip on its outer edge to change its thickness, or click one to pick it out in
-        the layer list.
+        reorder it, and it comes with you at its real width while the rest open a gap.
+        Drag the grip on its outer edge to change its thickness, or click one to pick it
+        out in the layer list.
         {hasBridgedLayer &&
           ' A bridged layer is outlined in the accent colour, and its callout carries the bridged percentage.' +
           (hasDrawableStuds
-            ? ` Its height is ${wallLengthShownMm.toFixed(0)} mm of wall, so studs and rafters appear inside the layers they bridge at their true width and pitch. The temperature line is an overlay on that section, read against the degrees axis on the right — a member drawn level with a temperature does not mean anything by it.`
+            ? ` Its height is ${wallLengthShownMm.toFixed(0)} mm of wall, so studs and rafters appear inside the layers they bridge at their true width and pitch. The temperature line is an overlay on that section, read against the degrees axis on the right, so a member drawn level with a temperature does not mean anything by it.`
             : ' Height carries no quantity where nothing is bridged by measured members.')}
         {lastIncludedIndex < layers.length - 1 &&
           ' The cross-hatched layers beyond the ventilated cavity are disregarded by the calculation.'}
@@ -1574,7 +1573,7 @@ export function CrossSection({
           <>
             {' '}
             A marked plane is one where water forms, and the drop beside it has an{' '}
-            <em>area</em> proportional to the rate — the printed figure is the result, the
+            <em>area</em> proportional to the rate. The printed figure is the result, the
             size only a reading aid. Moisture is assessed on every path and the worst
             reported
             {condensation.pathLabel !== '' ? ` (here, ${condensation.pathLabel})` : ''}, so

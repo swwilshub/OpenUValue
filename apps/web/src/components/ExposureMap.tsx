@@ -103,7 +103,7 @@ export function ExposureMap({ zoneId, onPick }: ExposureMapProps): JSX.Element {
           }
           role="button"
           tabIndex={0}
-          aria-label={`${zone.label} — ${zone.where}`}
+          aria-label={`${zone.label}. ${zone.where}`}
           aria-pressed={zone.id === zoneId}
           onClick={() => onPick(zone.id)}
           onKeyDown={(event) => {

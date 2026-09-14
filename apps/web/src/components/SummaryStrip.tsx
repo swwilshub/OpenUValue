@@ -176,7 +176,7 @@ export function SummaryStrip({
           title={
             incompleteMass === 0
               ? 'Dry mass of the specified materials, excluding fixings and finishes.'
-              : 'Dry mass, excluding layers with no density in the catalogue — so this is an under-estimate.'
+              : 'Dry mass, excluding layers with no density in the catalogue, so this is an under-estimate.'
           }
         />
 
@@ -216,7 +216,7 @@ export function SummaryStrip({
               `humidity, per BS EN ISO 13788. Assessed at the Rsi of ` +
               `${surface.rsiM2KPerW} m²K/W that §4.4.1 requires for damp and mould, which ` +
               `is a colder surface than the U-value's ${surface.uValueRsiM2KPerW} m²K/W ` +
-              `gives — so this figure is deliberately not the one on the temperature line.`
+              `gives. This figure is deliberately not the one on the temperature line.`
             }
           />
         )}
@@ -267,7 +267,7 @@ export function SummaryStrip({
               value={dynamic.main.internalArealHeatCapacityKJPerM2K.toFixed(0)}
               unit="kJ/(m²·K)"
               note="reachable from inside"
-              title="Areal heat capacity of the internal face, per BS EN ISO 13786 — the figure SAP 10.3 uses for thermal mass. Lower than the total heat capacity because a daily cycle only reaches so far into the build-up."
+              title="Areal heat capacity of the internal face, per BS EN ISO 13786. This is the figure SAP 10.3 uses for thermal mass. It is lower than the total heat capacity because a daily cycle only reaches so far into the build-up."
             />
           </>
         )}
@@ -295,7 +295,7 @@ export function SummaryStrip({
 
         {partLCheck !== undefined && (
           <span className="strip-source">
-            {partLCheck.label} — {partLCheck.citation}. England, dwellings. A limiting
+            {partLCheck.label}, {partLCheck.citation}. England, dwellings. A limiting
             value is a maximum to clear, not a target to aim at.
           </span>
         )}
@@ -312,7 +312,7 @@ export function SummaryStrip({
             <li>
               <strong>A rating on the dynamic figures.</strong> The decrement factor, time
               shift and κ are calculated (BS EN ISO 13786), but what counts as a good value
-              depends on the building around them — a shaded north wall and a south-facing
+              depends on the building around them. A shaded north wall and a south-facing
               one with the same numbers are not the same problem. The standard publishes no
               scale, so neither do we.
             </li>

@@ -596,14 +596,14 @@ export function Layup3D({
       <figcaption>
         <strong>Drag to turn it.</strong> The layers are face to face with nothing between
         them, as built; what makes each one visible is that it is cut back a little further
-        than the one in front. A bridged layer is built the way it is built — members with
-        the layer's material packed between them — so the studs show in the cut rather than
-        being buried. A <strong>cavity is drawn as the gap it is</strong>: the air is left
+        than the one in front. A bridged layer is modelled the way it is built, with the
+        members and the layer's material packed between them, so the studs show in the cut
+        rather than being buried. A <strong>cavity is drawn as the gap it is</strong>: the air is left
         empty and you see through to the face behind it, while battens, studs or dabs
         crossing it stand in the opening. It is an indicator rather than a construction drawing: no junctions,
         fixings or detailing, and nothing in it feeds the calculation. Layers thinner than
         the drawing can show are given a minimum thickness.{' '}
-        <strong>Cross battens are not drawn yet</strong> — a second set of members running
+        <strong>Cross battens are not drawn yet.</strong> A second set of members running
         the other way is on the roadmap.
       </figcaption>
     </figure>

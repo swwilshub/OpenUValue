@@ -362,8 +362,8 @@ const STEPS: readonly Step[] = [
       <>
         <p>
           Layers run <strong>inside on the left, outside on the right</strong>, each drawn at its
-          real thickness. The hatching says what a layer is made of — coursing for masonry, a
-          soft wave for quilt insulation — and the same hatch appears beside the material in the
+          real thickness. The hatching says what a layer is made of: coursing for masonry, a
+          soft wave for quilt insulation. The same hatch appears beside the material in the
           list, so the drawing and the list read as one thing.
         </p>
         <p>
@@ -385,7 +385,7 @@ const STEPS: readonly Step[] = [
       <>
         <p>
           The line falls from the inside temperature to the outside one. Its{' '}
-          <strong>steepness is the whole story</strong>: it plunges through the insulation, which
+          <strong>steepness is what to read</strong>: it plunges through the insulation, which
           resists heat, and barely tilts through the brick, which does not.
         </p>
         <p>
@@ -408,7 +408,7 @@ const STEPS: readonly Step[] = [
         <p>
           Warm air holds more moisture than cold air. Cool a parcel of air far enough and it can
           no longer hold what it has, and the surplus becomes liquid. That temperature is the{' '}
-          <strong>dew point</strong> — here 9.3 °C, for air at 20 °C and 50 % humidity.
+          <strong>dew point</strong>, here 9.3 °C for air at 20 °C and 50 % humidity.
         </p>
         <p>
           Anywhere the temperature line dips into the tinted band, the construction is colder
@@ -430,7 +430,7 @@ const STEPS: readonly Step[] = [
         <p>
           The same idea applied to a solid brick wall, insulated on the <strong>inside</strong>{' '}
           with quilt and plasterboard and no vapour control layer. The insulation now keeps the
-          heat off the brick, so the brick is cold — and the junction between insulation and
+          heat off the brick, so the brick is cold, and the junction between insulation and
           brick sits far below the dew point.
         </p>
         <p>
@@ -439,8 +439,8 @@ const STEPS: readonly Step[] = [
           plasterboard together hold back about as much water vapour as a fifth of a metre of
           still air, so room air reaches the cold brick more or less unimpeded and gives up its
           moisture on it. Damp brick, rotting embedded joist ends, mould behind the lining. This
-          is <em>interstitial condensation</em>, and it is the failure this drawing exists to
-          make visible.
+          is <em>interstitial condensation</em>, and making it visible is what this drawing is
+          for.
         </p>
       </>
     ),
@@ -458,7 +458,7 @@ const STEPS: readonly Step[] = [
         <p>
           The same wall again, with one thing added: a sheet of polythene on the warm side
           of the insulation, <strong>0.2 mm thick</strong>. It is the hairline marked at the
-          top of the drawing — at this scale it is barely a line.
+          top of the drawing, where at this scale it is barely a line.
         </p>
         <p>
           Look at what did <em>not</em> change. The temperature line is in exactly the same
@@ -469,13 +469,13 @@ const STEPS: readonly Step[] = [
         <p>
           What changed is invisible on this drawing. Before the sheet, everything between the
           room and that cold junction added up to 0.23 m of equivalent still air. With it,
-          <strong> 20.2 m</strong> — about ninety times harder for vapour to cross. The
+          <strong> 20.2 m</strong>, about ninety times harder for vapour to cross. The
           moisture largely never arrives, so it cannot condense.
         </p>
         <p className="tour-caveat">
           This is exactly why OpenUValue calls its dew-point check a{' '}
           <strong>screening indicator</strong> rather than a verdict. Being colder than the
-          dew point is necessary for condensation but not sufficient — whether vapour gets
+          dew point is necessary for condensation but not sufficient. Whether vapour gets
           there is the other half, and judging that properly is a BS EN ISO 13788 calculation
           this tool does not yet do. The S<sub>d</sub> figures beside each layer are what you
           would weigh up by hand in the meantime.
@@ -496,15 +496,14 @@ const STEPS: readonly Step[] = [
           Move the insulation to the outside face and the brick sits on the warm side of it. The
           whole masonry wall now stays well above the dew point, and the cold part of the
           build-up is the insulation and render, which tolerate it. Nothing has to be kept dry
-          by a sheet of plastic that has to be installed perfectly and stay intact for decades:
-          the geometry does the work.
+          by a sheet of plastic that must be installed perfectly and stay intact for decades.
         </p>
         <p>
-          Same wall, same insulation, same weather — the order of the layers is what changed.
-          And here is the part worth remembering: <strong>both versions land at almost exactly
-          the same U-value</strong>, near 0.30 W/(m²·K). One of them quietly wets its brickwork
-          and the other does not. A U-value on its own cannot tell you which is which, and that
-          is why this drawing sits above the number rather than beside it.
+          Same wall, same insulation, same weather. The only thing that changed is the order
+          of the layers, and <strong>both versions land at almost exactly the same
+          U-value</strong>, near 0.30 W/(m²·K). One of them wets its brickwork and the other
+          does not. A U-value on its own cannot tell you which, and that is why this drawing
+          sits above the number rather than beside it.
         </p>
         <p>
           Drag a layer and watch the line move.

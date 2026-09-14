@@ -108,7 +108,7 @@ export function lowEmissivityAirLayerResistanceM2KPerW(
           'value-needs-verification',
           `A low-emissivity cavity thinner than ` +
             `${(LOW_EMISSIVITY_FULL_THICKNESS_M * 1000).toFixed(0)} mm has no published ` +
-            'resistance for this heat flow direction — BR 443 (2019) 4.7.2 tabulates the ' +
+            'resistance for this heat flow direction. BR 443 (2019) 4.7.2 tabulates the ' +
             'thin case for walls only. The ordinary high-emissivity resistance has been ' +
             'used instead, which under-states what the reflective surface is worth.',
           layerId,

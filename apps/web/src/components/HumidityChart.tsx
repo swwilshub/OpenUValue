@@ -138,7 +138,7 @@ export function HumidityChart({ layers, profile, path }: HumidityChartProps): JS
           className="mould-label"
           textAnchor="end"
         >
-          {MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT}% — mould threshold
+          {MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT}% mould threshold
         </text>
 
         <polyline points={line} className="humidity-line-shadow" />

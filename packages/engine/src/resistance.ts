@@ -75,7 +75,7 @@ function bridgedAirLayerWarnings(
         `or height). It has been calculated as a void, to ISO/DIS 6946 Annex D.4, which ` +
         `gives it slightly more resistance than a layer of the same thickness because ` +
         `its two faces see less of one another. It may still pass the test on height, ` +
-        `since a member running the full storey leaves a tall pocket — in which case a ` +
+        `since a member running the full storey leaves a tall pocket, in which case a ` +
         `layer's resistance would be the right one and this is the cautious answer.`,
       layerId,
     ),

@@ -72,9 +72,9 @@ export function LocationPanel({
 
       <p className="choice-lead">
         How much wind-driven rain the wall catches, which decides whether a cavity may be
-        filled. Read your zone off the map in Approved Document C and match the colour —
-        the bands are the same four. It changes no calculated figure here, only what the
-        build-up is allowed to be.
+        filled. Read your zone off the map in Approved Document C and match the colour,
+        because the bands are the same four. It changes no calculated figure here, only
+        what the build-up is allowed to be.
       </p>
 
       <div className="location-body">

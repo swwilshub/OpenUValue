@@ -194,7 +194,7 @@ export function HelpButton({
       type="button"
       className="help-button"
       onClick={() => onOpen(topicId)}
-      title={`What is this? — ${label}`}
+      title={`What is this? ${label}`}
       aria-label={`Explain: ${label}`}
     >
       ?

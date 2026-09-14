@@ -256,7 +256,7 @@ export function MoistureTab({
             <ul className="plane-list">
               {periods.planes.map((plane) => (
                 <li key={plane.boundaryIndex}>
-                  <strong>{plane.label}</strong> — collects{' '}
+                  <strong>{plane.label}</strong> collects{' '}
                   {plane.accumulatedKgPerM2.toFixed(2)} kg/m² at {plane.temperatureC.toFixed(1)}{' '}
                   °C
                   {plane.daysToDry !== undefined
@@ -285,8 +285,8 @@ export function MoistureTab({
           <p className="tour-caveat">
             So <em>where</em> a wet plane sits matters as much as how much arrives there.
             The back of a leaf that is built to get wet and drain is a different
-            proposition from the same rate against insulation or sheathing, which are not
-            — and the method cannot tell you which of those you are looking at. You can.
+            proposition from the same rate against insulation or sheathing, which are not.
+            The method cannot tell you which of those you are looking at. You can.
             {/* TODO(verify): the clause in BS EN ISO 13788 that lists what the method
             does not account for. See VERIFY.md row V28. */}
           </p>
@@ -300,9 +300,9 @@ export function MoistureTab({
             location. OpenUValue does not ship either: the season lengths, the drying
             weather and the limit you judge against are all things it cannot attribute to
             a clause, and inventing them would make a made-up number look like a verdict.
-            What is calculated here is the arithmetic — rate multiplied by duration, then
-            the net rate over the drying season applied to what the plane already held —
-            on the periods and conditions you set. That second period can add water as
+            What is calculated here is the arithmetic, on the periods and conditions you
+            set: rate multiplied by duration, then the net rate over the drying season
+            applied to what the plane already held. That second period can add water as
             well as remove it, and does whenever the conditions you give it still drive
             vapour outwards. The numbers are real; deciding what counts as too much is
             still yours.
@@ -339,7 +339,7 @@ export function MoistureTab({
             </p>
             <p className="footnote">
               Mould does not need condensation, only persistently damp air against a
-              surface — which is why it appears in cold corners and behind furniture first.
+              surface, which is why it appears in cold corners and behind furniture first.
               Switching the internal surface to <em>reduced air circulation</em> on the
               build-up tab is how to test those spots.
             </p>

@@ -543,7 +543,7 @@ export function LayerTable({
               )}
 
               {layer.kind === 'air' && (
-                <label className="symbol-label" title="Whether a surface facing the cavity is reflective — foil, usually. BR 443 (2019) 4.7.2.">
+                <label className="symbol-label" title="Whether a surface facing the cavity is reflective, foil for example. BR 443 (2019) 4.7.2.">
                   Surfaces
                   <select
                     value={layer.emissivity}
@@ -832,7 +832,7 @@ export function LayerTable({
                     ).toFixed(1)}
                     %, plus the 1% BR 443 adds for additional timbers ={' '}
                     <strong>{layer.bridgedPercent.toFixed(1)}%</strong> (BR 443 4.5). For a
-                    whole timber-frame wall BR 443 gives a flat default instead — pick one
+                    whole timber-frame wall BR 443 gives a flat default instead. Pick one
                     below, or switch to a percentage and type your own.
                   </p>
                 )}
@@ -850,7 +850,7 @@ export function LayerTable({
                             ? 'chip is-current'
                             : 'chip'
                         }
-                        title={`${preset.clause} — ${preset.note}`}
+                        title={`${preset.clause}. ${preset.note}`}
                         onClick={() =>
                           update(index, {
                             bridgeSizing: 'fraction',

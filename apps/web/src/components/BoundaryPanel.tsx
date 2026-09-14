@@ -19,9 +19,9 @@ import {
 import { HelpButton } from './guide/Guide.js';
 
 const DIRECTION_LABELS: Record<HeatFlowDirection, string> = {
-  horizontal: 'Horizontal — wall',
-  upward: 'Upward — roof or ceiling',
-  downward: 'Downward — floor',
+  horizontal: 'Horizontal, wall',
+  upward: 'Upward, roof or ceiling',
+  downward: 'Downward, floor',
 };
 
 export interface BoundaryPanelProps {
@@ -146,7 +146,7 @@ export function BoundaryPanel({
             </legend>
             <p className="choice-lead">
               Still air clings to the inside face of a wall in a thin film, and that film
-              insulates — on a wall it is worth about as much as 8 mm of plasterboard. Park
+              insulates. On a wall it is worth about as much as 8 mm of plasterboard. Park
               a sofa or a wardrobe against the wall and the room&rsquo;s air stops sweeping
               it away: the film thickens and the surface behind it runs colder. That is the
               only thing these two settings change.
@@ -182,7 +182,7 @@ export function BoundaryPanel({
             <strong>The damp and mould check ignores this setting.</strong> BS EN ISO 13788
             requires a fixed 0.25 m²K/W for that, which stands for the worst corner of the
             room, so the verdict is worked out at that figure whichever option is chosen
-            here — and on the coldest path through the wall. This control changes the
+            here, and on the coldest path through the wall. This control changes the
             U-value and the temperature line, nothing else.
           </p>
           {/* The reasoning is a click away rather than a wall of text by default. */}
@@ -249,7 +249,7 @@ export function BoundaryPanel({
                   disabled={!environment.supported}
                 >
                   {environment.label}
-                  {environment.supported ? '' : ' — not available'}
+                  {environment.supported ? '' : ' (not available)'}
                 </option>
               ))}
             </select>
@@ -310,8 +310,8 @@ export function BoundaryPanel({
         {selectedInternal?.departsFromIso6946 === true ? (
           <strong>
             Reduced air circulation raises R<sub>si</sub> above the BS EN ISO 6946 value, which
-            also raises the total resistance — so this U-value is a moisture-protection figure,
-            not a BR 443 U-value.
+            also raises the total resistance, so this U-value is a moisture-protection
+            figure rather than a BR 443 U-value.
           </strong>
         ) : (
           <>BS EN ISO 6946, adopted by BR 443.</>

@@ -94,7 +94,7 @@ export function ResultsPanel({
             >
               {AIR_GAP_LEVELS.map((level) => (
                 <option key={level.level} value={level.level} title={level.description}>
-                  {level.label} — ΔU {level.deltaUWPerM2K.toFixed(2)}
+                  {level.label}, ΔU {level.deltaUWPerM2K.toFixed(2)}
                 </option>
               ))}
             </select>
@@ -206,7 +206,7 @@ export function ResultsPanel({
               )}
               <p className="footnote">
                 χ comes from a BS EN ISO 10211 model or from the fixing manufacturer,
-                often in a BBA certificate — it is the one figure here that cannot be
+                often in a BBA certificate. It is the one figure here that cannot be
                 worked out from the build-up. The approximate route in BS EN ISO 6946
                 Annex F.3.2 is not implemented; see VERIFY.md.
               </p>
@@ -219,8 +219,8 @@ export function ResultsPanel({
             ) : corrections.isNegligible ? (
               <>
                 Total ΔU = {corrections.totalDeltaUWPerM2K.toFixed(4)} W/(m²·K), which is
-                under 3% of the U-value, so BS EN ISO 6946 permits omitting it — and it has
-                been omitted. It is shown here rather than lost.
+                under 3% of the U-value, so BS EN ISO 6946 permits omitting it, and it
+                has been omitted. It is shown here so that it is not lost.
               </>
             ) : (
               <>
@@ -319,7 +319,7 @@ export function ResultsPanel({
           The internal surface stays at{' '}
           {internalSurface.worstCaseTemperatureC.toFixed(1)} °C at worst,{' '}
           {/*
-            A margin, not a temperature, so it is a difference — and shown in °C for the
+            A margin, not a temperature, so it is a difference, and shown in °C for the
             same reason as everywhere else: the sentence already ends in °C, and it used
             to switch to K halfway through for the same quantity. See format.ts.
           */}
@@ -350,7 +350,7 @@ export function ResultsPanel({
           <ul>
             {coldNodes.map((node, index) => (
               <li key={`${node.label}-${index}`}>
-                <strong>{node.label}</strong> — worst case{' '}
+                <strong>{node.label}</strong>, worst case{' '}
                 {node.worstCaseTemperatureC.toFixed(1)} °C
                 {node.worstCasePathId !== 'n/a' && ` on the ${node.worstCasePathId} path`}
                 {node.cumulativeSdM > 0 && `, S`}
@@ -368,8 +368,8 @@ export function ResultsPanel({
         there at saturation depends on the vapour resistance inboard of it, shown above
         as S<sub>d</sub>. A well-insulated element has most of its thickness below the
         internal dew point by design, so expect interfaces to be listed here that a
-        BS EN ISO 13788 or Glaser calculation would clear. That calculation is Phase 3
-        — see ROADMAP.md. The internal surface above is the one place where the
+        BS EN ISO 13788 or Glaser calculation would clear. That calculation is Phase 3;
+        see ROADMAP.md. The internal surface above is the one place where the
         comparison is the real criterion, because nothing impedes vapour reaching it.
       </p>
       <p className="footnote">

@@ -84,9 +84,9 @@ export function EnergyTab({
       <section className="panel">
         <h2>Energy and carbon</h2>
         <p className="verdict verdict-risk">
-          This build-up has no U-value — it is outside the scope of the combined method —
-          so there is nothing to put a heating cost against. Fix that on the build-up tab
-          and this fills in.
+          This build-up has no U-value, because it is outside the scope of the combined
+          method, so there is nothing to put a heating cost against. Fix that on the
+          build-up tab and this fills in.
         </p>
       </section>
     );
@@ -205,7 +205,7 @@ export function EnergyTab({
           label="Cost"
           value={`£${cost.costGBP.toFixed(2)}`}
           unit="/m²"
-          note={`at ${pricePerKWh} p/kWh — a price you should set yourself`}
+          note={`at ${pricePerKWh} p/kWh, a price you should set yourself`}
         />
       </div>
 
@@ -234,7 +234,7 @@ export function EnergyTab({
           <strong>This is heat lost through the fabric, not the heating demand.</strong>{' '}
           People, cooking, appliances and sunlight through the windows all put heat into a
           building, and that heat meets part of the loss. What a boiler or heat pump
-          actually has to supply is therefore less than the figure above — how much less
+          actually has to supply is therefore less than the figure above. How much less
           depends on the whole dwelling, its windows and how it is occupied, which is a
           different calculation from this one and not one an element on its own can
           answer.
@@ -250,7 +250,7 @@ export function EnergyTab({
           <strong>The prices are stale on purpose.</strong> SAP&rsquo;s Table 12 prices were
           set in 2021 and UK energy prices have moved a very long way since, so they are a
           starting point to overwrite rather than an answer. The carbon and primary energy
-          factors are policy figures and steadier — but electricity&rsquo;s carbon factor
+          factors are policy figures and steadier. Electricity&rsquo;s carbon factor still
           falls as the grid decarbonises, so a comparison made today flatters gas over the
           life of a building.
         </p>

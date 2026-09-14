@@ -155,14 +155,15 @@ export function CavityPicker({ layer, direction, onApply }: CavityPickerProps): 
       {layer.wasCavityGuessed === true && current !== undefined && (
         <p className="cavity-guessed">
           <strong>Guessed from the layers either side.</strong> {current.where} Check it
-          against what you are actually building — picking any option above settles it and
+          against what you are actually building. Picking any option above settles it and
           this note goes away.
         </p>
       )}
       {current === undefined && (
         <p className="cavity-custom">
-          This cavity does not match any of the above — its ventilation, opening area or
-          emissivity has been set by hand. Picking one of these will overwrite that.
+          This cavity does not match any of the above, because its ventilation, opening
+          area or emissivity has been set by hand. Picking one of these will overwrite
+          that.
         </p>
       )}
       {/*
@@ -171,7 +172,7 @@ export function CavityPicker({ layer, direction, onApply }: CavityPickerProps): 
         */}
       <p className="cavity-note">
         <strong>A full-fill cavity is not a cavity.</strong> If insulation fills the gap
-        wall to wall there is no airspace left to classify — enter the insulation as a
+        wall to wall there is no airspace left to classify. Enter the insulation as a
         material layer and do not add a cavity at all. A cavity layer belongs here only
         where there is air.
       </p>

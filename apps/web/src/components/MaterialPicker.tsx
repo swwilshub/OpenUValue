@@ -55,7 +55,7 @@ const SOURCE_STATUS_TEXT: Readonly<Record<SourceStatus, string>> = {
   cited: 'Read from the standard named below, at the clause named below.',
   evidenced:
     'Assumed. This is the conventional value and every public source consulted agrees ' +
-    'on it, but nobody has read the governing clause — so treat it as an assumption ' +
+    'on it, but nobody has read the governing clause, so treat it as an assumption ' +
     'that is expected to hold, not as a checked figure. Good enough to model with; ' +
     'not good enough to submit.',
   partial: 'Some values are attributed and some are not. The detail below says which.',

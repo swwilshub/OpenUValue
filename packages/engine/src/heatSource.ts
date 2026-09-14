@@ -77,7 +77,7 @@ export const HEAT_SOURCE_PRESETS: readonly {
     id: 'heat-pump-air',
     label: 'Air source heat pump',
     source: { fuelId: 'electricity', efficiency: 3.0 },
-    note: 'A seasonal coefficient of performance of 3 — it moves three units of heat for each unit of electricity. A well-designed system at low flow temperatures does better; one pushed to run radiators hot does worse.',
+    note: 'A seasonal coefficient of performance of 3, so it moves three units of heat for each unit of electricity. A well-designed system at low flow temperatures does better; one pushed to run radiators hot does worse.',
   },
   {
     id: 'oil-boiler',

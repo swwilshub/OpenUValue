@@ -446,7 +446,7 @@ export function App(): JSX.Element {
 
       <p className="phase-banner">
         <strong>Still being checked.</strong> Material values and several clause
-        references still need checking against printed standards — see{' '}
+        references still need checking against printed standards; see{' '}
         <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. The mechanical
         fastener correction covers BR 443's detailed route, where you supply a point
         thermal transmittance; its approximate route is not implemented.
@@ -704,7 +704,7 @@ export function App(): JSX.Element {
 
       <footer className="app-footer">
         <p>
-          Open source, MIT licensed. Runs entirely in your browser — the build-up is
+          Open source, MIT licensed. Runs entirely in your browser. The build-up is
           encoded in the address bar and nothing is sent anywhere.
         </p>
         <p>

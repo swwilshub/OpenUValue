@@ -66,7 +66,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
               here.
             </p>
             <p>
-              The hatching says what a layer is made of — coursing for masonry, a soft wave for
+              The hatching says what a layer is made of: coursing for masonry, a soft wave for
               quilt insulation, a wood grain for timber. The same hatch appears beside the
               material in the picker, so the list and the drawing read as one thing.
             </p>
@@ -86,7 +86,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Those are the <strong>surface resistances</strong> — the thin films of still air
+              Those are the <strong>surface resistances</strong>, the thin films of still air
               that cling to each face of a wall. They are real resistance: the inside film is
               worth about as much as 5 mm of insulation, and the calculation would be wrong
               without them.
@@ -110,17 +110,18 @@ export const CHAPTERS: readonly GuideChapter[] = [
               turn with the pointer. The layers sit <strong>face to face with nothing
               between them</strong>, because that is how they get built; what makes each
               one visible is that it is cut back a little further than the one in front,
-              the way a cutaway drawing has always worked — material removed, not moved.
+              the way a cutaway drawing has always worked, by removing material rather than
+              moving it.
             </p>
             <p>
               A bridged layer is modelled as it is built: members with the layer's material
-              packed between them. That is what lets you see a stud at all — sealed inside
-              one solid slab it would be invisible — and it is also the truth of the
-              construction.
+              packed between them. That is what lets you see a stud at all, since sealed
+              inside one solid slab it would be invisible, and it is also how the wall is
+              actually built.
             </p>
             <p>
               <strong>It is an indicator, not a drawing.</strong> No junctions, fixings or
-              detailing, and nothing in it feeds the calculation — the U-value comes from
+              detailing, and nothing in it feeds the calculation. The U-value comes from
               the layer table either way. Thicknesses are to scale against each other,
               except that the very thinnest get a minimum so a vapour barrier does not
               vanish. Click a layer or a line in the list to pick it out; the selection
@@ -136,7 +137,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Pick up any layer in the drawing and it comes with you — at its real
+              Pick up any layer in the drawing and it comes with you at its real
               thickness, so you are moving the material rather than a marker for it. The
               rest of the build-up opens a gap where it will land. The same thing works
               from the handle in the layer list, if you would rather work there.
@@ -162,7 +163,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Every layer has a grip on its <strong>outer edge</strong> — the one further
+              Every layer has a grip on its <strong>outer edge</strong>, the one further
               from the room. Drag it and the layer gets thicker or thinner, in half
               millimetres, with the U-value and everything downstream of it following as
               you go. The thickness box in the layer list is the same number typed instead
@@ -174,7 +175,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               The drawing normally scales so the build-up fills the width, which would make
-              a growing layer push its own edge out from under your pointer — you would be
+              a growing layer push its own edge out from under your pointer, leaving you
               chasing the grip as it ran away. The scale is therefore held still for the
               length of the drag, so the edge goes exactly where you put it, and the
               drawing refits when you let go.
@@ -202,7 +203,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <>
             <p>
               The line falls from the inside temperature to the outside one, and its{' '}
-              <strong>steepness is the whole story</strong>. It plunges through insulation, which
+              <strong>steepness is what to read</strong>. It plunges through insulation, which
               resists heat, and barely tilts through brick, which does not.
             </p>
             <p>
@@ -232,8 +233,9 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               <strong>Cold is not the same as wet.</strong> An interface only collects water if
               vapour actually reaches it at saturation, and the layers on the warm side may well
-              hold enough of it back. So being in the tinted band is not by itself a fault — most
-              of the thickness of a well-insulated element is below the dew point by design. The
+              hold enough of it back. Being in the tinted band is therefore not by itself a
+              fault, and most of the thickness of a well-insulated element is below the dew
+              point by design. The
               drawing marks the planes where water really does form, with a drop whose area is
               proportional to how much, and the notes underneath say what is happening at each
               marked interface.
@@ -254,7 +256,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               It changes the picture only. The condensation verdict is always worked out for
-              every slice and the worst one reported, whichever you are looking at — so you
+              every slice and the worst one reported, whichever you are looking at, so you
               cannot hide a problem by changing the view.
             </p>
           </>
@@ -282,7 +284,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               The note underneath is the limiting value from Approved Document L, and the card
               turns green or red against it. That limit is a <em>maximum to clear</em>, not a
-              target to aim at — the document says so itself.
+              target to aim at, and the document says so itself.
             </p>
           </>
         ),
@@ -299,7 +301,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
               reach 0.18; a renovated one has its own figure again.
             </p>
             <p>
-              Pick the one that matches your project. Nothing else on the page changes — only
+              Pick the one that matches your project. Nothing else on the page changes, only
               what the U-value is being measured against. England and dwellings only; Wales,
               Scotland and Northern Ireland set their own.
             </p>
@@ -313,7 +315,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Thickness is the sum of the layers — the number that decides whether the build-up
+              Thickness is the sum of the layers, and it tells you whether the build-up
               fits the space you have. Mass is the dry weight of a square metre of it.
             </p>
             <p>
@@ -337,7 +339,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               <strong>κ</strong> further along the strip is the part a <em>daily</em> cycle can
               actually reach. A 24-hour swing only penetrates a certain distance into a material
-              — roughly 100 mm for masonry — so mass buried deeper contributes almost nothing.
+              of around 100 mm for masonry, so mass buried deeper contributes almost nothing.
               That is why the two numbers can differ by a factor of ten, and why a very thick
               wall is not proportionally better at riding out a hot day.
             </p>
@@ -374,7 +376,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
               That air is always damper than the room: same moisture, colder air.
             </p>
             <p>
-              At 80 % surface humidity mould will grow, and the card turns red — long before any
+              At 80 % surface humidity mould will grow, and the card turns red, long before any
               liquid water appears. This is why mould shows up in cold corners and behind
               wardrobes first.
             </p>
@@ -389,7 +391,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <p>
             Whether water is forming <em>inside</em> the build-up under the conditions set on the
             Conditions box, and if so how fast. “None” means the vapour stays below saturation
-            all the way through. Any number here is worth understanding before you build —
+            all the way through. Any number here is worth understanding before you build, so
             follow it to the Moisture tab, which shows where and whether it dries out again.
           </p>
         ),
@@ -402,7 +404,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <>
             <p>
               The three summer numbers. <strong>Decrement</strong> is the fraction of an outdoor
-              temperature swing that reaches the inside surface — 0.42 means 42 % gets through.{' '}
+              temperature swing that reaches the inside surface, so 0.42 means 42 % gets
+              through.{' '}
               <strong>Time shift</strong> is how many hours later it arrives.{' '}
               <strong>κᵢ</strong> is how much heat the inside face can soak up and give back.
             </p>
@@ -449,7 +452,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <p>
             A new layer lands at the outside end and can be dragged wherever you want it. Add a{' '}
-            <strong>cavity</strong> instead when the gap is air rather than a product — an air
+            <strong>cavity</strong> instead when the gap is air rather than a product. An air
             layer is handled differently, because air insulates by not moving and stops doing so
             once it can circulate.
           </p>
@@ -468,15 +471,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               Choosing a material fills in λ, μ, density and specific heat together. Density and
-              specific heat are not editable — they never affect a U-value, only mass and the
-              summer figures.
+              specific heat are not editable, because they never affect a U-value, only mass
+              and the summer figures.
             </p>
           </>
         ),
       },
       {
         id: 'layer-lambda',
-        title: 'λ — thermal conductivity',
+        title: 'λ, thermal conductivity',
         figure: <ResistanceFigure />,
         body: (
           <>
@@ -487,15 +490,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               The layer's resistance is thickness ÷ λ, which is why 100 mm of quilt beats a metre
-              of brick. Typing your own λ is allowed — it detaches the layer from the catalogue
-              entry, since it is no longer that product.
+              of brick. Typing your own λ is allowed, and it detaches the layer from the
+              catalogue entry, since it is no longer that product.
             </p>
           </>
         ),
       },
       {
         id: 'layer-mu',
-        title: 'μ and δ — vapour',
+        title: 'μ and δ, vapour',
         figure: <VapourFigure barrier />,
         body: (
           <>
@@ -505,7 +508,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
               10; a polythene sheet is around 100 000.
             </p>
             <p>
-              δ beside it is the same property the other way up — permeability rather than
+              δ beside it is the same property the other way up: permeability rather than
               resistance. The layer's S<sub>d</sub> is μ × thickness, which is how a 0.2 mm sheet
               can out-resist a metre of masonry.
             </p>
@@ -526,14 +529,14 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               An asterisk means <strong>assumed</strong>: the conventional value for that material,
               which every public source we could reach agrees on, but which nobody here has read in
-              the standard that governs it. It is believed right and it is not verified — good
+              the standard that governs it. It is believed right and it is not verified: good
               enough to model with, not good enough to submit. Most vapour resistance factors are
               in this state, because the tables that would settle them are not published free.
             </p>
             <p>
-              Hover for the source. This is the same honesty as VERIFY.md, brought to the point of
-              choosing — an unattributed figure should never pass for a checked one, and an assumed
-              one should never pass for a read one.
+              Hover for the source. This is what VERIFY.md records, shown where you choose
+              rather than in a file. An unattributed figure should never pass for a checked
+              one, and an assumed one should never pass for a read one.
             </p>
           </>
         ),
@@ -545,7 +548,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Insulation between timbers is not one material — it is quilt for most of the area
+              Insulation between timbers is not one material. It is quilt for most of the area
               and wood where the studs are, and wood conducts about four times better. Ignoring
               them can under-state a wall's U-value by a fifth.
             </p>
@@ -554,8 +557,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
               plaster dabs, or a stud through a service void are the same situation: the
               layer is air over most of its area and something more conductive where the
               members are. BR 443 is explicit that the pockets left between them still
-              count as air layers — it names the space between battens in a dry-lined wall
-              as its own example — so the air keeps a cavity&rsquo;s resistance and the
+              count as air layers, and names the space between battens in a dry-lined wall
+              as its own example, so the air keeps a cavity&rsquo;s resistance and the
               members carry their own. Two presets set the standard&rsquo;s own figures:
               dabs at 20 % of the face, and 47 mm battens at 600 mm centres, whose 11.8 %
               is more than 47 ÷ 600 because the top and bottom rails count as well.
@@ -563,7 +566,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               That only holds while the pockets stay shallow relative to their width. Once
               a cavity is deep and the members are close, the space stops being an air
-              layer and becomes an air <em>void</em>, which takes a different resistance —
+              layer and becomes an air <em>void</em>, which takes a different resistance,
               so the calculation says so rather than carrying on quietly.
             </p>
             <p>
@@ -578,14 +581,14 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               Once a width and a spacing are set, the members appear in the cross-section
               itself, inside the layer they bridge, at their true width and pitch. The
-              height of the drawing is a length of wall — the caption says how much — so
+              height of the drawing is a length of wall, and the caption says how much, so
               the spacing you can see is the spacing you typed. The temperature line is an
               overlay on that section, read against the degrees axis on the right: a
               member drawn level with a temperature does not mean anything by it.
             </p>
             <p>
               Or enter a fraction directly if you are using a convention. BR 443 publishes
-              defaults — 15 % for a timber-framed wall — which is more than width ÷ spacing,
+              defaults, 15 % for a timber-framed wall, which is more than width ÷ spacing
               because plates, lintels and doubled studs at openings are timber too. A layer
               given that way has no geometry to draw, so it carries its percentage on its
               label but no members in the drawing.
@@ -600,8 +603,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <p>
             What that layer contributes, worked out as you type. <strong>R</strong> is its thermal
-            resistance in m²K/W — thickness ÷ λ. <strong>S<sub>d</sub></strong> is its vapour
-            resistance as an equivalent depth of air — μ × thickness. Together they tell you
+            resistance in m²K/W, or thickness ÷ λ. <strong>S<sub>d</sub></strong> is its vapour
+            resistance as an equivalent depth of air, or μ × thickness. Together they tell you
             whether a layer is earning its place.
           </p>
         ),
@@ -615,7 +618,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               An air cavity insulates because the air in it is still. Let outside air wash through
               and it stops: an <strong>unventilated</strong> cavity carries its full resistance, a{' '}
-              <strong>well-ventilated</strong> one carries none — and everything outside it is
+              <strong>well-ventilated</strong> one carries none, and everything outside it is
               disregarded too, because it is at outdoor temperature. The openings figure, in mm²
               per metre, is what decides which of the three classes applies.
             </p>
@@ -623,14 +626,14 @@ export const CHAPTERS: readonly GuideChapter[] = [
               <strong>Cavity type</strong> sets all of that at once for the cases that actually
               come up. The timber frame one is worth knowing about: a timber framed wall has to be
               drained and vented, and the NHBC requirement of an open perpend every 1.2 m comes to
-              roughly 580 mm² per metre — over the 500 mm² threshold, so that cavity is{' '}
+              roughly 580 mm² per metre, over the 500 mm² threshold, so that cavity is{' '}
               <em>slightly</em> ventilated, not unventilated, even though nobody set out to
               ventilate it.
             </p>
             <p>
               <strong>Surfaces</strong> is about radiation. Most of the heat crossing a still air
-              gap crosses it as radiation, so a reflective face — foil on the back of a board —
-              roughly doubles the cavity's resistance: 0.44 m²K/W in a wall against 0.18. It only
+              gap crosses it as radiation, so a reflective face such as foil on the back of a
+              board roughly doubles the cavity's resistance: 0.44 m²K/W in a wall against 0.18. It only
               counts where the foil actually faces the air space; foil buried between two solid
               layers does nothing at all. Below 25 mm the benefit falls away, and for a thin
               reflective cavity in a roof or floor there is no published figure, so the tool uses
@@ -654,7 +657,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <p>
             Heat rises, so the direction it is travelling changes the surface resistances and the
-            behaviour of any cavity. Upward is a roof, downward a floor, horizontal a wall —
+            behaviour of any cavity. Upward is a roof, downward a floor, horizontal a wall.
             BS EN ISO 6946 counts anything within 30° of horizontal as a wall, so a steeply
             pitched roof uses the wall figures. Changing this also changes which Part L limit the
             summary strip measures you against.
@@ -669,8 +672,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <p>
             These set the warm end of the temperature line and, with it, the dew point. Humidity
             matters more than people expect: at 20 °C, air at 40 % reaches its dew point at 6 °C,
-            but at 65 % it gets there at 13 °C — a difference that decides whether a wall
-            condenses. A steamy bathroom is a different building from a dry living room.
+            but at 65 % it gets there at 13 °C, which can be the difference between a wall
+            that condenses and one that does not. A steamy bathroom is a different building from a dry living room.
           </p>
         ),
       },
@@ -682,12 +685,12 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <>
             <p>
               The standard surface resistance assumes air can move freely across the wall. Behind
-              a wardrobe, in a corner, or in a niche, it cannot — so the surface runs colder than
+              a wardrobe, in a corner, or in a niche, it cannot, so the surface runs colder than
               the room and the air against it is damper.
             </p>
             <p>
-              Switch to <strong>reduced</strong> to test those spots. It is the honest setting for
-              a mould question, because mould appears exactly where the furniture is.
+              Switch to <strong>reduced</strong> to test those spots. It is the setting to use
+              for a mould question, because mould appears exactly where the furniture is.
             </p>
           </>
         ),
@@ -705,9 +708,9 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               Rear-ventilated cladding is a special case: the cavity is at outdoor temperature, so
-              the outer surface behaves like an indoor one. Ground is listed but not supported —
-              it needs BS EN ISO 13370, which this tool does not do, so it refuses rather than
-              guessing.
+              the outer surface behaves like an indoor one. Ground is listed but not supported,
+              because it needs BS EN ISO 13370, which this tool does not do, so it refuses rather
+              than guessing.
             </p>
           </>
         ),
@@ -720,7 +723,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <p>
             Sets both sides back to ordinary starting values for the environment you have chosen,
             so you can get back to a sensible baseline after experimenting. It changes only the
-            temperatures and humidities — never your layers.
+            temperatures and humidities, never your layers.
           </p>
         ),
       },
@@ -733,15 +736,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               Wind-driven rain is graded in four bands, from sheltered to very severe, by how much
               water a spell of weather throws at a square metre of wall. It has its own box because
-              it is not an inside or an outside condition and it changes no calculated figure —
-              what it changes is which constructions are allowed. A fully filled cavity in the
+              it is not an inside or an outside condition and it changes no calculated figure.
+              What it changes is which constructions are allowed. A fully filled cavity in the
               worst band is a way of bridging rain across to the inner leaf, and the tool says so
               rather than quietly calculating it.
             </p>
             <p>
               Read your band off the map in Approved Document C and match the colour; the four
               bands here are the same four. The little grid map beside them is <em>not</em> that
-              map — it is a deliberately coarse picture of the general pattern, western coasts and
+              map. It is a deliberately coarse picture of the general pattern: western coasts and
               high ground wet, central and eastern England dry. Clicking it suggests a band and
               says that it guessed. Boundaries are geography, not a table, and a building a mile
               the wrong side of one deserves better than our redrawing of it.
@@ -763,7 +766,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <GaugeFigure value={0.26} limit={0.26} />,
         body: (
           <p>
-            Reported to two significant figures, which is what BS EN ISO 6946 asks for — a wall
+            Reported to two significant figures, which is what BS EN ISO 6946 asks for. A wall
             calculated to 0.2583 is not known to four digits, and printing them would imply it
             was. The full-precision figure is used everywhere internally; only the display is
             rounded.
@@ -784,7 +787,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               Level 1 is the default, because the standard says to assume it unless the
               conditions for level 0 are met. If the corrections <em>together</em> come to
-              under 3 % of the U-value they may be left off — and they are, but the figures
+              under 3 % of the U-value they may be left off, and they are, but the figures
               are still shown so you can see what was dropped. The 3 % test is against the
               sum, so air gaps and fasteners are judged jointly, never one at a time.
             </p>
@@ -806,7 +809,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               The one figure you have to supply is <strong>χ</strong>, the point thermal
               transmittance of a single fastener in W/K. It cannot be worked out from the
-              build-up — it comes from a BS EN ISO 10211 model or from the fixing
+              build-up. It comes from a BS EN ISO 10211 model or from the fixing
               manufacturer, usually in a BBA certificate. Multiply it by the number of
               fasteners per square metre and that is the correction.
             </p>
@@ -826,7 +829,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <ResistanceFigure />,
         body: (
           <p>
-            Every layer's resistance, plus the two surface films, adding up to the total — and the
+            Every layer's resistance, plus the two surface films, adding up to the total. The
             U-value is one divided by that total. This is the table to scan when a U-value is
             worse than expected: it is almost always one layer doing nothing.
           </p>
@@ -845,8 +848,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               If those two limits are more than 1.5 times apart the bracket is too loose to be
-              useful, and <strong>no U-value is reported at all</strong> — the element needs proper
-              numerical modelling instead. Metal through the insulation is excluded outright for
+              useful, and <strong>no U-value is reported at all</strong>, because the element
+              needs proper numerical modelling instead. Metal through the insulation is excluded outright for
               the same reason.
             </p>
           </>
@@ -858,7 +861,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <SurfaceConditionFigure />,
         body: (
           <p>
-            Whether the room-side face falls below the dew point of the room air — the wet-window
+            Whether the room-side face falls below the dew point of the room air: the wet-window
             failure, on a wall. It is the most visible kind and the least serious, because you can
             see it happening. The mould threshold bites well before it.
           </p>
@@ -883,10 +886,10 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <CombinedFigure />,
         body: (
           <p>
-            Where the calculation has hit the edge of what the method covers — a cavity outside the
+            Where the calculation has hit the edge of what the method covers: a cavity outside the
             tabulated range, an interpolation, an in-house convention, a correction applied
-            unscaled. They are shown rather than swallowed. A tool that silently degrades is worse
-            than one that admits it cannot answer.
+            unscaled. They are shown rather than hidden, so you can see where the method
+            stopped applying cleanly.
           </p>
         ),
       },
@@ -906,7 +909,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <p>
             The share of an outdoor temperature swing that makes it to the inside surface over 24
             hours. 0.42 means a 10 °C swing outside arrives as 4.2 °C inside. Lower is calmer
-            indoors — and it is mass, not insulation, that does most of the work.
+            indoors, and it is mass, not insulation, that does most of the work.
           </p>
         ),
       },
@@ -961,8 +964,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <p>
             BS EN ISO 13786 is written for layers that run right across an element. A bridged one is
             not that, so each section is calculated separately and shown with its area share rather
-            than being averaged into a single number — timber stores far more heat than the
-            insulation it displaces, and averaging that away would hide the point.
+            than being averaged into a single number. Timber stores far more heat than the
+            insulation it displaces, and averaging that away would hide it.
           </p>
         ),
       },
@@ -1007,7 +1010,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               The dots are how much vapour pressure each interface could hold at its temperature.
               The straight line is what the vapour actually does: it takes the most direct route it
-              can without ever exceeding what the material can hold — like a string pulled taut
+              can without ever exceeding what the material can hold, like a string pulled taut
               underneath the dots.
             </p>
             <p>
@@ -1031,7 +1034,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               A build-up that gains a little every year and never gives it back is the failure that
-              rots a wall slowly rather than quickly — which is much worse, because nobody notices
+              rots a wall slowly rather than quickly, which is much worse, because nobody notices
               for a decade.
             </p>
           </>
@@ -1045,7 +1048,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <p>
             A formal assessment compares the accumulated water against a permitted maximum, using
             seasons and weather taken from a design climate for the location. OpenUValue ships
-            none of those, because it cannot attribute them to a clause — so it asks you for them
+            none of those, because it cannot attribute them to a clause, so it asks you for them
             instead and gives no verdict. The arithmetic is real; deciding what counts as too much
             stays with whoever can cite the limit.
           </p>
@@ -1057,7 +1060,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <SurfaceConditionFigure />,
         body: (
           <p>
-            Mould needs neither condensation nor liquid water — only air that stays damp against a
+            Mould needs neither condensation nor liquid water, only air that stays damp against a
             surface, which happens at about 80 % surface humidity. Since a cold surface makes the
             air against it damper than the room, this bites long before anything looks wet, and it
             bites first in corners and behind furniture.
@@ -1081,7 +1084,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               A U-value is a rate: watts per square metre for every degree of difference. Multiply
               it by how cold it actually gets where the building is, month by month, and you get
-              something you can spend — kilowatt-hours a year for each square metre of the
+              something you can spend: kilowatt-hours a year for each square metre of the
               element. Months warm enough not to need heating are left out entirely.
             </p>
             <p>
@@ -1134,8 +1137,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
           <>
             <p>
               The entire build-up is encoded in the page address. Copy the link and whoever opens
-              it sees exactly your wall — no account, no upload, no server. The link <em>is</em> the
-              file.
+              it sees exactly your wall, with no account, no upload and no server. The link{' '}
+              <em>is</em> the file.
             </p>
             <p>
               Bookmark variants to compare them. An old link still opens after the tool has
@@ -1150,7 +1153,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <LayersFigure />,
         body: (
           <p>
-            Two starting points written for this tool — a filled-cavity masonry wall and a timber
+            Two starting points written for this tool: a filled-cavity masonry wall and a timber
             frame wall. They replace whatever is on screen, so copy your link first if you want to
             come back to it. Neither is taken from anyone else's example library.
           </p>

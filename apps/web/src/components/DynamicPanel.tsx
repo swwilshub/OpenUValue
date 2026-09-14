@@ -35,8 +35,8 @@ export function DynamicPanel({ dynamic, onOpenGuide }: DynamicPanelProps): JSX.E
       </h2>
       <p className="footnote">
         How the build-up handles a temperature that swings over {hours} hours, rather than
-        one held steady. Two walls with the same U-value can be far apart here — it is the
-        mass, and where in the build-up it sits, that decides it.
+        one held steady. Two walls with the same U-value can be far apart here, because
+        what counts is the mass and where in the build-up it sits.
       </p>
 
       <dl className="dynamic-grid">
@@ -109,7 +109,7 @@ export function DynamicPanel({ dynamic, onOpenGuide }: DynamicPanelProps): JSX.E
           <p className="footnote">
             BS EN ISO 13786 is a method for layers that run right across the element. This
             one is bridged, so each section is calculated on its own and the figures above
-            are the section between the members — timber stores far more heat than the
+            are the section between the members. Timber stores far more heat than the
             insulation it displaces, so the two differ.
           </p>
           <table className="dynamic-table">
@@ -158,8 +158,8 @@ export function DynamicPanel({ dynamic, onOpenGuide }: DynamicPanelProps): JSX.E
           layer becomes a 2×2 complex matrix relating temperature and heat flow at its two
           faces; multiplying them in order gives the element, and the four figures above
           are read off the result. The scale that matters is the <em>periodic penetration
-          depth</em> — how far into a material a {hours}-hour cycle reaches, which is
-          around 100 mm for masonry. Mass buried deeper than that contributes almost
+          depth</em>, which is how far into a material a {hours}-hour cycle reaches. For
+          masonry that is around 100 mm. Mass buried deeper than that contributes almost
           nothing to the daily cycle, which is why a very thick wall is not proportionally
           better at damping one. OpenUValue derives the layer matrix from the heat
           equation rather than transcribing it, and the tests check it against the

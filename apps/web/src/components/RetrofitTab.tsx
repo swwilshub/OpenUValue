@@ -135,7 +135,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
           </ul>
           {everythingTicked && (
             <p className="footnote">
-              Every layer is ticked, which leaves no wall to compare against — leave at
+              Every layer is ticked, which leaves no wall to compare against. Leave at
               least one in place.
             </p>
           )}
@@ -241,7 +241,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
                     {money.format(assessment.savedCO2KgPerYear)}{' '}
                     <span className="energy-figure-unit">kg CO₂e/year</span>
                   </strong>
-                  <em>operational only — not the carbon spent making the materials</em>
+                  <em>operational only, not the carbon spent making the materials</em>
                 </div>
               </div>
             </>
@@ -326,7 +326,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
             <p className="tour-caveat">
               <strong>The carbon here is operational only.</strong> Making the insulation
               cost carbon and money before any of it was saved, and that debt has its own
-              payback — usually a short one for insulation, but this tool cannot tell you
+              payback, usually a short one for insulation. This tool cannot tell you,
               because it ships no embodied-carbon data and will not invent any.
             </p>
             <p className="tour-caveat">
