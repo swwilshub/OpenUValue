@@ -16,6 +16,7 @@ import {
   condensationMarkers,
 } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
+import { LocationPanel } from './components/LocationPanel.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
 import { EnergyTab } from './components/EnergyTab.js';
@@ -659,11 +660,6 @@ export function App(): JSX.Element {
               heatFlowDirection={state.heatFlowDirection}
               conditions={state.conditions}
               internalSurfaceCondition={state.internalSurfaceCondition}
-              exposureZoneId={state.exposureZoneId}
-              onExposureZoneChange={(exposureZoneId) =>
-                setState((current) => ({ ...current, exposureZoneId }))
-              }
-              layers={state.layers}
               externalEnvironmentKind={state.externalEnvironment}
               result={result}
               onDirectionChange={setDirection}
@@ -672,6 +668,15 @@ export function App(): JSX.Element {
               onExternalEnvironmentChange={setExternalEnvironment}
             />
           )}
+
+          <LocationPanel
+            onOpenGuide={openGuide}
+            zoneId={state.exposureZoneId}
+            onChange={(exposureZoneId) =>
+              setState((current) => ({ ...current, exposureZoneId }))
+            }
+            layers={state.layers}
+          />
         </div>
 
         <div className="column-right">

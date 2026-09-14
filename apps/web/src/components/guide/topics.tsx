@@ -713,27 +713,6 @@ export const CHAPTERS: readonly GuideChapter[] = [
         ),
       },
       {
-        id: 'conditions-exposure',
-        title: 'How exposed the wall is to driven rain',
-        figure: <EnvironmentFigure />,
-        body: (
-          <>
-            <p>
-              Wind-driven rain is graded in four bands, from sheltered to very severe, by how much
-              water a spell of weather throws at a square metre of wall. Pick the colour that
-              matches where the building is rather than hunting for an exact boundary: the bands
-              are wide, and a building on a hill or facing the prevailing wind sits worse than its
-              neighbours whatever the map says.
-            </p>
-            <p>
-              It changes no number here. What it changes is which constructions are sensible: a
-              fully filled cavity in the worst band is a way of bridging rain across to the inner
-              leaf, and the tool says so rather than quietly calculating it.
-            </p>
-          </>
-        ),
-      },
-      {
         id: 'conditions-defaults',
         title: 'The “common defaults” button',
         figure: <EnvironmentFigure />,
@@ -743,6 +722,31 @@ export const CHAPTERS: readonly GuideChapter[] = [
             so you can get back to a sensible baseline after experimenting. It changes only the
             temperatures and humidities — never your layers.
           </p>
+        ),
+      },
+      {
+        id: 'conditions-exposure',
+        title: 'The Location box: wind-driven rain',
+        figure: <EnvironmentFigure />,
+        body: (
+          <>
+            <p>
+              Wind-driven rain is graded in four bands, from sheltered to very severe, by how much
+              water a spell of weather throws at a square metre of wall. It has its own box because
+              it is not an inside or an outside condition and it changes no calculated figure —
+              what it changes is which constructions are allowed. A fully filled cavity in the
+              worst band is a way of bridging rain across to the inner leaf, and the tool says so
+              rather than quietly calculating it.
+            </p>
+            <p>
+              Read your band off the map in Approved Document C and match the colour; the four
+              bands here are the same four. The little grid map beside them is <em>not</em> that
+              map — it is a deliberately coarse picture of the general pattern, western coasts and
+              high ground wet, central and eastern England dry. Clicking it suggests a band and
+              says that it guessed. Boundaries are geography, not a table, and a building a mile
+              the wrong side of one deserves better than our redrawing of it.
+            </p>
+          </>
         ),
       },
     ],
