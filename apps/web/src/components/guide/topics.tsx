@@ -742,6 +742,48 @@ export const CHAPTERS: readonly GuideChapter[] = [
               and the tool says so rather than quietly calculating it.
             </p>
             <p>
+              Find your zone on Diagram 12 of Approved Document C, on page 34, and pick it here.
+              The map is not shown in this page and cannot be: it is Crown copyright, free to
+              download but not free to republish. Nor is it redrawn, because the zones are
+              geography rather than a table and an approximation of them would give a wall a mile
+              the wrong side of a line a confident wrong answer.
+            </p>
+            <p>
+              Two adjustments belong to you rather than to the map. Paragraph 5.16 adds a zone
+              where local conditions accentuate the wind, such as an open hillside or a valley
+              funnelling it onto the wall, and subtracts one where the wall does not face into the
+              prevailing wind. A site-specific calculation to BS 8104 replaces the map outright.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'conditions-defaults',
+        title: 'The “common defaults” button',
+        figure: <EnvironmentFigure />,
+        body: (
+          <p>
+            Sets both sides back to ordinary starting values for the environment you have chosen,
+            so you can get back to a sensible baseline after experimenting. It changes only the
+            temperatures and humidities, never your layers.
+          </p>
+        ),
+      },
+      {
+        id: 'conditions-exposure',
+        title: 'The Location box: wind-driven rain',
+        figure: <EnvironmentFigure />,
+        body: (
+          <>
+            <p>
+              Wind-driven rain is graded in four numbered zones, from 1 sheltered to 4 very
+              severe, by how much water a spell of weather throws at a square metre of wall. It
+              has its own box because it is not an inside or an outside condition and it changes
+              no calculated figure. What it changes is which constructions are allowed: a fully
+              filled cavity in the worst zones is a way of bridging rain across to the inner leaf,
+              and the tool says so rather than quietly calculating it.
+            </p>
+            <p>
               <strong>Read it off the real map by clicking it.</strong> Approved Document C
               Diagram 12 shades the country in four flat greys, so the answer is already in the
               figure. Open the document, screenshot Diagram 12, paste or drag it into the box, and

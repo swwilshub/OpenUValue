@@ -1,9 +1,7 @@
-import { useState } from 'react';
 import { EXPOSURE_ZONES, exposureZone } from '@openuvalue/engine';
 import type { ExposureZoneId } from '@openuvalue/engine';
 import { hasFullFillCavity } from '../state/model.js';
 import type { UiLayer } from '../state/model.js';
-import { ExposureMapReader } from './ExposureMapReader.js';
 import { HelpButton } from './guide/Guide.js';
 
 /**
@@ -15,10 +13,12 @@ import { HelpButton } from './guide/Guide.js';
  * pressure. What it decides is whether a construction is allowed, chiefly whether a
  * cavity may be filled, so it belongs in a box about the place rather than the physics.
  *
- * The zone can be read straight off Approved Document C Diagram 12: load your own copy of
- * the figure, click where the building is, and the shade under the pointer settles the
- * band. That needs no geography at all, and the four bands are matched by the tool rather
- * than by eye. Picking a band by hand still works, and overrides the reading.
+ * **No map here.** Approved Document C Diagram 12 is Crown copyright, free to download
+ * but not free to republish, so the figure cannot be shown inside this page. Anything we
+ * could draw in its place would be our own approximation of a geographic dataset, which
+ * is worse than not drawing one: a wall a mile the wrong side of a line would get a
+ * confident wrong answer. So the zone is chosen, and the reader is sent to the published
+ * figure to choose it from. They read it better than we could redraw it.
  */
 
 const SWATCH: Readonly<Record<ExposureZoneId, string>> = {
@@ -27,6 +27,9 @@ const SWATCH: Readonly<Record<ExposureZoneId, string>> = {
   severe: 'var(--exposure-severe)',
   'very-severe': 'var(--exposure-very-severe)',
 };
+
+const ADC_PUBLICATION_URL =
+  'https://www.gov.uk/government/publications/site-preparation-and-resistance-to-contaminates-and-moisture-approved-document-c';
 
 export interface LocationPanelProps {
   readonly zoneId: ExposureZoneId;
@@ -42,13 +45,6 @@ export function LocationPanel({
   layers,
   onOpenGuide,
 }: LocationPanelProps): JSX.Element {
-  /*
-   * Whether the band on screen was read off the map. It is not part of the shared state
-   * because it describes how this session arrived at the value rather than the value
-   * itself: a shared link should carry the zone, not the route to it.
-   */
-  const [readFromMap, setReadFromMap] = useState(false);
-
   const current = exposureZone(zoneId);
   const fullFill = hasFullFillCavity(layers);
   const conflict = fullFill && current?.rulesOutFullFill === true;
@@ -67,16 +63,12 @@ export function LocationPanel({
       <p className="choice-lead">
         How much wind-driven rain the wall catches. It changes no calculated figure here,
         only what the build-up is allowed to be: Approved Document C settles whether a
-        cavity may be filled by the zone the building stands in. Load the map below and
-        click your spot, or pick a band yourself.
+        cavity may be filled by the zone the building stands in. Find your zone on{' '}
+        <a href={ADC_PUBLICATION_URL} target="_blank" rel="noreferrer">
+          Diagram 12 of Approved Document C
+        </a>{' '}
+        (page 34) and pick it here.
       </p>
-
-      <ExposureMapReader
-        onRead={(next) => {
-          setReadFromMap(true);
-          onChange(next);
-        }}
-      />
 
       <ul className="exposure-options">
         {EXPOSURE_ZONES.map((zone) => (
@@ -85,10 +77,7 @@ export function LocationPanel({
               type="button"
               className={zone.id === zoneId ? 'exposure-option is-current' : 'exposure-option'}
               aria-pressed={zone.id === zoneId}
-              onClick={() => {
-                setReadFromMap(false);
-                onChange(zone.id);
-              }}
+              onClick={() => onChange(zone.id)}
             >
               <span className="exposure-swatch" style={{ background: SWATCH[zone.id] }}>
                 {zone.number}
@@ -103,16 +92,6 @@ export function LocationPanel({
         ))}
       </ul>
 
-      {readFromMap && (
-        <p className="exposure-read">
-          <strong>Read from the map.</strong> Paragraph 5.16 then lets you move it: add one
-          zone where local conditions accentuate the wind, such as an open hillside or a
-          valley funnelling it onto the wall, and subtract one where the wall does not face
-          into the prevailing wind. A site-specific calculation to BS 8104 replaces the map
-          altogether.
-        </p>
-      )}
-
       {current !== undefined && (
         <p className={conflict ? 'exposure-conflict' : 'cavity-custom'}>
           {conflict && <strong>This build-up fills the cavity. </strong>}
@@ -121,11 +100,19 @@ export function LocationPanel({
       )}
 
       <p className="footnote">
+        Paragraph 5.16 then lets you move the zone the map gives you: add one where local
+        conditions accentuate the wind, such as an open hillside or a valley funnelling it
+        onto the wall, and subtract one where the wall does not face into the prevailing
+        wind. A site-specific calculation to BS 8104 replaces the map altogether, and a
+        sheltering hill or an exposed corner can put one wall of a house in a different
+        zone from another.
+      </p>
+
+      <p className="footnote">
         Zones and boundaries from Approved Document C Diagram 12, the categories coming
         from BS 8104. Table 4, which gives the highest zone each construction may be used
         in, is not implemented here; the advice above follows its facing-masonry columns
-        only. A sheltering hill or an exposed corner can put one wall of a house in a
-        different band from another.
+        only.
       </p>
     </section>
   );
