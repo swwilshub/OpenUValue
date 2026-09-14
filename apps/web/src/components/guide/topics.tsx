@@ -734,6 +734,55 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
+              Wind-driven rain is graded in four numbered zones, from 1 sheltered to 4 very
+              severe, by how much water a spell of weather throws at a square metre of wall. It
+              has its own box because it is not an inside or an outside condition and it changes
+              no calculated figure. What it changes is which constructions are allowed: a fully
+              filled cavity in the worst zones is a way of bridging rain across to the inner leaf,
+              and the tool says so rather than quietly calculating it.
+            </p>
+            <p>
+              <strong>Read it off the real map by clicking it.</strong> Approved Document C
+              Diagram 12 shades the country in four flat greys, so the answer is already in the
+              figure. Open the document, screenshot Diagram 12, paste or drag it into the box, and
+              click where the building is: the shade under the crosshair settles the zone. The
+              magnifier shows which pixels are being read, a click between two shades or on a
+              coastline is reported as unclear rather than resolved, and you can always pick a
+              band by hand instead.
+            </p>
+            <p>
+              The map is not shipped with this tool, and cannot be: it is Crown copyright, free to
+              download but not free to republish. Your copy stays in your browser, because the
+              whole tool runs there and there is no server to send it to.
+            </p>
+            <p>
+              Two adjustments belong to you rather than to the map. Paragraph 5.16 adds a zone
+              where local conditions accentuate the wind, such as an open hillside or a valley
+              funnelling it onto the wall, and subtracts one where the wall does not face into the
+              prevailing wind. A site-specific calculation to BS 8104 replaces the map outright.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'conditions-defaults',
+        title: 'The “common defaults” button',
+        figure: <EnvironmentFigure />,
+        body: (
+          <p>
+            Sets both sides back to ordinary starting values for the environment you have chosen,
+            so you can get back to a sensible baseline after experimenting. It changes only the
+            temperatures and humidities, never your layers.
+          </p>
+        ),
+      },
+      {
+        id: 'conditions-exposure',
+        title: 'The Location box: wind-driven rain',
+        figure: <EnvironmentFigure />,
+        body: (
+          <>
+            <p>
               Wind-driven rain is graded in four bands, from sheltered to very severe, by how much
               water a spell of weather throws at a square metre of wall. It has its own box because
               it is not an inside or an outside condition and it changes no calculated figure.

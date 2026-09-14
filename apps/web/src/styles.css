@@ -63,7 +63,12 @@
   --cat3d-air: #cfe2ec;
   --cat3d-custom: #cdbfa8;
 
-  /* The four wind-driven rain bands, as the published exposure figure ramps them. */
+  /*
+   * The four wind-driven rain bands. Our own ramp, not the published figure's: Approved
+   * Document C Diagram 12 is printed in four greys, which read as one another at swatch
+   * size. Ordered light to dark as the figure is, so a band still reads as more or less
+   * exposed at a glance. Matching a colour to a band is the reader's job, not the eye's.
+   */
   --exposure-sheltered: #cfe3e6;
   --exposure-moderate: #8fc2d0;
   --exposure-severe: #7d9ed4;
@@ -3830,88 +3835,149 @@ body.is-dragging * {
   margin-bottom: 12px;
 }
 
-/* Map beside the bands while there is room, map above them once there is not. */
-.location-body {
+/*
+ * The map reader. The figure is the user's own copy of Approved Document C Diagram 12,
+ * loaded into a canvas so the shade under the pointer can be read back; nothing is
+ * uploaded, and nothing of the map is shipped.
+ */
+.map-reader {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 16px;
+  gap: 14px;
+  margin-bottom: 12px;
 }
 
-.location-body .exposure-options {
-  flex: 1 1 260px;
-  min-width: 0;
-}
-
-.exposure-map-figure {
-  margin: 0;
-  flex: 0 0 auto;
-  width: 144px;
-}
-
-.exposure-map-figure figcaption {
-  margin-top: 6px;
-  font-size: 10.5px;
-  line-height: 1.4;
-  color: var(--ink-faint);
+.map-drop {
+  flex: 1 1 100%;
+  display: block;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--ground);
   text-transform: none;
   letter-spacing: normal;
-}
-
-/*
- * A grid coarse enough that nobody could read a boundary off it, which is the point.
- * Each band is one click target rather than each square, so the thing being chosen is a
- * band and the keyboard has four stops rather than a hundred.
- */
-.exposure-map {
-  display: block;
-  overflow: visible;
-}
-
-.exposure-map-band {
   cursor: pointer;
 }
 
+.map-drop strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.map-drop > span {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.map-drop input[type='file'] {
+  margin-top: 9px;
+  font-size: 11.5px;
+  padding: 4px;
+  background: var(--surface);
+}
+
+.map-drop-note {
+  color: var(--ink-faint);
+}
+
+.map-canvas-wrap {
+  flex: 1 1 320px;
+  min-width: 0;
+  line-height: 0;
+}
+
+/* The pin is positioned against this, so it has to be exactly the box the canvas fills. */
+.map-canvas-frame {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
 /*
- * Every square keeps a hairline, or the sheltered band — which is nearly white — stops
- * being land at all and the silhouette breaks in the middle of England.
+ * Never upscaled: a screenshot shown larger than it was taken only blurs the shades the
+ * reading depends on. A tall one is capped instead, and the page scrolls to it.
  */
-.exposure-map-band rect {
-  stroke: rgba(0, 0, 0, 0.16);
-  stroke-width: 0.75;
-  transition: stroke 120ms ease-out, stroke-width 120ms ease-out;
+.map-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 62vh;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: crosshair;
 }
 
-.exposure-map-band:hover rect {
-  stroke: var(--ink-soft);
-  stroke-width: 1.1;
+.map-pin {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--risk);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.exposure-map-band.is-current rect {
-  stroke: var(--ink-soft);
-  stroke-width: 1;
+.map-reader-side {
+  flex: 0 0 auto;
+  width: 138px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.map-loupe-caption {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
 }
 
 /*
- * The focus ring goes on the squares, not on the group: a band is scattered across the
- * country, so an outline around its bounding box frames half the map and the sea with it.
+ * Nearest-neighbour, because the whole point is to see the individual pixels the reading
+ * is taken from. Smoothing them would invent shades that are not in the figure.
  */
-.exposure-map-band:focus,
-.exposure-map-band:focus-visible {
-  outline: none;
+.map-loupe {
+  display: block;
+  width: 136px;
+  height: 136px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  image-rendering: pixelated;
 }
 
-.exposure-map-band:focus-visible rect {
-  stroke: var(--accent);
-  stroke-width: 1.6;
+.map-live {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-faint);
 }
 
-/* Said out loud, because a guess that reads as a lookup is the failure mode here. */
-.exposure-suggested {
+.map-live strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.map-live em {
+  display: block;
+  font-style: normal;
+  color: var(--ink-soft);
+}
+
+/* What the reading was, and the two things the document lets you do to it afterwards. */
+.exposure-read {
   margin: 10px 0 0;
   padding: 8px 10px;
-  border-left: 3px solid var(--warn);
-  background: var(--warn-soft);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
   border-radius: 0 6px 6px 0;
   font-size: 11.5px;
   line-height: 1.5;
@@ -3955,8 +4021,14 @@ body.is-dragging * {
   width: 26px;
   height: 26px;
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .exposure-option strong { display: block; font-size: 12.5px; color: var(--ink); }

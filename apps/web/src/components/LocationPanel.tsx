@@ -3,7 +3,7 @@ import { EXPOSURE_ZONES, exposureZone } from '@openuvalue/engine';
 import type { ExposureZoneId } from '@openuvalue/engine';
 import { hasFullFillCavity } from '../state/model.js';
 import type { UiLayer } from '../state/model.js';
-import { ExposureMap } from './ExposureMap.js';
+import { ExposureMapReader } from './ExposureMapReader.js';
 import { HelpButton } from './guide/Guide.js';
 
 /**
@@ -12,13 +12,13 @@ import { HelpButton } from './guide/Guide.js';
  * Wind-driven rain exposure used to sit inside the Conditions box under "Inside", which
  * was the wrong home twice over: it is not an inside quantity, and it is not a condition
  * the calculation uses at all. It changes no U-value, no temperature and no vapour
- * pressure. What it decides is whether a construction is *allowed* — chiefly whether a
- * cavity may be filled — so it belongs in a box about the place rather than the physics.
+ * pressure. What it decides is whether a construction is allowed, chiefly whether a
+ * cavity may be filled, so it belongs in a box about the place rather than the physics.
  *
- * The map beside the bands is our own coarse grid rather than the published figure; see
- * `ExposureMap` for why it is drawn the way it is. Picking a band off it is a suggestion
- * and is labelled as one. Matching a colour off the Approved Document's own map to a row
- * here remains the interaction that settles it.
+ * The zone can be read straight off Approved Document C Diagram 12: load your own copy of
+ * the figure, click where the building is, and the shade under the pointer settles the
+ * band. That needs no geography at all, and the four bands are matched by the tool rather
+ * than by eye. Picking a band by hand still works, and overrides the reading.
  */
 
 const SWATCH: Readonly<Record<ExposureZoneId, string>> = {
@@ -43,21 +43,15 @@ export function LocationPanel({
   onOpenGuide,
 }: LocationPanelProps): JSX.Element {
   /*
-   * Whether the band on screen came from the map rather than from the reader. It is not
-   * part of the shared state because it describes how this session arrived at the value,
-   * not the value itself — a shared link should carry the zone, not the fact that
-   * somebody once clicked a square to reach it.
+   * Whether the band on screen was read off the map. It is not part of the shared state
+   * because it describes how this session arrived at the value rather than the value
+   * itself: a shared link should carry the zone, not the route to it.
    */
-  const [suggestedFromMap, setSuggestedFromMap] = useState(false);
+  const [readFromMap, setReadFromMap] = useState(false);
 
   const current = exposureZone(zoneId);
   const fullFill = hasFullFillCavity(layers);
   const conflict = fullFill && current?.rulesOutFullFill === true;
-
-  const pick = (next: ExposureZoneId, fromMap: boolean): void => {
-    setSuggestedFromMap(fromMap);
-    onChange(next);
-  };
 
   return (
     <section className="panel location-panel">
@@ -71,46 +65,51 @@ export function LocationPanel({
       </h2>
 
       <p className="choice-lead">
-        How much wind-driven rain the wall catches, which decides whether a cavity may be
-        filled. Read your zone off the map in Approved Document C and match the colour,
-        because the bands are the same four. It changes no calculated figure here, only
-        what the build-up is allowed to be.
+        How much wind-driven rain the wall catches. It changes no calculated figure here,
+        only what the build-up is allowed to be: Approved Document C settles whether a
+        cavity may be filled by the zone the building stands in. Load the map below and
+        click your spot, or pick a band yourself.
       </p>
 
-      <div className="location-body">
-        <figure className="exposure-map-figure">
-          <ExposureMap zoneId={zoneId} onPick={(next) => pick(next, true)} />
-          <figcaption>
-            The rough pattern, not the published map. Click a band to try it.
-          </figcaption>
-        </figure>
+      <ExposureMapReader
+        onRead={(next) => {
+          setReadFromMap(true);
+          onChange(next);
+        }}
+      />
 
-        <ul className="exposure-options">
-          {EXPOSURE_ZONES.map((zone) => (
-            <li key={zone.id}>
-              <button
-                type="button"
-                className={zone.id === zoneId ? 'exposure-option is-current' : 'exposure-option'}
-                aria-pressed={zone.id === zoneId}
-                onClick={() => pick(zone.id, false)}
-              >
-                <span className="exposure-swatch" style={{ background: SWATCH[zone.id] }} />
-                <span>
-                  <strong>{zone.label}</strong>
-                  <em>{zone.rangeText}</em>
-                  <em>{zone.where}</em>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ul className="exposure-options">
+        {EXPOSURE_ZONES.map((zone) => (
+          <li key={zone.id}>
+            <button
+              type="button"
+              className={zone.id === zoneId ? 'exposure-option is-current' : 'exposure-option'}
+              aria-pressed={zone.id === zoneId}
+              onClick={() => {
+                setReadFromMap(false);
+                onChange(zone.id);
+              }}
+            >
+              <span className="exposure-swatch" style={{ background: SWATCH[zone.id] }}>
+                {zone.number}
+              </span>
+              <span>
+                <strong>{zone.label}</strong>
+                <em>{zone.rangeText}</em>
+                <em>{zone.where}</em>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
 
-      {suggestedFromMap && (
-        <p className="exposure-suggested">
-          <strong>Suggested from the map above.</strong> That map is a rough pattern rather
-          than the published boundaries, so check the band against the figure in Approved
-          Document C before you rely on it.
+      {readFromMap && (
+        <p className="exposure-read">
+          <strong>Read from the map.</strong> Paragraph 5.16 then lets you move it: add one
+          zone where local conditions accentuate the wind, such as an open hillside or a
+          valley funnelling it onto the wall, and subtract one where the wall does not face
+          into the prevailing wind. A site-specific calculation to BS 8104 replaces the map
+          altogether.
         </p>
       )}
 
@@ -122,10 +121,11 @@ export function LocationPanel({
       )}
 
       <p className="footnote">
-        Boundaries from the Approved Document C exposure figure, the categories coming
-        from BS 8104. A site-specific calculation to BS 8104 overrides the map, and a
-        sheltering hill or an exposed corner can put one wall of a house in a different
-        band from another.
+        Zones and boundaries from Approved Document C Diagram 12, the categories coming
+        from BS 8104. Table 4, which gives the highest zone each construction may be used
+        in, is not implemented here; the advice above follows its facing-masonry columns
+        only. A sheltering hill or an exposed corner can put one wall of a house in a
+        different band from another.
       </p>
     </section>
   );
