@@ -3889,7 +3889,9 @@ body.is-dragging * {
 
 .retrofit-layer {
   display: flex;
-  align-items: flex-start;
+  /* `label` is a column flex box by default here, which stacked the box above its text. */
+  flex-direction: row;
+  align-items: center;
   gap: 9px;
   padding: 7px 9px;
   border: 1px solid var(--line);
@@ -3906,4 +3908,140 @@ body.is-dragging * {
   font-style: normal;
   font-size: 11px;
   color: var(--ink-faint);
+}
+
+/*
+ * A checkbox inherits the full-width rule that every other input wants, which pushed it
+ * onto a line of its own above the label it belongs to.
+ */
+.retrofit-layer input[type='checkbox'] {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+}
+
+/*
+ * Three steps rather than one page of controls: pick the layers, say how much and what
+ * it cost, read the answer. The numbers are drawn rather than left to the list marker so
+ * they can sit level with the heading at a size that reads as a step.
+ */
+.retrofit-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.retrofit-step > h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.retrofit-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* The two inputs only this project can supply, and later the assumptions behind them. */
+.retrofit-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+/* Two fields do not need the full width of the panel; the assumptions below do. */
+.retrofit-step > .retrofit-fields {
+  max-width: 460px;
+}
+
+/* The figure people came for, given the weight the other three do not need. */
+.retrofit-answer {
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+
+.retrofit-answer-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.retrofit-answer strong {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 1px;
+  font-size: 34px;
+  line-height: 1.1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.retrofit-answer-unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.retrofit-answer em {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* What actually changed, in the two units a reader of the other tabs already knows. */
+.retrofit-change {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.retrofit-change b {
+  color: var(--ink);
+}
+
+.retrofit-waiting {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.retrofit-assumptions > summary {
+  font-variant-numeric: tabular-nums;
+}
+
+.retrofit-tab .explain {
+  margin-top: 12px;
 }

@@ -713,6 +713,27 @@ export const CHAPTERS: readonly GuideChapter[] = [
         ),
       },
       {
+        id: 'conditions-exposure',
+        title: 'How exposed the wall is to driven rain',
+        figure: <EnvironmentFigure />,
+        body: (
+          <>
+            <p>
+              Wind-driven rain is graded in four bands, from sheltered to very severe, by how much
+              water a spell of weather throws at a square metre of wall. Pick the colour that
+              matches where the building is rather than hunting for an exact boundary: the bands
+              are wide, and a building on a hill or facing the prevailing wind sits worse than its
+              neighbours whatever the map says.
+            </p>
+            <p>
+              It changes no number here. What it changes is which constructions are sensible: a
+              fully filled cavity in the worst band is a way of bridging rain across to the inner
+              leaf, and the tool says so rather than quietly calculating it.
+            </p>
+          </>
+        ),
+      },
+      {
         id: 'conditions-defaults',
         title: 'The “common defaults” button',
         figure: <EnvironmentFigure />,
@@ -1037,6 +1058,60 @@ export const CHAPTERS: readonly GuideChapter[] = [
             air against it damper than the room, this bites long before anything looks wet, and it
             bites first in corners and behind furniture.
           </p>
+        ),
+      },
+    ],
+  },
+
+  {
+    id: 'energy',
+    title: 'The Energy and Retrofit tabs',
+    blurb: 'What the element costs to heat through, and what improving it buys back.',
+    topics: [
+      {
+        id: 'energy-season',
+        title: 'Heat lost over a heating season',
+        figure: <SeasonFigure />,
+        body: (
+          <>
+            <p>
+              A U-value is a rate: watts per square metre for every degree of difference. Multiply
+              it by how cold it actually gets where the building is, month by month, and you get
+              something you can spend — kilowatt-hours a year for each square metre of the
+              element. Months warm enough not to need heating are left out entirely.
+            </p>
+            <p>
+              This is the heat lost <em>through this element</em>, not the building’s demand.
+              Nothing here knows about the other walls, the windows, the roof, the air changes or
+              the heat the occupants and the sunshine put back in.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'retrofit',
+        title: 'What the work saves, and what it pays back',
+        figure: <GaugeFigure />,
+        body: (
+          <>
+            <p>
+              The build-up on the other tabs is the wall <strong>after</strong> the work. Tick the
+              layers the work adds and what is left is the wall as it was, so both sides of the
+              comparison are build-ups this tool has calculated rather than a U-value remembered
+              from somewhere else.
+            </p>
+            <p>
+              The difference between the two, over a heating season and through the heating system
+              you choose, is a saving in heat, fuel, carbon and money. The cost of the work divided
+              by the money is a payback in years.
+            </p>
+            <p>
+              Treat that payback as the optimistic end. It assumes today’s fuel price forever,
+              it assumes every kilowatt-hour saved turns into money rather than into a warmer
+              house, and it counts no carbon or cash spent making the insulation in the first
+              place.
+            </p>
+          </>
         ),
       },
     ],
