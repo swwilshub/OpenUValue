@@ -9,6 +9,8 @@ import {
 import type { UiState } from '../state/model.js';
 import { toBuildingElement } from '../state/model.js';
 import { assessRetrofit } from '../state/retrofit.js';
+import { DEFAULT_SHEET_SIZE, SHEET_SIZE_PRESETS, sheetsCostGBP, sheetsForArea } from '../state/sheets.js';
+import { SheetDiagram } from './SheetDiagram.js';
 import { HelpButton } from './guide/Guide.js';
 
 /**
@@ -41,7 +43,25 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
   const [efficiency, setEfficiency] = useState(0.9);
   const [pricePerKWh, setPricePerKWh] = useState(7);
   const [areaM2, setAreaM2] = useState(50);
-  const [costGBP, setCostGBP] = useState(4000);
+  /*
+   * A price per sheet rather than a price for the job, because a sheet price is a number
+   * somebody can read off a quote. Twenty-five pounds is a placeholder in the same spirit
+   * as the fuel price: a starting point to overwrite, not a market figure this tool knows.
+   */
+  const [pricePerSheetGBP, setPricePerSheetGBP] = useState(25);
+  const [sheetWidthMm, setSheetWidthMm] = useState(DEFAULT_SHEET_SIZE.widthM * 1000);
+  const [sheetLengthMm, setSheetLengthMm] = useState(DEFAULT_SHEET_SIZE.lengthM * 1000);
+  /** Labour, access, fixings: whatever the sheets themselves do not cover. */
+  const [otherCostsGBP, setOtherCostsGBP] = useState(0);
+
+  // Millimetres are a UI unit and convert at this boundary, as everywhere else.
+  const sheetSize = { widthM: sheetWidthMm / 1000, lengthM: sheetLengthMm / 1000 };
+  const sheets =
+    sheetWidthMm > 0 && sheetLengthMm > 0 && areaM2 > 0
+      ? sheetsForArea(areaM2, sheetSize)
+      : undefined;
+  const materialsGBP = sheets === undefined ? 0 : sheetsCostGBP(sheets, pricePerSheetGBP);
+  const costGBP = materialsGBP + otherCostsGBP;
 
   const preset = HEAT_SOURCE_PRESETS.find((candidate) => candidate.id === presetId);
   const fuelId = preset?.source.fuelId ?? 'mains-gas';
@@ -143,8 +163,13 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
 
         <li className="retrofit-step">
           <h3>
-            <span className="retrofit-step-number">2</span> How much of it, and what it costs
+            <span className="retrofit-step-number">2</span> How much of it, and what a sheet costs
           </h3>
+          <p className="choice-lead">
+            Materials are bought by the sheet, so that is what this asks for. The area
+            decides how many sheets, and whole sheets get paid for however much of the last
+            one is left over.
+          </p>
           <div className="retrofit-fields">
             <label className="field">
               <span className="field-caption">Area treated, m²</span>
@@ -157,16 +182,93 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
               />
             </label>
             <label className="field">
-              <span className="field-caption">Cost of the work, £</span>
+              <span className="field-caption">Price of one sheet, £</span>
               <input
                 type="number"
                 min={0}
-                step={100}
-                value={costGBP}
-                onChange={(event) => setCostGBP(Math.max(0, Number(event.target.value)))}
+                step={1}
+                value={pricePerSheetGBP}
+                onChange={(event) =>
+                  setPricePerSheetGBP(Math.max(0, Number(event.target.value)))
+                }
+              />
+            </label>
+            <label className="field">
+              <span className="field-caption">Labour and the rest, £</span>
+              <input
+                type="number"
+                min={0}
+                step={50}
+                value={otherCostsGBP}
+                onChange={(event) => setOtherCostsGBP(Math.max(0, Number(event.target.value)))}
               />
             </label>
           </div>
+
+          <div className="sheet-size">
+            <span className="picker-label">Sheet size, mm</span>
+            <div className="chip-row">
+              {SHEET_SIZE_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={
+                    Math.abs(sheetWidthMm - preset.widthM * 1000) < 0.5 &&
+                    Math.abs(sheetLengthMm - preset.lengthM * 1000) < 0.5
+                      ? 'chip is-current'
+                      : 'chip'
+                  }
+                  onClick={() => {
+                    setSheetWidthMm(preset.widthM * 1000);
+                    setSheetLengthMm(preset.lengthM * 1000);
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div className="sheet-size-fields">
+              <label className="field">
+                <span className="field-caption">Width</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={50}
+                  value={sheetWidthMm}
+                  onChange={(event) => setSheetWidthMm(Math.max(1, Number(event.target.value)))}
+                />
+              </label>
+              <label className="field">
+                <span className="field-caption">Length</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={50}
+                  value={sheetLengthMm}
+                  onChange={(event) => setSheetLengthMm(Math.max(1, Number(event.target.value)))}
+                />
+              </label>
+            </div>
+          </div>
+
+          {sheets !== undefined && (
+            <>
+              <SheetDiagram count={sheets} size={sheetSize} />
+              <p className="sheet-sum">
+                {sheets.wholeSheets} sheet{sheets.wholeSheets === 1 ? '' : 's'} at £
+                {money.format(pricePerSheetGBP)} = <strong>£{money.format(materialsGBP)}</strong>
+                {otherCostsGBP > 0 ? (
+                  <>
+                    , plus £{money.format(otherCostsGBP)} for labour and the rest:{' '}
+                    <strong>£{money.format(costGBP)}</strong>
+                  </>
+                ) : (
+                  <>, and no labour entered, so everything below is materials only</>
+                )}
+                .
+              </p>
+            </>
+          )}
         </li>
 
         <li className="retrofit-step">
@@ -198,8 +300,11 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
                   <span className="retrofit-answer-unit">years</span>
                 </strong>
                 <em>
-                  £{money.format(costGBP)} of work saving £
-                  {money.format(assessment.savedGBPPerYear)} a year on{' '}
+                  £{money.format(costGBP)}
+                  {sheets !== undefined && otherCostsGBP === 0
+                    ? ` of sheets (${sheets.wholeSheets} at £${money.format(pricePerSheetGBP)}, materials only)`
+                    : ' of work'}
+                  , saving £{money.format(assessment.savedGBPPerYear)} a year on{' '}
                   {factors?.label.toLowerCase() ?? 'fuel'}
                 </em>
               </div>
@@ -328,6 +433,13 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
               cost carbon and money before any of it was saved, and that debt has its own
               payback, usually a short one for insulation. This tool cannot tell you,
               because it ships no embodied-carbon data and will not invent any.
+            </p>
+            <p className="tour-caveat">
+              <strong>The sheet count is area, not a buying list.</strong> It divides the
+              area by one sheet and rounds up. A real wall has reveals, corners and
+              openings, every cut leaves an offcut that rarely fits anywhere else, and
+              nothing here counts fixings, adhesive, tape or the skip. Expect to buy a few
+              sheets more than this says.
             </p>
             <p className="tour-caveat">
               And a payback in years says nothing about whether the work is worth doing. A

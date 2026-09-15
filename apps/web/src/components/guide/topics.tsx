@@ -1200,8 +1200,18 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               The difference between the two, over a heating season and through the heating system
-              you choose, is a saving in heat, fuel, carbon and money. The cost of the work divided
-              by the money is a payback in years.
+              you choose, is a saving in heat, fuel, carbon and money. The cost divided by the
+              money is a payback in years.
+            </p>
+            <p>
+              <strong>The cost is built from one sheet.</strong> Nobody buys 50 m² of insulation;
+              they buy boards, in whatever size the merchant stocks, and pay for whole ones however
+              much of the last is left over. So this asks for the price of a single sheet, which is
+              a number you can read off a quote, and works out the rest. The drawing shows the
+              count, with the offcut on the last sheet hatched, because that is the part people
+              query. It divides area by sheet and rounds up: cuts at reveals, corners and openings
+              mean a real job needs a few more. Labour, access and fixings are a separate box, and
+              leaving it at zero makes everything below a materials-only figure.
             </p>
             <p>
               Treat that payback as the optimistic end. It assumes today’s fuel price forever,

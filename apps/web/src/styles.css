@@ -3952,6 +3952,11 @@ body.is-dragging * {
   gap: 16px;
 }
 
+/* A grid item defaults to min-width:auto, which let the sheet drawing widen the step. */
+.retrofit-step {
+  min-width: 0;
+}
+
 .retrofit-step > h3 {
   display: flex;
   align-items: center;
@@ -3985,9 +3990,9 @@ body.is-dragging * {
   gap: 10px;
 }
 
-/* Two fields do not need the full width of the panel; the assumptions below do. */
+/* The per-project figures do not need the full width of the panel; the assumptions do. */
 .retrofit-step > .retrofit-fields {
-  max-width: 460px;
+  max-width: 620px;
 }
 
 /* The figure people came for, given the weight the other three do not need. */
@@ -4063,4 +4068,96 @@ body.is-dragging * {
 
 .retrofit-tab .explain {
   margin-top: 12px;
+}
+
+/* ------------------------------------------------------ costing by sheets ---
+ * Materials are bought by the sheet, so the retrofit cost is built from one.
+ */
+.sheet-size {
+  margin-top: 10px;
+  max-width: 460px;
+}
+
+.sheet-size-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+  max-width: 300px;
+}
+
+/*
+ * Drawn at its natural size and only ever shrunk. Scaling it up to fill the column blew
+ * the labels up with it, so a one-sheet job came out in headlines.
+ */
+.sheet-diagram {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0 6px;
+  overflow: visible;
+}
+
+.sheet-face {
+  fill: var(--cat-insulation);
+  stroke: var(--cat-insulation-ink);
+  stroke-width: 1;
+}
+
+/* The sheet carrying the dimensions is the one being priced, so it leads. */
+.sheet-unit-outline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+
+/* Paid for and not used: the part of the last sheet that explains the round-up. */
+.sheet-face.is-offcut {
+  fill: url(#sheet-offcut);
+  stroke: var(--cat-insulation-ink);
+  stroke-dasharray: 3 2;
+}
+
+.sheet-offcut-hatch {
+  stroke: var(--cat-insulation-ink);
+  stroke-width: 1;
+}
+
+.sheet-face.is-elided {
+  fill: var(--ground);
+  stroke: var(--line);
+  stroke-dasharray: 3 2;
+}
+
+.sheet-elided-count {
+  font-size: 10px;
+  fill: var(--ink-faint);
+}
+
+.sheet-dim {
+  font-size: 9.5px;
+  fill: var(--ink-soft);
+}
+
+.sheet-total {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+
+.sheet-note {
+  font-size: 9.5px;
+  fill: var(--ink-faint);
+}
+
+.sheet-sum {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.sheet-sum strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
