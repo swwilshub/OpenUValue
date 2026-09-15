@@ -63,7 +63,9 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <p>
               The build-up runs <strong>inside on the left, outside on the right</strong>, and
               each layer is drawn at its real thickness. Widen a layer in the list and it widens
-              here.
+              here. A roof or a floor is drawn down the page instead, outside at the top for a
+              roof and the room at the top for a floor, so the drawing sits the way the element
+              does and the layer names move to the side.
             </p>
             <p>
               The hatching says what a layer is made of: coursing for masonry, a soft wave for

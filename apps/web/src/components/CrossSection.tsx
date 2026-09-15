@@ -38,6 +38,8 @@ import { temperatureIntervalC } from '../format.js';
 const FILM_WIDTH = 44;
 const DRAW_WIDTH = 660;
 const PLOT_HEIGHT = 260;
+/** Everything the drawing occupies down the page: plot, thickness captions, edge labels. */
+const DRAWING_DEPTH = 260 + 18 + 66;
 const TOP_PAD = 18;
 const AXIS_WIDTH = 46;
 /**
@@ -203,6 +205,11 @@ const CONDITION_TEXT: Readonly<Record<InterfaceCondition, string>> = {
 const CALLOUT_ROW_HEIGHT = 14;
 const CALLOUT_GAP = 12;
 const CALLOUT_MAX_WIDTH = 210;
+/** Gutter for the names when the build-up runs down the page. */
+const CALLOUT_GUTTER = 224;
+/** Room one name needs across the stack, with and without its second line. */
+const CALLOUT_SLOT = 12;
+const CALLOUT_SLOT_WITH_DETAIL = 21;
 /** Approximate advance width of one character at the callout's 10.5px size. */
 const CALLOUT_CHAR_WIDTH = 5.6;
 /**
@@ -353,6 +360,24 @@ export function CrossSection({
   condensation,
   dryOut,
 }: CrossSectionProps): JSX.Element {
+  /*
+   * Which way the build-up runs on screen.
+   *
+   * A wall is drawn left to right because that is how you stand in front of one. A roof
+   * is not: the covering is over your head and the room is underneath, and a drawing that
+   * lays it on its side asks the reader to rotate it themselves before anything about it
+   * makes sense. A floor is the same problem the other way up.
+   *
+   * The drawing itself is unchanged. Everything is still laid out along the same two
+   * axes — thickness across, wall length and temperature down — and a single transform on
+   * the group turns the whole thing a quarter turn, with the text turned back so it stays
+   * upright. That keeps one set of geometry for all three cases rather than a second
+   * drawing that would have to be kept in step with the first.
+   */
+  const orientation: 'wall' | 'roof' | 'floor' =
+    elementKind === 'roof' ? 'roof' : elementKind === 'floor' ? 'floor' : 'wall';
+  const vertical = orientation !== 'wall';
+
   const svgRef = useRef<SVGSVGElement | null>(null);
   /**
    * Dragging a layer along the drawing. `from` is the layer picked up, `to` the gap it
@@ -363,6 +388,7 @@ export function CrossSection({
     readonly from: number;
     readonly to: number;
     readonly startClientX: number;
+    readonly startClientY: number;
     readonly moved: boolean;
     /** Pointer position in the drawing's own coordinates, for placing the layer. */
     readonly pointerUserX: number;
@@ -381,6 +407,7 @@ export function CrossSection({
   const [resize, setResize] = useState<{
     readonly index: number;
     readonly startClientX: number;
+    readonly startClientY: number;
     readonly startThicknessMm: number;
     readonly frozenScale: number;
     readonly frozenViewBoxWidth: number;
@@ -481,6 +508,13 @@ export function CrossSection({
    */
   const callouts = (() => {
     const rowRightEdge: number[] = [];
+    /*
+     * When the build-up runs down the page the names stack beside it instead of above
+     * it, so the packing changes axis: across the page a name takes its own width, down
+     * the page it takes a line's height. `stackedAt` walks the layers in order and keeps
+     * each name clear of the one before it.
+     */
+    let stackedAt = Number.NEGATIVE_INFINITY;
     return boxes.map((box) => {
       const bridged = box.layer.bridgedPercent;
       const text = fitLabel(box.layer.label, CALLOUT_MAX_WIDTH, CALLOUT_CHAR_WIDTH);
@@ -517,6 +551,14 @@ export function CrossSection({
         Math.max(text.length, detail === undefined ? 0 : detail.length * 0.88) *
         CALLOUT_CHAR_WIDTH;
       const anchorX = drawXOf(box) + box.width / 2;
+
+      if (vertical) {
+        const slot = detail === undefined ? CALLOUT_SLOT : CALLOUT_SLOT_WITH_DETAIL;
+        const at = Math.max(anchorX, stackedAt + slot);
+        stackedAt = at;
+        return { box, text, detail, left: at, width, row: 0, anchorX };
+      }
+
       const left = Math.min(
         Math.max(0, anchorX - width / 2),
         totalWidth + AXIS_WIDTH - width,
@@ -541,7 +583,7 @@ export function CrossSection({
    * coordinate in the drawing being pushed down by a block whose height is not known
    * until the labels have been laid out.
    */
-  const viewBoxMinY = Math.min(0, calloutTop - 12);
+  const viewBoxMinY = vertical ? -CALLOUT_GUTTER : Math.min(0, calloutTop - 12);
 
   /*
    * SVG has no z-index, so the layer in hand is simply drawn last. Everything else keeps
@@ -621,7 +663,42 @@ export function CrossSection({
     ? Math.max(...studColumns.map((column) => column.pitchMm)) * STUD_BAYS_SHOWN
     : 0;
   const mmToY = wallLengthShownMm > 0 ? PLOT_HEIGHT / wallLengthShownMm : 0;
-  const viewBoxHeight = PLOT_HEIGHT + TOP_PAD + 66;
+  const viewBoxHeight = DRAWING_DEPTH;
+
+  /*
+   * Where the drawing's own coordinates land on screen.
+   *
+   * The geometry is always laid out with thickness across and wall length down. A wall is
+   * drawn as it is laid out; a roof is turned a quarter turn anticlockwise so the outside
+   * face is at the top and the room below, and a floor a quarter turn the other way so
+   * the room is above. The second turn is a rotation rather than a reflection, so the
+   * length axis is mirrored — which costs nothing, because what runs along it is a
+   * repeating pattern of members and a temperature scale.
+   */
+  const xMin = vertical ? VIEWBOX_MIN_X - 16 : VIEWBOX_MIN_X;
+  const xMax = VIEWBOX_MIN_X + viewBoxWidth;
+  const yMin = viewBoxMinY;
+  const yMax = viewBoxHeight;
+
+  const groupTransform =
+    orientation === 'roof'
+      ? `translate(${-yMin} ${xMax}) rotate(-90)`
+      : orientation === 'floor'
+        ? `translate(${yMax} ${-xMin}) rotate(90)`
+        : undefined;
+
+  /** Turns a label back upright after the group has been turned under it. */
+  const upright = (x: number, y: number): string | undefined =>
+    orientation === 'roof'
+      ? `rotate(90 ${x} ${y})`
+      : orientation === 'floor'
+        ? `rotate(-90 ${x} ${y})`
+        : undefined;
+
+  const vbX = vertical ? 0 : xMin;
+  const vbY = vertical ? 0 : yMin;
+  const vbW = vertical ? yMax - yMin : viewBoxWidth;
+  const vbH = vertical ? xMax - xMin : viewBoxHeight - viewBoxMinY;
 
   const studsByLayerId = new Map(
     studColumns.map((column) => [column.box.layer.id, column] as const),
@@ -686,29 +763,48 @@ export function CrossSection({
    * width:100%, height:auto with the default preserveAspectRatio), so one ratio does
    * it; getScreenCTM would need a DOMPoint and buys nothing here.
    */
-  const toUserX = (clientX: number): number => {
+  const svgPoint = (clientX: number, clientY: number): { sx: number; sy: number } => {
     const svg = svgRef.current;
     if (svg === null) {
-      return 0;
+      return { sx: 0, sy: 0 };
     }
     const rect = svg.getBoundingClientRect();
-    if (rect.width === 0) {
-      return 0;
+    if (rect.width === 0 || rect.height === 0) {
+      return { sx: 0, sy: 0 };
     }
-    return VIEWBOX_MIN_X + ((clientX - rect.left) / rect.width) * viewBoxWidth;
+    return {
+      sx: vbX + ((clientX - rect.left) / rect.width) * vbW,
+      sy: vbY + ((clientY - rect.top) / rect.height) * vbH,
+    };
   };
 
-  /** The same mapping down the drawing, for dragging a member's edge. */
-  const toUserY = (clientY: number): number => {
-    const svg = svgRef.current;
-    if (svg === null) {
-      return 0;
+  /**
+   * Pointer position in the drawing's own coordinates, whichever way the drawing is
+   * turned. Both client coordinates are needed for either axis once it can be turned:
+   * on a roof the thickness runs down the screen, so it is the pointer's y that moves a
+   * layer's edge.
+   */
+  const toUserX = (clientX: number, clientY: number): number => {
+    const { sx, sy } = svgPoint(clientX, clientY);
+    if (orientation === 'roof') {
+      return xMax - sy;
     }
-    const rect = svg.getBoundingClientRect();
-    if (rect.height === 0) {
-      return 0;
+    if (orientation === 'floor') {
+      return sy + xMin;
     }
-    return viewBoxMinY + ((clientY - rect.top) / rect.height) * (viewBoxHeight - viewBoxMinY);
+    return sx;
+  };
+
+  /** The same, along the drawing's length axis, for dragging a member's edge. */
+  const toUserY = (clientX: number, clientY: number): number => {
+    const { sx, sy } = svgPoint(clientX, clientY);
+    if (orientation === 'roof') {
+      return sx + yMin;
+    }
+    if (orientation === 'floor') {
+      return yMax - sx;
+    }
+    return sy;
   };
 
   /**
@@ -718,6 +814,7 @@ export function CrossSection({
    */
   const [memberResize, setMemberResize] = useState<{
     readonly index: number;
+    readonly startClientX: number;
     readonly startClientY: number;
     readonly startWidthMm: number;
     readonly frozenMmToY: number;
@@ -738,6 +835,7 @@ export function CrossSection({
     event.currentTarget.setPointerCapture(event.pointerId);
     setMemberResize({
       index,
+      startClientX: event.clientX,
       startClientY: event.clientY,
       startWidthMm: widthMm,
       frozenMmToY: mmToY,
@@ -751,7 +849,9 @@ export function CrossSection({
       return;
     }
     event.stopPropagation();
-    const deltaUserY = toUserY(event.clientY) - toUserY(memberResize.startClientY);
+    const deltaUserY =
+      toUserY(event.clientX, event.clientY) -
+      toUserY(memberResize.startClientX, memberResize.startClientY);
     // Both edges are dragged outward to widen, so the lower edge grows with a positive
     // delta and the upper with a negative one; each edge moves half the total width.
     const deltaMm = ((deltaUserY * memberResize.sign) / memberResize.frozenMmToY) * 2;
@@ -794,6 +894,7 @@ export function CrossSection({
       startThicknessMm: thicknessMm,
       frozenScale: scale,
       frozenViewBoxWidth: viewBoxWidth,
+      startClientY: event.clientY,
     });
   };
 
@@ -802,7 +903,9 @@ export function CrossSection({
       return;
     }
     event.stopPropagation();
-    const deltaUserX = toUserX(event.clientX) - toUserX(resize.startClientX);
+    const deltaUserX =
+      toUserX(event.clientX, event.clientY) -
+      toUserX(resize.startClientX, resize.startClientY);
     const deltaMm = deltaUserX / resize.frozenScale;
     const next = Math.min(
       MAX_THICKNESS_MM,
@@ -820,8 +923,8 @@ export function CrossSection({
   };
 
   /** The gap between layers that a pointer at this position would drop into. */
-  const dropIndexAt = (clientX: number): number => {
-    const userX = toUserX(clientX);
+  const dropIndexAt = (clientX: number, clientY: number): number => {
+    const userX = toUserX(clientX, clientY);
     for (const [index, box] of boxes.entries()) {
       if (userX < box.x + box.width / 2) {
         return index;
@@ -837,21 +940,29 @@ export function CrossSection({
     <figure className="cross-section">
       <svg
         ref={svgRef}
-        viewBox={`${VIEWBOX_MIN_X} ${viewBoxMinY} ${viewBoxWidth} ${
-          viewBoxHeight - viewBoxMinY
-        }`}
-        className={drag?.moved === true ? 'is-dragging' : undefined}
+        viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+        className={
+          [vertical ? 'is-vertical' : '', drag?.moved === true ? 'is-dragging' : '']
+            .filter((name) => name !== '')
+            .join(' ') || undefined
+        }
         onPointerMove={(event) => {
           if (drag === null) {
             return;
           }
-          const moved =
-            drag.moved || Math.abs(event.clientX - drag.startClientX) > DRAG_THRESHOLD_PX;
+          /*
+           * The build-up runs down the screen on a roof, so the travel that counts as a
+           * drag is along whichever axis the layers are stacked on.
+           */
+          const travelled = vertical
+            ? Math.abs(event.clientY - drag.startClientY)
+            : Math.abs(event.clientX - drag.startClientX);
+          const moved = drag.moved || travelled > DRAG_THRESHOLD_PX;
           setDrag({
             ...drag,
             moved,
-            to: dropIndexAt(event.clientX),
-            pointerUserX: toUserX(event.clientX),
+            to: dropIndexAt(event.clientX, event.clientY),
+            pointerUserX: toUserX(event.clientX, event.clientY),
           });
         }}
         onPointerUp={(event) => {
@@ -859,7 +970,7 @@ export function CrossSection({
             return;
           }
           if (drag.moved) {
-            onReorder?.(drag.from, dropIndexAt(event.clientX));
+            onReorder?.(drag.from, dropIndexAt(event.clientX, event.clientY));
           } else {
             // A press that never moved is a click: select, or clear the selection.
             const layer = layers[drag.from];
@@ -873,6 +984,8 @@ export function CrossSection({
         role="img"
         aria-label={`Cross-section of ${layers.length} layers with the temperature profile overlaid`}
       >
+        {/* One turn for the whole drawing; the labels inside it are turned back. */}
+        <g transform={groupTransform}>
         <defs>
           {/*
            * The temperature line's colour is mapped to the temperature axis itself:
@@ -903,7 +1016,12 @@ export function CrossSection({
               y2={toY(value)}
               className="grid-line"
             />
-            <text x={totalWidth + 6} y={toY(value) + 4} className="axis-label">
+            <text
+              x={totalWidth + 6}
+              y={toY(value) + 4}
+              transform={upright(totalWidth + 6, toY(value) + 4)}
+              className="axis-label"
+            >
               {value}
             </text>
           </g>
@@ -911,6 +1029,7 @@ export function CrossSection({
         <text
           x={totalWidth + AXIS_WIDTH - 4}
           y={TOP_PAD - 6}
+          transform={upright(totalWidth + AXIS_WIDTH - 4, TOP_PAD - 6)}
           className="axis-title"
           textAnchor="end"
         >
@@ -961,11 +1080,12 @@ export function CrossSection({
                 // Capture on the SVG, so a fast drag that outruns the pointer keeps
                 // sending moves instead of stranding the drag mid-gesture.
                 event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId);
-                const pointerUserX = toUserX(event.clientX);
+                const pointerUserX = toUserX(event.clientX, event.clientY);
                 setDrag({
                   from: index,
                   to: index,
                   startClientX: event.clientX,
+                  startClientY: event.clientY,
                   moved: false,
                   pointerUserX,
                   // Grab offset comes from the undragged layout, which is where the
@@ -1124,6 +1244,7 @@ export function CrossSection({
                 <text
                   x={drawX + box.width / 2}
                   y={PLOT_HEIGHT + TOP_PAD + 16}
+                  transform={upright(drawX + box.width / 2, PLOT_HEIGHT + TOP_PAD + 16)}
                   className="layer-caption"
                   textAnchor="middle"
                 >
@@ -1190,6 +1311,47 @@ export function CrossSection({
         */}
         <g className="callouts">
           {callouts.map((callout) => {
+            /*
+             * Across the page the name sits above its layer and the leader drops to it.
+             * Down the page it sits beside the layer in the gutter, the leader runs
+             * sideways to it, and the second line stacks away from the drawing rather
+             * than below the first — which after the turn comes to the same thing.
+             */
+            if (vertical) {
+              const detailOffset = orientation === 'roof' ? -9 : 9;
+              return (
+                <g key={callout.box.layer.id}>
+                  <line
+                    x1={callout.anchorX}
+                    y1={-2}
+                    x2={callout.left}
+                    y2={-8}
+                    className="callout-leader"
+                  />
+                  <circle cx={callout.anchorX} cy={-2} r={1.7} className="callout-dot" />
+                  <text
+                    x={callout.left}
+                    y={-11}
+                    transform={upright(callout.left, -11)}
+                    className="callout-name"
+                    textAnchor={orientation === 'roof' ? 'end' : 'start'}
+                  >
+                    {callout.text}
+                  </text>
+                  {callout.detail !== undefined && (
+                    <text
+                      x={callout.left + detailOffset}
+                      y={-11}
+                      transform={upright(callout.left + detailOffset, -11)}
+                      className="callout-detail"
+                      textAnchor={orientation === 'roof' ? 'end' : 'start'}
+                    >
+                      {callout.detail}
+                    </text>
+                  )}
+                </g>
+              );
+            }
             const y = calloutY(callout.row);
             const labelCentreX = callout.left + callout.width / 2;
             return (
@@ -1249,7 +1411,12 @@ export function CrossSection({
           y2={dewPointY}
           className="dew-point-line"
         />
-        <text x={4} y={dewPointY - 5} className="dew-point-label">
+        <text
+          x={vertical ? totalWidth * 0.34 : 4}
+          y={dewPointY - 5}
+          transform={upright(totalWidth * 0.34, dewPointY - 5)}
+          className="dew-point-label"
+        >
           dew point {profile.internalDewPointTemperatureC.toFixed(1)} °C
         </text>
 
@@ -1336,6 +1503,13 @@ export function CrossSection({
                 />
                 {/* Leader from the plane to the badge, when the badge had to shift. */}
                 <line x1={x} y1={lineY} x2={dropCx} y2={centreY} className="wet-plane-leader" />
+                {/*
+                  * The badge is turned back as a whole rather than label by label. It is
+                  * a panel with a drop and two lines of text laid out against each other,
+                  * so turning the pieces separately would leave the text running out of
+                  * its own box.
+                  */}
+                <g transform={upright(badgeX + badgeWidth / 2, centreY)}>
                 <rect
                   x={badgeX}
                   y={badgeY}
@@ -1355,6 +1529,7 @@ export function CrossSection({
                 <text x={textX} y={centreY + 11} className="wet-plane-rate">
                   {rateText}
                 </text>
+                </g>
               </g>
             );
           })}
@@ -1409,7 +1584,12 @@ export function CrossSection({
                      * point line - and that row already carries the dew point's own
                      * label over on the left.
                      */
-                    <text x={x + 9} y={y + 15} className="shortfall-label">
+                    <text
+                      x={x + 9}
+                      y={y + 15}
+                      transform={upright(x + 9, y + 15)}
+                      className="shortfall-label"
+                    >
                       {temperatureIntervalC(shortfallK)} below dew point
                     </text>
                   )}
@@ -1443,7 +1623,13 @@ export function CrossSection({
               )}
               {/* The exclamation inside the warning triangle. */}
               {condition === 'surface-condensation' && (
-                <text x={x} y={y + 4} textAnchor="middle" className="node-glyph-bang">
+                <text
+                  x={x}
+                  y={y + 4}
+                  transform={upright(x, y + 4)}
+                  textAnchor="middle"
+                  className="node-glyph-bang"
+                >
                   !
                 </text>
               )}
@@ -1451,13 +1637,44 @@ export function CrossSection({
           );
         })}
 
-        <text x={0} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label">
-          {EDGE_LABELS[elementKind][0]}
-        </text>
-        <text x={totalWidth} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label" textAnchor="end">
-          {EDGE_LABELS[elementKind][1]}
-        </text>
-
+        {vertical ? (
+          <>
+            {/* Centred beyond each face, which after the turn is over it and under it. */}
+            <text
+              x={-10}
+              y={TOP_PAD + PLOT_HEIGHT / 2}
+              transform={upright(-10, TOP_PAD + PLOT_HEIGHT / 2)}
+              className="side-label"
+              textAnchor="middle"
+            >
+              {EDGE_LABELS[elementKind][0]}
+            </text>
+            <text
+              x={totalWidth + AXIS_WIDTH - 10}
+              y={TOP_PAD + PLOT_HEIGHT / 2}
+              transform={upright(totalWidth + AXIS_WIDTH - 10, TOP_PAD + PLOT_HEIGHT / 2)}
+              className="side-label"
+              textAnchor="middle"
+            >
+              {EDGE_LABELS[elementKind][1]}
+            </text>
+          </>
+        ) : (
+          <>
+            <text x={0} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label">
+              {EDGE_LABELS[elementKind][0]}
+            </text>
+            <text
+              x={totalWidth}
+              y={PLOT_HEIGHT + TOP_PAD + 38}
+              className="side-label"
+              textAnchor="end"
+            >
+              {EDGE_LABELS[elementKind][1]}
+            </text>
+          </>
+        )}
+        </g>
       </svg>
       {/*
         * What is happening at each marked interface, under the drawing. The markers say
@@ -1572,14 +1789,18 @@ export function CrossSection({
         are the internal and external surface resistances, which have no thickness and
         are drawn at a fixed width. Names sit above the drawing with a line to the layer
         each one belongs to, the hatching shows what a layer is made of, and the tinted
-        band is everything at or below the internal dew point. Drag a layer sideways to
-        reorder it, and it comes with you at its real width while the rest open a gap.
+        band is everything at or below the internal dew point.{' '}
+        {vertical
+          ? `The build-up runs down the page, ${
+              orientation === 'roof' ? 'outside at the top' : 'the room at the top'
+            }, so the drawing sits the way the element does. Drag a layer up or down to reorder it, and it comes with you at its real thickness while the rest open a gap.`
+          : 'Drag a layer sideways to reorder it, and it comes with you at its real width while the rest open a gap.'}{' '}
         Drag the grip on its outer edge to change its thickness, or click one to pick it
         out in the layer list.
         {hasBridgedLayer &&
           ' A bridged layer is outlined in the accent colour, and its callout carries the bridged percentage.' +
           (hasDrawableStuds
-            ? ` Its height is ${wallLengthShownMm.toFixed(0)} mm of wall, so studs and rafters appear inside the layers they bridge at their true width and pitch. The temperature line is an overlay on that section, read against the degrees axis on the right, so a member drawn level with a temperature does not mean anything by it.`
+            ? ` It covers ${wallLengthShownMm.toFixed(0)} mm along the element, so studs and rafters appear inside the layers they bridge at their true width and pitch. The temperature line is an overlay on that section, read against the degrees axis ${vertical ? 'along the top' : 'on the right'}, so a member drawn level with a temperature does not mean anything by it.`
             : ' Height carries no quantity where nothing is bridged by measured members.')}
         {lastIncludedIndex < layers.length - 1 &&
           ' The cross-hatched layers beyond the ventilated cavity are disregarded by the calculation.'}

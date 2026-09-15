@@ -3710,6 +3710,33 @@ body.is-dragging * {
 }
 
 /*
+ * A roof or a floor runs down the page, so the drawing is portrait and the axes the
+ * pointer works along have swapped. Sized by its height rather than stretched to the
+ * column width, or a tall drawing would fill the screen and the layers would be drawn a
+ * metre wide.
+ */
+.cross-section > svg.is-vertical {
+  display: block;
+  width: auto;
+  height: 620px;
+  max-width: 100%;
+  max-height: 78vh;
+  margin: 0 auto;
+}
+
+.is-vertical .resize-handle-target {
+  cursor: ns-resize;
+}
+
+.is-vertical .member-grip {
+  cursor: ew-resize;
+}
+
+.cross-section:has(.is-vertical .resize-handle.is-active) {
+  cursor: ns-resize;
+}
+
+/*
  * A touch device has no hover, so a handle that only appears on hover can never be found.
  * There they stay faintly visible instead.
  */
