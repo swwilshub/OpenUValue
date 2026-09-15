@@ -46,6 +46,7 @@ import {
   layerDrawCategory,
   environmentForDirection,
   hasBridging,
+  coldRoofExample,
   timberFrameExample,
   toBuildingElement,
 } from './state/model.js';
@@ -458,6 +459,9 @@ export function App(): JSX.Element {
           </button>
           <button type="button" onClick={() => setState(timberFrameExample())}>
             Timber frame example
+          </button>
+          <button type="button" onClick={() => setState(coldRoofExample())}>
+            Cold roof example
           </button>
           <button type="button" className="primary" onClick={() => void copyLink()}>
             {copied ? 'Link copied' : 'Copy share link'}

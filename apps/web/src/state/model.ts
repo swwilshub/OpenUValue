@@ -819,8 +819,8 @@ export function blankAirLayer(): UiLayer {
 }
 
 /**
- * A filled-cavity masonry wall and a timber-frame wall, both written by us as
- * starting points. Neither is taken from any other tool's example library.
+ * Three starting points, all written for this tool: a filled-cavity masonry wall, a
+ * timber-frame wall and a cold roof. None is taken from anyone else's example library.
  */
 export function defaultState(): UiState {
   return {
@@ -838,6 +838,61 @@ export function defaultState(): UiState {
     section: 'combined',
     internalSurfaceCondition: 'normal-air-circulation',
     externalEnvironment: 'outside-air',
+    // BR 443 (2019) 4.8.1: level 1 unless the conditions for level 0 are met.
+    airGapLevel: DEFAULT_AIR_GAP_LEVEL,
+    exposureZoneId: 'moderate',
+  };
+}
+
+/**
+ * A cold roof: insulation at ceiling level with a ventilated loft over it.
+ *
+ * This is what most UK houses have over the top floor, and what most loft work is done
+ * to. The 100 mm laid between the ceiling joists and 200 mm cross-laid over them is the
+ * arrangement the depth is usually made up in, and it is there for a reason the drawing
+ * shows: only the first layer is bridged by the joists, so the second one insulates the
+ * timber as well as the gaps between it. Laying all 300 mm between the joists would cost
+ * a good deal of the benefit and would not fit.
+ *
+ * The loft above is an unheated roof space, so the outer face sees still air rather than
+ * wind and the tiles, battens and felt above play no part in the U-value.
+ *
+ * The dimensions are ordinary UK practice rather than anything a standard fixes: 47 mm
+ * joists at 400 mm centres, 12.5 mm plasterboard. The timber fraction is measured from
+ * them rather than taken from a table, since a ceiling's joists are the members that
+ * bridge it and nothing else is.
+ */
+export function coldRoofExample(): UiState {
+  const joistWidthMm = 47;
+  const joistCentresMm = 400;
+  return {
+    name: 'Cold roof, insulated at ceiling level',
+    elementKind: 'roof',
+    // A ceiling is flat, so heat leaves it straight up. The loft's own pitch is above it
+    // and outside the element entirely.
+    roofPitchDegrees: 0,
+    heatFlowDirection: 'upward',
+    layers: [
+      layerFromMaterial('gypsum-plasterboard', 12.5),
+      {
+        ...layerFromMaterial('mineral-wool-quilt', 100),
+        bridgedPercent: bridgedPercentFromDimensions(joistWidthMm, joistCentresMm),
+        bridgeLabel: 'Ceiling joist',
+        bridgeMaterialId: 'softwood-structural',
+        bridgeLambdaWPerMK: 0.13,
+        bridgeSizing: 'dimensions',
+        bridgeWidthMm: joistWidthMm,
+        bridgeSpacingMm: joistCentresMm,
+      },
+      {
+        ...layerFromMaterial('mineral-wool-quilt', 200),
+        label: 'Mineral wool quilt, cross-laid over the joists',
+      },
+    ],
+    conditions: commonDefaultConditions('unheated-roof-space'),
+    section: 'combined',
+    internalSurfaceCondition: 'normal-air-circulation',
+    externalEnvironment: 'unheated-roof-space',
     // BR 443 (2019) 4.8.1: level 1 unless the conditions for level 0 are met.
     airGapLevel: DEFAULT_AIR_GAP_LEVEL,
     exposureZoneId: 'moderate',

@@ -1273,9 +1273,12 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <LayersFigure />,
         body: (
           <p>
-            Two starting points written for this tool: a filled-cavity masonry wall and a timber
-            frame wall. They replace whatever is on screen, so copy your link first if you want to
-            come back to it. Neither is taken from anyone else's example library.
+            Three starting points written for this tool: a filled-cavity masonry wall, a timber
+            frame wall, and a cold roof insulated at ceiling level with a ventilated loft above
+            it. The last one is the commonest thing over a UK top floor, and it sets the element
+            to a roof, so the drawing turns with it. They replace whatever is on screen, so copy
+            your link first if you want to come back to it. None is taken from anyone else's
+            example library.
           </p>
         ),
       },
