@@ -17,6 +17,7 @@ export * from './psychrometrics.js';
 export * from './vapour.js';
 export * from './rounding.js';
 export * from './surfaceResistance.js';
+export * from './pitch.js';
 export * from './airLayer.js';
 export * from './airspace.js';
 export * from './climate.js';

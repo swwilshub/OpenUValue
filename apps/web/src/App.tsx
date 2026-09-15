@@ -3,7 +3,6 @@ import type {
   AirGapLevel,
   EnvironmentConditions,
   ExternalEnvironmentKind,
-  HeatFlowDirection,
   InternalSurfaceCondition,
   ProfileSection,
 } from '@openuvalue/engine';
@@ -38,9 +37,12 @@ import {
   type UiFasteners,
   type UiLayer,
   type UiState,
+  type UiElementKind,
   bridgedPercentFromDimensions,
   conditionsForEnvironment,
   defaultState,
+  directionForElement,
+  partLKindForElement,
   layerDrawCategory,
   environmentForDirection,
   hasBridging,
@@ -63,6 +65,20 @@ const TOUR_SEEN_KEY = 'openuvalue.tour.seen';
  * whichever analysis is open. The tabs switch what is said *about* it.
  */
 type TabId = 'buildup' | 'moisture' | 'energy' | 'retrofit';
+
+/**
+ * How far to lay the 3D model back from upright, in radians.
+ *
+ * A wall stands up. A roof is laid back by (90° − its pitch), so a flat roof lies flat
+ * and a steep one stands almost upright; a floor lies flat with the room above it, which
+ * is the same quarter turn the other way. Nothing about the build-up changes, only the
+ * angle the model is seen from.
+ */
+function layupTiltRadians(kind: UiElementKind, roofPitchDegrees: number): number {
+  const degrees =
+    kind === 'wall' ? 0 : kind === 'floor' ? 90 : 90 - roofPitchDegrees;
+  return (degrees * Math.PI) / 180;
+}
 
 const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
   { id: 'buildup', label: 'Build-up and U-value' },
@@ -192,8 +208,11 @@ export function App(): JSX.Element {
       return { ...current, layers: next };
     });
   }, []);
-  const setDirection = useCallback((heatFlowDirection: HeatFlowDirection) => {
+  const setElement = useCallback((elementKind: UiElementKind, roofPitchDegrees: number) => {
     setState((current) => {
+      // The direction is not stored independently: it is what the element and its pitch
+      // imply, so it is recomputed here rather than left to drift out of step with them.
+      const heatFlowDirection = directionForElement(elementKind, roofPitchDegrees);
       // Turning a wall into a roof leaves "rear ventilated cladding" selected, which
       // the engine refuses outright, so the environment moves with the direction.
       const externalEnvironmentKind = environmentForDirection(
@@ -202,6 +221,8 @@ export function App(): JSX.Element {
       );
       return {
         ...current,
+        elementKind,
+        roofPitchDegrees,
         heatFlowDirection,
         externalEnvironment: externalEnvironmentKind,
         conditions:
@@ -530,6 +551,7 @@ export function App(): JSX.Element {
           {heroView === 'section' ? (
             <CrossSection
               layers={state.layers}
+              elementKind={state.elementKind}
               result={result}
               profile={profile}
               section={state.section}
@@ -547,6 +569,7 @@ export function App(): JSX.Element {
               included={result.layers.map((layer) => layer.includedInCalculation)}
               selectedLayerId={selectedLayerId}
               onSelectLayer={setSelectedLayerId}
+              tiltRadians={layupTiltRadians(state.elementKind, state.roofPitchDegrees)}
             />
           )}
 
@@ -581,6 +604,7 @@ export function App(): JSX.Element {
         <SummaryStrip
           onOpenGuide={openGuide}
           element={element}
+          partLKind={partLKindForElement(state.elementKind)}
           result={result}
           corrections={corrections}
           conditions={state.conditions}
@@ -658,11 +682,13 @@ export function App(): JSX.Element {
             <BoundaryPanel
               onOpenGuide={openGuide}
               heatFlowDirection={state.heatFlowDirection}
+              elementKind={state.elementKind}
+              roofPitchDegrees={state.roofPitchDegrees}
               conditions={state.conditions}
               internalSurfaceCondition={state.internalSurfaceCondition}
               externalEnvironmentKind={state.externalEnvironment}
               result={result}
-              onDirectionChange={setDirection}
+              onElementChange={setElement}
               onConditionsChange={setConditions}
               onInternalSurfaceConditionChange={setInternalSurfaceCondition}
               onExternalEnvironmentChange={setExternalEnvironment}

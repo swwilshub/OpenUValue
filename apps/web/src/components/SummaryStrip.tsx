@@ -6,6 +6,7 @@ import type {
   EnvironmentConditions,
   PartLContext,
   UValueResult,
+  PartLElementKind,
 } from '@openuvalue/engine';
 import {
   MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT,
@@ -13,7 +14,6 @@ import {
   arealQuantities,
   assessInterstitialCondensation,
   checkAgainstPartL,
-  partLElementKindForDirection,
   ratePerDayGPerM2,
   vapourClassForSd,
 } from '@openuvalue/engine';
@@ -70,6 +70,12 @@ export interface SummaryStripProps {
   /** Opens the feature guide at a topic. */
   readonly onOpenGuide: (topicId: string) => void;
   readonly element: BuildingElement;
+  /**
+   * The Approved Document L category. Passed in rather than derived from the heat flow
+   * direction, because a roof steep enough to take a wall's surface resistances is still
+   * a roof to the limiting values.
+   */
+  readonly partLKind: PartLElementKind;
   readonly result: UValueResult;
   readonly corrections: CorrectionResult | undefined;
   readonly conditions: EnvironmentConditions;
@@ -79,6 +85,7 @@ export interface SummaryStripProps {
 
 export function SummaryStrip({
   element,
+  partLKind,
   result,
   corrections,
   conditions,
@@ -106,10 +113,9 @@ export function SummaryStrip({
   const partLCheck =
     displayedU === null
       ? undefined
-      : checkAgainstPartL(
-          displayedU,
-          partLElementKindForDirection(element.heatFlowDirection),
-        ).find((check) => check.context === partLContext);
+      : checkAgainstPartL(displayedU, partLKind).find(
+          (check) => check.context === partLContext,
+        );
 
   /*
    * The damp and mould verdict comes from the assessment, not from the profile on

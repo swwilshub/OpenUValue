@@ -8,7 +8,7 @@ import type {
   TemperatureProfile,
   UValueResult,
 } from '@openuvalue/engine';
-import type { LayerDrawCategory, UiLayer } from '../state/model.js';
+import type { LayerDrawCategory, UiElementKind, UiLayer } from '../state/model.js';
 import {
   BR443_ADDITIONAL_TIMBER_ALLOWANCE,
   bridgeGeometry,
@@ -288,8 +288,22 @@ interface LayerBox {
   readonly included: boolean;
 }
 
+/**
+ * What each face of the element faces, in the words that fit it. A section through a roof
+ * is drawn along the same axis as a wall, because a section is taken normal to the
+ * element either way, but "inside" and "outside" stop being the useful names once the
+ * room is below the drawing rather than beside it.
+ */
+const EDGE_LABELS: Readonly<Record<UiElementKind, readonly [string, string]>> = {
+  wall: ['inside', 'outside'],
+  roof: ['room below', 'outside above'],
+  floor: ['room above', 'below'],
+};
+
 export interface CrossSectionProps {
   readonly layers: readonly UiLayer[];
+  /** Decides what the two edges of the drawing are called. */
+  readonly elementKind: UiElementKind;
   readonly result: UValueResult;
   readonly profile: TemperatureProfile;
   readonly section: ProfileSection;
@@ -328,6 +342,7 @@ export interface CrossSectionProps {
 
 export function CrossSection({
   layers,
+  elementKind,
   result,
   profile,
   selectedLayerId,
@@ -1437,10 +1452,10 @@ export function CrossSection({
         })}
 
         <text x={0} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label">
-          inside
+          {EDGE_LABELS[elementKind][0]}
         </text>
         <text x={totalWidth} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label" textAnchor="end">
-          outside
+          {EDGE_LABELS[elementKind][1]}
         </text>
 
       </svg>

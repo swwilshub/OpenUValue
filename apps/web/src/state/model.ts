@@ -15,7 +15,9 @@ import {
   DEFAULT_AIR_GAP_LEVEL,
   externalEnvironment,
   externalEnvironmentsForDirection,
+  heatFlowDirectionForRoofPitch,
 } from '@openuvalue/engine';
+import type { PartLElementKind } from '@openuvalue/engine';
 import { millimetresToMetres, percentToFraction } from '@openuvalue/engine';
 import type { MaterialCategory } from '@openuvalue/materials';
 import { findMaterialById, toEngineMaterial } from '@openuvalue/materials';
@@ -96,8 +98,56 @@ export interface UiLayer {
   readonly emissivity: AirLayerEmissivity;
 }
 
+/**
+ * What is being built, as a person would name it.
+ *
+ * The engine works in directions of heat flow, which is the right variable for the
+ * physics and the wrong one for a control: "upward" is a roof to somebody who already
+ * knows, and a puzzle to everybody else. A roof also carries a pitch, which decides the
+ * direction for it (see `heatFlowDirectionForRoofPitch`), and Approved Document L judges
+ * a roof as a roof at any pitch — so the regulatory category has to come from this field
+ * rather than from the direction the pitch resolves to.
+ */
+export type UiElementKind = 'wall' | 'roof' | 'floor';
+
+/** A common UK pitch to start from, and a plain one to draw. Not a standard value. */
+export const DEFAULT_ROOF_PITCH_DEGREES = 35;
+
+/**
+ * The direction of heat flow the element implies. A wall is horizontal and a floor
+ * downward by definition; a roof depends on its pitch, and a steep enough one behaves
+ * like a wall.
+ */
+export function directionForElement(
+  kind: UiElementKind,
+  roofPitchDegrees: number,
+): HeatFlowDirection {
+  switch (kind) {
+    case 'wall':
+      return 'horizontal';
+    case 'floor':
+      return 'downward';
+    case 'roof':
+      return heatFlowDirectionForRoofPitch(roofPitchDegrees);
+  }
+}
+
+/**
+ * The Approved Document L category. Taken from what the element is, never from the
+ * direction: a roof pitched at 70 degrees takes a wall's surface resistances and is
+ * still a roof to the limiting values.
+ */
+export function partLKindForElement(kind: UiElementKind): PartLElementKind {
+  return kind;
+}
+
 export interface UiState {
   readonly name: string;
+  /** What the element is. The direction below follows from it, and from the pitch. */
+  readonly elementKind: UiElementKind;
+  /** Degrees from horizontal. Only meaningful for a roof; 0 is a flat roof. */
+  readonly roofPitchDegrees: number;
+  /** Derived from the two above, and kept here because everything downstream reads it. */
   readonly heatFlowDirection: HeatFlowDirection;
   readonly layers: readonly UiLayer[];
   readonly conditions: EnvironmentConditions;
@@ -775,6 +825,8 @@ export function blankAirLayer(): UiLayer {
 export function defaultState(): UiState {
   return {
     name: 'Filled cavity masonry wall',
+    elementKind: 'wall',
+    roofPitchDegrees: DEFAULT_ROOF_PITCH_DEGREES,
     heatFlowDirection: 'horizontal',
     layers: [
       layerFromMaterial('gypsum-plasterboard', 12.5),
@@ -796,6 +848,8 @@ export function timberFrameExample(): UiState {
   const insulation = layerFromMaterial('mineral-wool-quilt', 140);
   return {
     name: 'Timber frame wall',
+    elementKind: 'wall',
+    roofPitchDegrees: DEFAULT_ROOF_PITCH_DEGREES,
     heatFlowDirection: 'horizontal',
     layers: [
       layerFromMaterial('gypsum-plasterboard', 12.5),

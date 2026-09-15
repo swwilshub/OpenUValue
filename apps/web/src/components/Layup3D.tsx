@@ -136,6 +136,13 @@ const AMBIENT = 0.62;
 
 export interface Layup3DProps {
   readonly layers: readonly UiLayer[];
+  /**
+   * How far the element is laid back from upright, in radians, before the camera sees
+   * it. Zero draws a wall. A roof pitched θ from horizontal is laid back by (90° − θ), so
+   * a flat roof lies flat and a steep one stands nearly upright. The build-up is
+   * unchanged: this turns the model, not the layers.
+   */
+  readonly tiltRadians?: number;
   readonly included: readonly boolean[];
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
@@ -146,6 +153,7 @@ export function Layup3D({
   included,
   selectedLayerId,
   onSelectLayer,
+  tiltRadians = 0,
 }: Layup3DProps): JSX.Element {
   const [yaw, setYaw] = useState(DEFAULT_YAW);
   const [pitch, setPitch] = useState(DEFAULT_PITCH);
@@ -203,8 +211,13 @@ export function Layup3D({
   const cy = -tallestMm / 2;
   const cz = totalThicknessMm / 2;
 
+  /*
+   * Lay the element back to its own pitch first, then apply the camera. A rotation about
+   * X with no yaw is exactly that tilt, so the same helper does both turns and there is
+   * one place where the order is decided.
+   */
   const place = (v: Vec3): Vec3 =>
-    rotate({ x: v.x + cx, y: v.y + cy, z: v.z + cz }, yaw, pitch);
+    rotate(rotate({ x: v.x + cx, y: v.y + cy, z: v.z + cz }, 0, tiltRadians), yaw, pitch);
 
   /*
    * Fit to what the model actually projects to at the angle it is at.
@@ -237,8 +250,11 @@ export function Layup3D({
     originY - v.y * scale,
   ];
 
+  /** A direction in the model's own frame, as the camera sees it once it is laid back. */
+  const tiltedAxis = (v: Vec3): Vec3 => rotate(rotate(v, 0, tiltRadians), yaw, pitch);
+
   const faceBrightness = (normal: Vec3): number => {
-    const n = rotate(normal, yaw, pitch);
+    const n = tiltedAxis(normal);
     const lambert = Math.max(0, n.x * LIGHT.x + n.y * LIGHT.y + n.z * LIGHT.z);
     return AMBIENT + (1 - AMBIENT) * lambert;
   };
@@ -251,8 +267,8 @@ export function Layup3D({
    * just that axis rotated and its z taken. That linearity is what makes an exact draw
    * order possible below without sorting individual triangles.
    */
-  const depthPerX = rotate({ x: 1, y: 0, z: 0 }, yaw, pitch).z;
-  const depthPerZ = rotate({ x: 0, y: 0, z: 1 }, yaw, pitch).z;
+  const depthPerX = tiltedAxis({ x: 1, y: 0, z: 0 }).z;
+  const depthPerZ = tiltedAxis({ x: 0, y: 0, z: 1 }).z;
 
   const boxFaces = (
     key: string,
@@ -275,7 +291,7 @@ export function Layup3D({
       }
       // Drop the faces turned away from the camera: they can never be seen, and drawing
       // them would put a wrongly shaded polygon over one that should be in front.
-      const n = rotate(face.normal, yaw, pitch);
+      const n = tiltedAxis(face.normal);
       if (n.z <= 0.0001) {
         return;
       }

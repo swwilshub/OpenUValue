@@ -7,15 +7,39 @@ import type {
   InternalSurfaceCondition,
   ProfileSection,
 } from '@openuvalue/engine';
-import { EXPOSURE_ZONES, EXTERNAL_ENVIRONMENTS, INTERNAL_SURFACE_CONDITIONS } from '@openuvalue/engine';
 import {
+  EXPOSURE_ZONES,
+  EXTERNAL_ENVIRONMENTS,
+  INTERNAL_SURFACE_CONDITIONS,
+  MAX_PITCH_DEGREES,
+  PITCH_TREATED_AS_VERTICAL_DEGREES,
+} from '@openuvalue/engine';
+import {
+  DEFAULT_ROOF_PITCH_DEGREES,
+  type UiElementKind,
   type UiFasteners,
   type UiLayer,
   type UiState,
   blankSolidLayer,
   defaultState,
+  directionForElement,
   makeLayerId,
 } from '../state/model.js';
+
+/** The element kinds, for validating a hand-edited link. */
+const ELEMENT_KINDS: readonly UiElementKind[] = ['wall', 'roof', 'floor'];
+
+/** What a link written before element kinds existed meant by its direction. */
+function elementKindForDirection(direction: HeatFlowDirection): UiElementKind {
+  switch (direction) {
+    case 'upward':
+      return 'roof';
+    case 'downward':
+      return 'floor';
+    case 'horizontal':
+      return 'wall';
+  }
+}
 
 /**
  * The build-up is encoded into the URL hash so it can be shared by link, with no
@@ -65,6 +89,10 @@ interface EncodedState {
   readonly f?: readonly [number, number, number, number];
   /** Wind-driven rain exposure zone. Absent in links written before it existed. */
   readonly x?: ExposureZoneId;
+  /** What the element is. Absent in links written before roofs had a pitch. */
+  readonly k?: UiElementKind;
+  /** Roof pitch in degrees. Absent unless the element is a roof. */
+  readonly p?: number;
 }
 
 /**
@@ -114,6 +142,8 @@ export function encodeState(state: UiState): string {
   const payload: EncodedState = {
     n: state.name,
     x: state.exposureZoneId,
+    k: state.elementKind,
+    ...(state.elementKind === 'roof' ? { p: state.roofPitchDegrees } : {}),
     d: state.heatFlowDirection,
     s: state.section,
     c: [
@@ -268,6 +298,29 @@ export function decodeState(hash: string): DecodeResult {
     const conditions = Array.isArray(parsed['c']) ? parsed['c'] : [];
     const direction = parsed['d'];
     const section = parsed['s'];
+    const decodedDirection: HeatFlowDirection =
+      typeof direction === 'string' &&
+      HEAT_FLOW_DIRECTIONS.includes(direction as HeatFlowDirection)
+        ? (direction as HeatFlowDirection)
+        : 'horizontal';
+    const elementKind: UiElementKind =
+      typeof parsed['k'] === 'string' && ELEMENT_KINDS.includes(parsed['k'] as UiElementKind)
+        ? (parsed['k'] as UiElementKind)
+        : elementKindForDirection(decodedDirection);
+    const rawPitch = parsed['p'];
+    const pitch =
+      typeof rawPitch === 'number' && Number.isFinite(rawPitch)
+        ? Math.min(MAX_PITCH_DEGREES, Math.max(0, rawPitch))
+        : /*
+           * An old link that said "upward" meant a flat roof or a ceiling, which is 0.
+           * One that said "horizontal" and is being read as a roof only gets there by
+           * hand-editing, and a steep pitch is the reading that keeps its resistances.
+           */
+          decodedDirection === 'upward'
+          ? 0
+          : elementKind === 'roof'
+            ? PITCH_TREATED_AS_VERTICAL_DEGREES
+            : DEFAULT_ROOF_PITCH_DEGREES;
     return {
       state: {
         name: typeof parsed['n'] === 'string' ? parsed['n'] : fallback.name,
@@ -281,11 +334,17 @@ export function decodeState(hash: string): DecodeResult {
           EXPOSURE_ZONES.some((zone) => zone.id === parsed['x'])
             ? (parsed['x'] as UiState['exposureZoneId'])
             : fallback.exposureZoneId,
-        heatFlowDirection:
-          typeof direction === 'string' &&
-          HEAT_FLOW_DIRECTIONS.includes(direction as HeatFlowDirection)
-            ? (direction as HeatFlowDirection)
-            : 'horizontal',
+        /*
+         * The element kind and its pitch arrived after the direction did, so a link
+         * written before them carries only 'd'. Such a link is read back through the
+         * kind that direction implied at the time, which is what it meant: 'upward' was
+         * only ever reachable by choosing a roof. The direction is then recomputed from
+         * the pair rather than trusted from the hash, so a hand-edited link cannot
+         * describe a 20-degree roof with a wall's surface resistances.
+         */
+        elementKind,
+        roofPitchDegrees: pitch,
+        heatFlowDirection: directionForElement(elementKind, pitch),
         section:
           typeof section === 'string' && PROFILE_SECTIONS.includes(section as ProfileSection)
             ? (section as ProfileSection)

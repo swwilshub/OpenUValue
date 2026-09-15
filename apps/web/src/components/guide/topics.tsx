@@ -652,16 +652,33 @@ export const CHAPTERS: readonly GuideChapter[] = [
     topics: [
       {
         id: 'conditions-direction',
-        title: 'Wall, roof or floor',
+        title: 'Wall, roof or floor, and the pitch',
         figure: <DirectionFigure />,
         body: (
-          <p>
-            Heat rises, so the direction it is travelling changes the surface resistances and the
-            behaviour of any cavity. Upward is a roof, downward a floor, horizontal a wall.
-            BS EN ISO 6946 counts anything within 30° of horizontal as a wall, so a steeply
-            pitched roof uses the wall figures. Changing this also changes which Part L limit the
-            summary strip measures you against.
-          </p>
+          <>
+            <p>
+              Heat rises, so the direction it travels changes the surface resistances and the
+              behaviour of any cavity. Say what you are building and the direction follows:
+              a wall is horizontal, a floor is downward, and a roof depends on how steep it is.
+              The choice also decides which Approved Document L limit the summary strip measures
+              you against, and it tilts the 3D layup to match.
+            </p>
+            <p>
+              <strong>The pitch rule catches people out, this tool included.</strong> BS EN ISO
+              6946 tabulates by the direction heat <em>flows</em>, not by the angle of the
+              surface, and the horizontal column covers flow within ±30° of the horizontal
+              plane. Heat leaves normal to the face, so a roof pitched θ sends it out at (90 − θ)
+              from horizontal: a 45° roof still counts as upward heat flow, and only at 60° does
+              the flow come inside the band and take a wall&rsquo;s R<sub>si</sub> of 0.13
+              instead of 0.10. The figure beside the pitch draws the slope, the flow and the band
+              together, and shades the band when the flow is inside it.
+            </p>
+            <p>
+              A steep roof takes a wall&rsquo;s surface resistances and is still a roof to the
+              limiting values, which are set by what the element is rather than by where its heat
+              goes. A cold loft ceiling is a roof at 0°.
+            </p>
+          </>
         ),
       },
       {

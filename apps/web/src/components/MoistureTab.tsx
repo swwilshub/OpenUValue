@@ -112,7 +112,7 @@ export function MoistureTab({
       <section className="panel">
         <div className="panel-head">
           <h2>
-            How damp does it get inside the wall?
+            How damp does it get inside the build-up?
             <HelpButton topicId="moisture-humidity" label="the humidity chart" onOpen={onOpenGuide} />
           </h2>
           {assessment.perPath.length > 1 && (
@@ -248,7 +248,7 @@ export function MoistureTab({
                   <strong>It does not dry out.</strong>{' '}
                   {periods.totalRemainingKgPerM2.toFixed(2)} kg/m² is still there at the end
                   of the drying season, so this build-up gains water every year. That is the
-                  failure mode that rots a wall slowly rather than quickly.
+                  failure mode that rots a build-up slowly rather than quickly.
                 </>
               )}
             </p>

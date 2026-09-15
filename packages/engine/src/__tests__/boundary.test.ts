@@ -128,12 +128,12 @@ describe('external environment', () => {
   });
 
   it('refuses an environment that does not apply to the direction of heat flow', () => {
-    // Rear ventilated roofing is not a thing a wall has.
-    const wall = element([solid('c', 'Concrete', 0.1, CONCRETE_MEDIUM)], {
-      heatFlowDirection: 'horizontal',
-      externalEnvironment: 'rear-ventilated-roofing',
+    // Rear ventilated cladding is not a thing a ceiling has.
+    const ceiling = element([solid('c', 'Concrete', 0.1, CONCRETE_MEDIUM)], {
+      heatFlowDirection: 'upward',
+      externalEnvironment: 'rear-ventilated-cladding',
     });
-    expect(() => resolveSurfaceResistancesDetailed(wall)).toThrow(InvalidInputError);
+    expect(() => resolveSurfaceResistancesDetailed(ceiling)).toThrow(InvalidInputError);
   });
 
   it('lets an explicit Rse override win over the environment', () => {
@@ -153,14 +153,23 @@ describe('external environment', () => {
 
 describe('environment listings', () => {
   it('offers only environments that suit the direction of heat flow', () => {
+    /*
+     * Horizontal heat flow is not only a wall's. A roof pitched past 60 degrees resolves
+     * to horizontal and still has tiles over a ventilated batten space, and a gable wall
+     * between a room and a cold loft faces a roof space while standing upright. What a
+     * wall genuinely cannot have is a ceiling's, and vice versa.
+     */
     const horizontal = externalEnvironmentsForDirection('horizontal').map((e) => e.kind);
     expect(horizontal).toContain('rear-ventilated-cladding');
-    expect(horizontal).not.toContain('rear-ventilated-roofing');
-    expect(horizontal).not.toContain('unheated-roof-space');
+    expect(horizontal).toContain('rear-ventilated-roofing');
+    expect(horizontal).toContain('unheated-roof-space');
 
     const upward = externalEnvironmentsForDirection('upward').map((e) => e.kind);
     expect(upward).toContain('unheated-roof-space');
+    expect(upward).toContain('rear-ventilated-roofing');
     expect(upward).not.toContain('rear-ventilated-cladding');
+    // Ground needs BS EN ISO 13370 and is never offered upward either way.
+    expect(upward).not.toContain('ground');
   });
 
   it('keeps every listed case reachable by its own lookup', () => {

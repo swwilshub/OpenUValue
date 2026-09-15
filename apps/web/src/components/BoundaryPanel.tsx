@@ -17,22 +17,20 @@ import {
   conditionsForEnvironment,
 } from '../state/model.js';
 import { HelpButton } from './guide/Guide.js';
-
-const DIRECTION_LABELS: Record<HeatFlowDirection, string> = {
-  horizontal: 'Horizontal, wall',
-  upward: 'Upward, roof or ceiling',
-  downward: 'Downward, floor',
-};
+import { ElementPicker } from './ElementPicker.js';
+import type { UiElementKind } from '../state/model.js';
 
 export interface BoundaryPanelProps {
   /** Opens the feature guide at a topic. */
   readonly onOpenGuide: (topicId: string) => void;
   readonly heatFlowDirection: HeatFlowDirection;
+  readonly elementKind: UiElementKind;
+  readonly roofPitchDegrees: number;
   readonly conditions: EnvironmentConditions;
   readonly internalSurfaceCondition: InternalSurfaceCondition;
   readonly externalEnvironmentKind: ExternalEnvironmentKind;
   readonly result: UValueResult;
-  readonly onDirectionChange: (direction: HeatFlowDirection) => void;
+  readonly onElementChange: (kind: UiElementKind, roofPitchDegrees: number) => void;
   readonly onConditionsChange: (conditions: EnvironmentConditions) => void;
   readonly onInternalSurfaceConditionChange: (condition: InternalSurfaceCondition) => void;
   readonly onExternalEnvironmentChange: (
@@ -75,11 +73,13 @@ function SurfaceConditionIcon({ kind }: { readonly kind: InternalSurfaceConditio
 
 export function BoundaryPanel({
   heatFlowDirection,
+  elementKind,
+  roofPitchDegrees,
   conditions,
   internalSurfaceCondition: internalCondition,
   externalEnvironmentKind,
   result,
-  onDirectionChange,
+  onElementChange,
   onConditionsChange,
   onInternalSurfaceConditionChange,
   onExternalEnvironmentChange,
@@ -113,19 +113,21 @@ export function BoundaryPanel({
         </button>
       </div>
 
-      <label className="field">
-        Direction of heat flow
-        <select
-          value={heatFlowDirection}
-          onChange={(event) => onDirectionChange(event.target.value as HeatFlowDirection)}
-        >
-          {(Object.keys(DIRECTION_LABELS) as HeatFlowDirection[]).map((direction) => (
-            <option key={direction} value={direction}>
-              {DIRECTION_LABELS[direction]}
-            </option>
-          ))}
-        </select>
-      </label>
+      <fieldset className="choice-group">
+        <legend>
+          What are you building?
+          <HelpButton
+            topicId="conditions-direction"
+            label="the element and its pitch"
+            onOpen={onOpenGuide}
+          />
+        </legend>
+        <ElementPicker
+          elementKind={elementKind}
+          roofPitchDegrees={roofPitchDegrees}
+          onChange={onElementChange}
+        />
+      </fieldset>
 
       <div className="boundary-sides">
         {/* ----------------------------------------------------------- inside --- */}

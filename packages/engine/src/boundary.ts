@@ -178,7 +178,10 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
       'A ventilated cavity beneath a roof covering. Treated as for rear ventilated ' +
       'cladding, with the covering and the cavity disregarded.',
     rseTreatment: 'still-air-equal-to-rsi',
-    applicableDirections: ['upward', 'downward'],
+    // Horizontal is here for a steeply pitched roof: past 60 degrees its heat flow comes
+    // within the +/-30 band and resolves to horizontal, and it still has tiles over a
+    // ventilated batten space.
+    applicableDirections: ['upward', 'horizontal', 'downward'],
     supported: true,
     needsOwnAirTemperature: false,
   },
@@ -203,7 +206,10 @@ export const EXTERNAL_ENVIRONMENTS: readonly ExternalEnvironmentDefinition[] = [
       'A cold loft above the insulated ceiling. Still air on the outer face, so Rse ' +
       'takes the internal-surface value, and the loft temperature has to be supplied.',
     rseTreatment: 'still-air-equal-to-rsi',
-    applicableDirections: ['upward', 'downward'],
+    // Horizontal covers the two upright cases that face the same cold space: a gable or
+    // party wall between a room and a loft, and a steeply pitched roof or dormer cheek
+    // whose heat flow resolves to horizontal.
+    applicableDirections: ['upward', 'horizontal', 'downward'],
     supported: true,
     needsOwnAirTemperature: true,
   },
