@@ -39,7 +39,7 @@ const FILM_WIDTH = 44;
 const DRAW_WIDTH = 660;
 const PLOT_HEIGHT = 260;
 /** Everything the drawing occupies down the page: plot, thickness captions, edge labels. */
-const DRAWING_DEPTH = 260 + 18 + 66;
+const DRAWING_DEPTH = 260 + 18 + 90;
 const TOP_PAD = 18;
 const AXIS_WIDTH = 46;
 /**
@@ -207,6 +207,15 @@ const CALLOUT_GAP = 12;
 const CALLOUT_MAX_WIDTH = 210;
 /** Gutter for the names when the build-up runs down the page. */
 const CALLOUT_GUTTER = 224;
+/**
+ * Lengths a scale bar may take, in millimetres. The bar is the longest of these that
+ * still fits comfortably across the drawing, so it reads as a round number of
+ * millimetres rather than as whatever the drawing happened to scale to.
+ */
+const SCALE_BAR_STEPS_MM = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
+/** Rows under the drawing: captions, the overall dimension, then the bar. */
+const DIMENSION_Y = 260 + 18 + 34;
+const SCALE_BAR_Y = 260 + 18 + 62;
 /** Room one name needs across the stack, with and without its second line. */
 const CALLOUT_SLOT = 12;
 const CALLOUT_SLOT_WITH_DETAIL = 21;
@@ -551,12 +560,18 @@ export function CrossSection({
         Math.max(text.length, detail === undefined ? 0 : detail.length * 0.88) *
         CALLOUT_CHAR_WIDTH;
       const anchorX = drawXOf(box) + box.width / 2;
+      /*
+       * The layer's place in the build-up, which is what the layer list and the 3D view
+       * number it by. Taken from the layers rather than from the draw order, because the
+       * two come apart while a layer is being dragged.
+       */
+      const number = layers.findIndex((layer) => layer.id === box.layer.id) + 1;
 
       if (vertical) {
         const slot = detail === undefined ? CALLOUT_SLOT : CALLOUT_SLOT_WITH_DETAIL;
         const at = Math.max(anchorX, stackedAt + slot);
         stackedAt = at;
-        return { box, text, detail, left: at, width, row: 0, anchorX };
+        return { box, text, detail, left: at, width, row: 0, anchorX, number };
       }
 
       const left = Math.min(
@@ -569,7 +584,7 @@ export function CrossSection({
       }
       rowRightEdge[row] = left + width;
       // A bridged layer's callout carries a second line, so it needs the room of two.
-      return { box, text, detail, left, width, row, anchorX };
+      return { box, text, detail, left, width, row, anchorX, number };
     });
   })();
 
@@ -1119,6 +1134,19 @@ export function CrossSection({
                     />
                   )}
                   {/*
+                    Shading across the layer's own thickness, darker at each face. It
+                    separates one slab from the next without a line that could be read as
+                    a material boundary of its own.
+                  */}
+                  <rect
+                    x={drawX}
+                    y={TOP_PAD}
+                    width={box.width}
+                    height={PLOT_HEIGHT}
+                    fill="url(#layer-shade)"
+                    pointerEvents="none"
+                  />
+                  {/*
                     Studs and rafters, at true width and pitch, drawn as part of the layer
                     they bridge. Inside the layer's own group on purpose: it puts them
                     above the layer's fill and hatch but below its name, which would
@@ -1245,6 +1273,7 @@ export function CrossSection({
                   x={drawX + box.width / 2}
                   y={PLOT_HEIGHT + TOP_PAD + 16}
                   transform={upright(drawX + box.width / 2, PLOT_HEIGHT + TOP_PAD + 16)}
+                  dominantBaseline={vertical ? 'central' : undefined}
                   className="layer-caption"
                   textAnchor="middle"
                 >
@@ -1328,7 +1357,17 @@ export function CrossSection({
                     y2={-8}
                     className="callout-leader"
                   />
-                  <circle cx={callout.anchorX} cy={-2} r={1.7} className="callout-dot" />
+                  <circle cx={callout.anchorX} cy={-2} r={6.4} className="callout-disc" />
+                  <text
+                    x={callout.anchorX}
+                    y={vertical ? -2 : 1.2}
+                    transform={upright(callout.anchorX, -2)}
+                    className="callout-number"
+                    textAnchor="middle"
+                    dominantBaseline={vertical ? 'central' : undefined}
+                  >
+                    {callout.number}
+                  </text>
                   <text
                     x={callout.left}
                     y={-11}
@@ -1363,7 +1402,15 @@ export function CrossSection({
                   y2={TOP_PAD - 1}
                   className="callout-leader"
                 />
-                <circle cx={callout.anchorX} cy={TOP_PAD - 1} r={1.7} className="callout-dot" />
+                <circle cx={callout.anchorX} cy={TOP_PAD - 1} r={6.4} className="callout-disc" />
+                <text
+                  x={callout.anchorX}
+                  y={TOP_PAD + 2.2}
+                  className="callout-number"
+                  textAnchor="middle"
+                >
+                  {callout.number}
+                </text>
                 <text x={callout.left} y={y} className="callout-name">
                   {callout.text}
                 </text>
@@ -1637,6 +1684,86 @@ export function CrossSection({
           );
         })}
 
+        {/*
+          The overall thickness, dimensioned inside face to outside face the way a
+          drawing does it: ticks at each end, the figure in the middle of the run. The
+          per-layer captions above give the parts; this gives the sum, which is the
+          number that decides whether a build-up fits the space there is.
+        */}
+        {(() => {
+          const from = FILM_WIDTH;
+          const to = externalFilmX;
+          if (to - from < 30) {
+            return null;
+          }
+          const middle = (from + to) / 2;
+          return (
+            <g className="dimension">
+              <line x1={from} y1={DIMENSION_Y} x2={to} y2={DIMENSION_Y} />
+              <line x1={from} y1={DIMENSION_Y - 4} x2={from} y2={DIMENSION_Y + 4} />
+              <line x1={to} y1={DIMENSION_Y - 4} x2={to} y2={DIMENSION_Y + 4} />
+              <rect
+                x={middle - 26}
+                y={DIMENSION_Y - 6}
+                width={52}
+                height={12}
+                className="dimension-gap"
+              />
+              <text
+                x={middle}
+                y={vertical ? DIMENSION_Y : DIMENSION_Y + 3.4}
+                transform={upright(middle, vertical ? DIMENSION_Y : DIMENSION_Y + 3.4)}
+                className="dimension-label"
+                textAnchor="middle"
+                dominantBaseline={vertical ? 'central' : undefined}
+              >
+                {includedThicknessMm.toFixed(includedThicknessMm % 1 === 0 ? 0 : 1)} mm
+              </text>
+            </g>
+          );
+        })()}
+
+        {/*
+          A scale bar, so the drawing can be measured rather than only read. The bar
+          takes the longest round length that fits across the build-up, which is also
+          what says how much the drawing has been squeezed: the same bar is shorter on a
+          thick wall than on a thin one.
+        */}
+        {(() => {
+          if (!(scale > 0)) {
+            return null;
+          }
+          const available = (externalFilmX - FILM_WIDTH) * 0.62;
+          const stepMm =
+            [...SCALE_BAR_STEPS_MM].reverse().find((step) => step * scale <= available) ??
+            SCALE_BAR_STEPS_MM[0] ??
+            10;
+          const length = stepMm * scale;
+          if (length < 18) {
+            return null;
+          }
+          const from = FILM_WIDTH;
+          const to = from + length;
+          const half = from + length / 2;
+          return (
+            <g className="scale-bar">
+              {/* Alternating halves, the way a scale bar is drawn on a map or a plan. */}
+              <rect x={from} y={SCALE_BAR_Y - 3} width={length / 2} height={6} className="scale-bar-dark" />
+              <rect x={half} y={SCALE_BAR_Y - 3} width={length / 2} height={6} className="scale-bar-light" />
+              <rect x={from} y={SCALE_BAR_Y - 3} width={length} height={6} className="scale-bar-frame" />
+              <text
+                x={to + 6}
+                y={vertical ? SCALE_BAR_Y : SCALE_BAR_Y + 3.4}
+                transform={upright(to + 6, vertical ? SCALE_BAR_Y : SCALE_BAR_Y + 3.4)}
+                className="scale-bar-label"
+                dominantBaseline={vertical ? 'central' : undefined}
+              >
+                {stepMm} mm
+              </text>
+            </g>
+          );
+        })()}
+
         {vertical ? (
           <>
             {/* Centred beyond each face, which after the turn is over it and under it. */}
@@ -1661,12 +1788,12 @@ export function CrossSection({
           </>
         ) : (
           <>
-            <text x={0} y={PLOT_HEIGHT + TOP_PAD + 38} className="side-label">
+            <text x={0} y={SCALE_BAR_Y + 4} className="side-label">
               {EDGE_LABELS[elementKind][0]}
             </text>
             <text
               x={totalWidth}
-              y={PLOT_HEIGHT + TOP_PAD + 38}
+              y={SCALE_BAR_Y + 4}
               className="side-label"
               textAnchor="end"
             >
@@ -1785,11 +1912,15 @@ export function CrossSection({
         </ul>
       )}
       <figcaption>
-        Layer widths are to scale and captioned in millimetres; the two hatched bands
-        are the internal and external surface resistances, which have no thickness and
-        are drawn at a fixed width. Names sit above the drawing with a line to the layer
-        each one belongs to, the hatching shows what a layer is made of, and the tinted
-        band is everything at or below the internal dew point.{' '}
+        Layer widths are to scale and captioned in millimetres, with the overall
+        thickness dimensioned below them and a scale bar under that, so the drawing can
+        be measured as well as read. The two hatched bands are the internal and external
+        surface resistances, which have no thickness and are drawn at a fixed width.
+        Names sit beside the drawing with a numbered leader to the layer each one belongs
+        to, and the number is the layer's place in the list. The hatching follows ordinary
+        drawing conventions for what a layer is made of, each layer is shaded darker
+        towards its two faces so one slab reads clear of the next, and the tinted band is
+        everything at or below the internal dew point.{' '}
         {vertical
           ? `The build-up runs down the page, ${
               orientation === 'roof' ? 'outside at the top' : 'the room at the top'

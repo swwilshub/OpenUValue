@@ -68,15 +68,28 @@ export const CHAPTERS: readonly GuideChapter[] = [
               does and the layer names move to the side.
             </p>
             <p>
-              The hatching says what a layer is made of: coursing for masonry, a soft wave for
-              quilt insulation, a wood grain for timber. The same hatch appears beside the
-              material in the picker, so the list and the drawing read as one thing.
+              The hatching says what a layer is made of, following ordinary drawing
+              conventions: running-bond coursing for masonry, aggregate among a stipple for
+              concrete, grain for timber, a soft quilt wave for insulation, a fine stipple for
+              plaster, lapped arcs for a tile covering. The same hatch appears beside the
+              material in the picker, so the list and the drawing read as one thing. Each layer
+              is also shaded darker towards its two faces, which is a drawing device rather than
+              information: it separates one slab from the next without a line that could be
+              mistaken for a material boundary.
             </p>
             <p>
-              Names sit <strong>above</strong> the drawing with a line down to the layer
+              Names sit <strong>outside</strong> the drawing with a numbered leader to the layer
               each belongs to, rather than inside it. A name set inside a layer has to be
               rotated, gets cut short by anything narrow, and competes with the
-              temperature line for the same space.
+              temperature line for the same space. The number on the leader is the layer's
+              place in the build-up, the same one the layer list and the 3D view use.
+            </p>
+            <p>
+              Under the drawing the overall thickness is dimensioned end to end, and under that
+              is a <strong>scale bar</strong> of a round number of millimetres. The bar is worth
+              a glance before reading anything off the drawing: it takes the longest round length
+              that fits, so it also says how hard the build-up has been squeezed to fit the
+              width.
             </p>
           </>
         ),
