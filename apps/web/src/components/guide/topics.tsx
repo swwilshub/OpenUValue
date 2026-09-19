@@ -474,6 +474,37 @@ export const CHAPTERS: readonly GuideChapter[] = [
         ),
       },
       {
+        id: 'palette',
+        title: 'The materials palette',
+        figure: <PickerFigure />,
+        body: (
+          <>
+            <p>
+              The tray under the drawing, for building a wall the other way round: instead of
+              adding a layer and then choosing what it is made of, pick the thing and put it
+              where it goes. <strong>Drag a chip onto the drawing</strong> and the layer lands in
+              the gap you let go over, with a mark showing which gap that will be before you
+              commit to it.
+            </p>
+            <p>
+              A chip is also a button, because a touch screen has no drag to speak of. Clicking
+              one adds its layer after whichever layer is selected, or on the outside when none
+              is, and selects what it just added, so a second click lands after that. That is a
+              build-up assembled a layer at a time without touching the list.
+            </p>
+            <p>
+              Each chip lands at a common thickness — a brick at 102.5 mm, a sheet of
+              plasterboard at 12.5 — which is what they are sold as rather than anything a
+              standard fixes. Drag the layer&rsquo;s edge, or type in the list, to make it the
+              real figure. The palette is the same catalogue the list uses, so nothing here is a
+              material you could not have reached the long way round, and a cavity dropped
+              between two leaves is classified from its neighbours exactly as the list&rsquo;s
+              own cavity button does it.
+            </p>
+          </>
+        ),
+      },
+      {
         id: 'layer-material',
         title: 'Choosing a material',
         figure: <PickerFigure />,

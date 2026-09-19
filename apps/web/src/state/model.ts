@@ -814,6 +814,43 @@ export function guessCavityPreset(
   return cavityPreset('unventilated-masonry');
 }
 
+/**
+ * Splice a layer into a build-up, classifying a cavity from what it lands between.
+ *
+ * The guess has to be made against the build-up the cavity will be *in*, so the layer is
+ * spliced in first and the neighbours read from that: guessing against the old list would
+ * look at whatever used to be next to it. Both ways of adding a layer — the button in the
+ * list and a chip dropped on the drawing — come through here, so a cavity is classified
+ * the same way whichever route it arrived by.
+ */
+export function withLayerInserted(
+  layers: readonly UiLayer[],
+  index: number,
+  layer: UiLayer,
+): readonly UiLayer[] {
+  const next = [...layers];
+  const at = Math.min(Math.max(0, index), next.length);
+  next.splice(at, 0, layer);
+  if (layer.kind !== 'air') {
+    return next;
+  }
+  const guess = guessCavityPreset(next, at);
+  const placed = next[at];
+  if (guess === undefined || placed === undefined) {
+    return next;
+  }
+  next[at] = {
+    ...placed,
+    thicknessMm: guess.thicknessMm,
+    ventilation: guess.ventilation,
+    openingAreaMm2PerM: guess.openingAreaMm2PerM,
+    emissivity: guess.emissivity,
+    cavityPresetId: guess.id,
+    wasCavityGuessed: true,
+  };
+  return next;
+}
+
 export function blankAirLayer(): UiLayer {
   return { ...blankSolidLayer(), kind: 'air', label: 'Cavity', thicknessMm: 25 };
 }

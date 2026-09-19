@@ -4377,3 +4377,101 @@ body.is-dragging * {
   fill: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }
+
+/* ------------------------------------------------------------- the palette ---
+ * A tray of materials under the drawing, to build a wall by hand.
+ */
+.palette {
+  margin: 14px 0 4px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ground);
+}
+
+.palette-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 9px;
+}
+
+.palette-hint {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.palette-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.palette-group {
+  min-width: 0;
+}
+
+.palette-group-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.palette-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.palette-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--ink);
+  cursor: grab;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+.palette-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.palette-chip:active {
+  cursor: grabbing;
+}
+
+.palette-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.palette-chip .material-swatch {
+  flex: 0 0 auto;
+}
+
+/* Where a chip would land: the gap itself, marked the full depth of the section. */
+.palette-drop line {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.palette-drop circle {
+  fill: var(--accent);
+}

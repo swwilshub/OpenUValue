@@ -30,6 +30,8 @@ import { CrossSection } from './components/CrossSection.js';
 import { SummaryStrip } from './components/SummaryStrip.js';
 import { DynamicPanel } from './components/DynamicPanel.js';
 import { Layup3D } from './components/Layup3D.js';
+import { MaterialPalette } from './components/MaterialPalette.js';
+import { layerFromPalette } from './state/palette.js';
 import { Guide, HelpButton } from './components/guide/Guide.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
@@ -45,6 +47,7 @@ import {
   partLKindForElement,
   layerDrawCategory,
   environmentForDirection,
+  withLayerInserted,
   hasBridging,
   coldRoofExample,
   timberFrameExample,
@@ -209,6 +212,22 @@ export function App(): JSX.Element {
       return { ...current, layers: next };
     });
   }, []);
+  /**
+   * Put a palette layer into the build-up and select it, so the thing just added is the
+   * thing the list and the drawing are both showing.
+   */
+  const insertPalette = useCallback((index: number, paletteId: string) => {
+    const layer = layerFromPalette(paletteId);
+    if (layer === undefined) {
+      return;
+    }
+    setState((current) => ({
+      ...current,
+      layers: withLayerInserted(current.layers, index, layer),
+    }));
+    setSelectedLayerId(layer.id);
+  }, []);
+
   const setElement = useCallback((elementKind: UiElementKind, roofPitchDegrees: number) => {
     setState((current) => {
       // The direction is not stored independently: it is what the element and its pitch
@@ -556,6 +575,7 @@ export function App(): JSX.Element {
             <CrossSection
               layers={state.layers}
               elementKind={state.elementKind}
+              onInsertPalette={insertPalette}
               result={result}
               profile={profile}
               section={state.section}
@@ -576,6 +596,32 @@ export function App(): JSX.Element {
               tiltRadians={layupTiltRadians(state.elementKind, state.roofPitchDegrees)}
             />
           )}
+
+          {/*
+            The palette sits under the drawing it drops into, which is also where a
+            reader's eye already is once they have looked at the build-up and found
+            something missing from it.
+          */}
+          <div hidden={heroView !== 'section'}>
+            <MaterialPalette
+              onAdd={(paletteId) => {
+                /*
+                 * A click has no position, so the layer goes after whichever one is
+                 * selected, or on the outside end when none is. Selecting the new layer
+                 * then makes a second click land after it, which is how a build-up gets
+                 * assembled a layer at a time.
+                 */
+                const selected = state.layers.findIndex((layer) => layer.id === selectedLayerId);
+                insertPalette(selected < 0 ? state.layers.length : selected + 1, paletteId);
+              }}
+              onOpenGuide={openGuide}
+              addPosition={
+                state.layers.some((layer) => layer.id === selectedLayerId)
+                  ? 'after the selected layer'
+                  : 'on the outside'
+              }
+            />
+          </div>
 
           <div className="section-legend" hidden={heroView !== 'section'}>
             <HatchLegend />

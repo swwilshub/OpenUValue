@@ -9,6 +9,7 @@ import type {
   UValueResult,
 } from '@openuvalue/engine';
 import type { LayerDrawCategory, UiElementKind, UiLayer } from '../state/model.js';
+import { PALETTE_DRAG_TYPE } from '../state/palette.js';
 import {
   BR443_ADDITIONAL_TIMBER_ALLOWANCE,
   bridgeGeometry,
@@ -326,6 +327,11 @@ export interface CrossSectionProps {
   /** Layer highlighted in the layer table, so the drawing and the table agree. */
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
+  /**
+   * Drop a material from the palette into the build-up at the position it was let go.
+   * The index is the gap it lands in, counted the same way a reorder counts them.
+   */
+  readonly onInsertPalette?: ((index: number, paletteId: string) => void) | undefined;
   /** Reorder by dragging a layer along the drawing. Same contract as the table's. */
   readonly onReorder?: ((from: number, to: number) => void) | undefined;
   /** Change a layer's thickness by dragging the handle on its outer edge. */
@@ -363,6 +369,7 @@ export function CrossSection({
   profile,
   selectedLayerId,
   onSelectLayer,
+  onInsertPalette,
   onReorder,
   onResizeLayer,
   onResizeMember,
@@ -393,6 +400,8 @@ export function CrossSection({
    * would drop into, and `moved` distinguishes a drag from a click: without it, every
    * attempt to select a layer would also count as a reorder to where it already is.
    */
+  /** The gap a palette chip would drop into, or null when nothing is over the drawing. */
+  const [paletteOver, setPaletteOver] = useState<number | null>(null);
   const [drag, setDrag] = useState<{
     readonly from: number;
     readonly to: number;
@@ -951,6 +960,18 @@ export function CrossSection({
   /** How far the pointer must travel before a press counts as a drag, not a click. */
   const DRAG_THRESHOLD_PX = 4;
 
+  /*
+   * A chip from the palette, in flight over the drawing. Only the gap it would land in is
+   * tracked: what is being dragged cannot be read until it is dropped, so the preview
+   * shows where rather than what.
+   */
+  const paletteDropIndex =
+    onInsertPalette === undefined || paletteOver === null ? undefined : paletteOver;
+  const paletteDropX =
+    paletteDropIndex === undefined
+      ? undefined
+      : (boxes[paletteDropIndex]?.x ?? externalFilmX);
+
   return (
     <figure className="cross-section">
       <svg
@@ -996,6 +1017,43 @@ export function CrossSection({
           setDrag(null);
         }}
         onPointerLeave={() => setDrag(null)}
+        onDragOver={(event) => {
+          if (
+            onInsertPalette === undefined ||
+            !event.dataTransfer.types.includes(PALETTE_DRAG_TYPE)
+          ) {
+            return;
+          }
+          // Without preventDefault the browser refuses the drop and no drop event fires.
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+          setPaletteOver(dropIndexAt(event.clientX, event.clientY));
+        }}
+        onDragLeave={(event) => {
+          /*
+           * dragleave bubbles, so crossing from one layer to the next inside the drawing
+           * fires it on the drawing itself and the landing mark would blink out on every
+           * move. It has only really been left when the element being entered is not
+           * inside it.
+           */
+          const entering = event.relatedTarget;
+          if (entering instanceof Node && event.currentTarget.contains(entering)) {
+            return;
+          }
+          setPaletteOver(null);
+        }}
+        onDrop={(event) => {
+          if (onInsertPalette === undefined) {
+            return;
+          }
+          const paletteId = event.dataTransfer.getData(PALETTE_DRAG_TYPE);
+          setPaletteOver(null);
+          if (paletteId === '') {
+            return;
+          }
+          event.preventDefault();
+          onInsertPalette(dropIndexAt(event.clientX, event.clientY), paletteId);
+        }}
         role="img"
         aria-label={`Cross-section of ${layers.length} layers with the temperature profile overlaid`}
       >
@@ -1800,6 +1858,17 @@ export function CrossSection({
               {EDGE_LABELS[elementKind][1]}
             </text>
           </>
+        )}
+        {/*
+          Where a chip from the palette would land: the gap itself, marked the full depth
+          of the section, so it reads as a place in the build-up rather than as a cursor.
+        */}
+        {paletteDropX !== undefined && (
+          <g className="palette-drop" pointerEvents="none">
+            <line x1={paletteDropX} y1={TOP_PAD - 4} x2={paletteDropX} y2={TOP_PAD + PLOT_HEIGHT + 4} />
+            <circle cx={paletteDropX} cy={TOP_PAD - 6} r={3} />
+            <circle cx={paletteDropX} cy={TOP_PAD + PLOT_HEIGHT + 6} r={3} />
+          </g>
         )}
         </g>
       </svg>

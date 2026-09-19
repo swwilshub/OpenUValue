@@ -24,7 +24,7 @@ import {
   SOFTWOOD_LAMBDA_W_PER_MK,
   type UiLayer,
   blankAirLayer,
-  guessCavityPreset,
+  withLayerInserted,
   blankSolidLayer,
   bridgedPercentFromDimensions,
 } from '../state/model.js';
@@ -322,23 +322,7 @@ export function LayerTable({
    * would look at whatever used to be next to it.
    */
   const insertCavityBehind = (index: number): void => {
-    const at = index + 1;
-    const next = [...layers];
-    next.splice(at, 0, blankAirLayer());
-    const guess = guessCavityPreset(next, at);
-    const placed = next[at];
-    if (guess !== undefined && placed !== undefined) {
-      next[at] = {
-        ...placed,
-        thicknessMm: guess.thicknessMm,
-        ventilation: guess.ventilation,
-        openingAreaMm2PerM: guess.openingAreaMm2PerM,
-        emissivity: guess.emissivity,
-        cavityPresetId: guess.id,
-        wasCavityGuessed: true,
-      };
-    }
-    onChange(next);
+    onChange(withLayerInserted(layers, index + 1, blankAirLayer()));
   };
 
   return (
