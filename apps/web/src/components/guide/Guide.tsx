@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ALL_TOPICS, CHAPTERS, findTopicIndex } from './topics.js';
 
 /**
- * The feature guide: every box and control in the tool, each with a diagram of what it
- * does and a short explanation.
+ * The feature guide: step-by-step walkthroughs for common jobs, then every box and
+ * control in the tool, each with a diagram of what it does and a short explanation.
  *
  * It opens either from the header — at the beginning, as a tutorial to read through — or
  * from a help button beside a particular box, which jumps straight to that topic. The
@@ -25,6 +25,7 @@ export function Guide({ open, topicId, onClose }: GuideProps): JSX.Element | nul
   const [index, setIndex] = useState(0);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
 
   // Jump to the requested topic each time the guide is opened, so a help button always
   // lands in the right place even if the guide was last left somewhere else.
@@ -61,6 +62,15 @@ export function Guide({ open, topicId, onClose }: GuideProps): JSX.Element | nul
     bodyRef.current?.scrollTo({ top: 0 });
   }, [index]);
 
+  // A help button can open the guide sixty topics in, far below the fold of the contents
+  // list, so the list follows the current topic rather than leaving it out of sight.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    navRef.current?.querySelector('.is-current')?.scrollIntoView({ block: 'nearest' });
+  }, [open, index]);
+
   const current = ALL_TOPICS[index];
 
   const chapterOf = useMemo(() => {
@@ -86,7 +96,7 @@ export function Guide({ open, topicId, onClose }: GuideProps): JSX.Element | nul
       className="guide-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="Guide to every feature"
+      aria-label="Guide and walkthroughs"
     >
       <div className="guide-dialog">
         <div className="guide-head">
@@ -102,7 +112,7 @@ export function Guide({ open, topicId, onClose }: GuideProps): JSX.Element | nul
         </div>
 
         <div className="guide-columns">
-          <nav className="guide-nav" aria-label="Guide contents">
+          <nav className="guide-nav" aria-label="Guide contents" ref={navRef}>
             {CHAPTERS.map((entry) => (
               <section key={entry.id}>
                 <h3>{entry.title}</h3>

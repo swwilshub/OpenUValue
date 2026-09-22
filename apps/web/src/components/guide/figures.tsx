@@ -621,6 +621,50 @@ export function SeasonFigure(): JSX.Element {
   );
 }
 
+/**
+ * Twelve months of heat loss, with the warm months below the heating base greyed out.
+ *
+ * The bar heights are a schematic shape, cold in the middle of winter and nothing in
+ * summer, not data from any region: the Energy tab draws the real ones.
+ */
+export function MonthsFigure(): JSX.Element {
+  const shape = [1, 0.9, 0.75, 0.5, 0.28, 0, 0, 0, 0.12, 0.42, 0.72, 0.92];
+  const letters = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+  const slot = PLOT.w / shape.length;
+  return (
+    <Frame label="Heat lost month by month, with summer months left out of the heating season">
+      <line x1={PLOT.x} y1={PLOT.y + PLOT.h} x2={PLOT.x + PLOT.w} y2={PLOT.y + PLOT.h} className="g-axis" />
+      {shape.map((share, index) => {
+        const off = share === 0;
+        const height = off ? 4 : share * (PLOT.h - 8);
+        return (
+          <g key={index}>
+            <rect
+              x={PLOT.x + index * slot + slot * 0.18}
+              y={PLOT.y + PLOT.h - height}
+              width={slot * 0.64}
+              height={height}
+              className={off ? 'g-month-off g-fade' : 'g-month g-fade'}
+              style={{ '--g-delay': `${(index * 0.05).toFixed(2)}s` } as React.CSSProperties}
+            />
+            <text
+              x={PLOT.x + index * slot + slot / 2}
+              y={PLOT.y + PLOT.h + 14}
+              className="g-tick"
+              textAnchor="middle"
+            >
+              {letters[index]}
+            </text>
+          </g>
+        );
+      })}
+      <text x={W / 2} y={H - 4} className="g-caption" textAnchor="middle">
+        months warmer than the heating base count for nothing
+      </text>
+    </Frame>
+  );
+}
+
 /** Two sine waves: the outside swing, and the damped and delayed inside one. */
 export function WaveFigure(): JSX.Element {
   const mid = 62;

@@ -156,7 +156,7 @@ export function DynamicPanel({ dynamic, onOpenGuide }: DynamicPanelProps): JSX.E
           The method treats the outside temperature as a sine wave and solves the heat
           equation for the oscillation that settles down inside the construction. Each
           layer becomes a 2×2 complex matrix relating temperature and heat flow at its two
-          faces; multiplying them in order gives the element, and the four figures above
+          faces; multiplying them in order gives the element, and the figures above
           are read off the result. The scale that matters is the <em>periodic penetration
           depth</em>, which is how far into a material a {hours}-hour cycle reaches. For
           masonry that is around 100 mm. Mass buried deeper than that contributes almost

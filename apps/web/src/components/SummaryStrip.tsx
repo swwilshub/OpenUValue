@@ -192,9 +192,9 @@ export function SummaryStrip({
           unit="kJ/(m²·K)"
           note="total, not κ"
           title={
-            'The sum of ρ × c × d over the layers. This is the total, not the areal heat ' +
-            'capacity κ of BS EN ISO 13786, which is a dynamic quantity and is not ' +
-            'implemented.'
+            'The sum of ρ × c × d over the layers: all the heat the build-up could hold if ' +
+            'warmed right through. This is not the areal heat capacity κ of BS EN ISO 13786, ' +
+            'which counts only what a daily cycle reaches and is shown further along the strip.'
           }
         />
 

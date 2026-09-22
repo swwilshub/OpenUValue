@@ -148,10 +148,10 @@ export function BoundaryPanel({
             </legend>
             <p className="choice-lead">
               Still air clings to the inside face of a wall in a thin film, and that film
-              insulates. On a wall it is worth about as much as 8 mm of plasterboard. Park
-              a sofa or a wardrobe against the wall and the room&rsquo;s air stops sweeping
-              it away: the film thickens and the surface behind it runs colder. That is the
-              only thing these two settings change.
+              insulates. On a wall it is worth about as much as 27 mm of plasterboard, or
+              5 mm of insulation. Park a sofa or a wardrobe against the wall and the
+              room&rsquo;s air stops sweeping it away: the film thickens and the surface
+              behind it runs colder. That is the only thing these two settings change.
             </p>
             {INTERNAL_SURFACE_CONDITIONS.map((condition) => (
               <label key={condition.kind} className="choice choice-with-icon">

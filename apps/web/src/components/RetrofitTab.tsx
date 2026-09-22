@@ -164,6 +164,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
         <li className="retrofit-step">
           <h3>
             <span className="retrofit-step-number">2</span> How much of it, and what a sheet costs
+            <HelpButton topicId="retrofit-sheets" label="costing by the sheet" onOpen={onOpenGuide} />
           </h3>
           <p className="choice-lead">
             Materials are bought by the sheet, so that is what this asks for. The area
@@ -274,6 +275,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
         <li className="retrofit-step">
           <h3>
             <span className="retrofit-step-number">3</span> What you get back
+            <HelpButton topicId="retrofit-payback" label="the payback" onOpen={onOpenGuide} />
           </h3>
 
           {nothingTicked && (

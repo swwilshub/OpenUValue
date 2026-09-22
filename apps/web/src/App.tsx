@@ -462,16 +462,16 @@ export function App(): JSX.Element {
         <div>
           <h1>OpenUValue</h1>
           <p className="tagline">
-            U-value, temperature profile and surface condensation, to BS EN ISO 6946
-            with BR 443 conventions.
+            U-value, temperature, condensation and summer performance of a wall, roof or
+            floor, with U-values to BS EN ISO 6946 and BR 443 conventions.
           </p>
         </div>
         <div className="header-actions">
           <button type="button" onClick={() => setTourOpen(true)}>
-            How to read this
+            How to read the drawing
           </button>
           <button type="button" onClick={() => openGuide()}>
-            Guide to every feature
+            Guide and walkthroughs
           </button>
           <button type="button" onClick={() => setState(defaultState())}>
             Masonry example
@@ -489,11 +489,11 @@ export function App(): JSX.Element {
       </header>
 
       <p className="phase-banner">
-        <strong>Still being checked.</strong> Material values and several clause
-        references still need checking against printed standards; see{' '}
+        <strong>Still being checked.</strong> Several material values and clause
+        references have not yet been checked against printed standards; see{' '}
         <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. The mechanical
-        fastener correction covers BR 443's detailed route, where you supply a point
-        thermal transmittance; its approximate route is not implemented.
+        fastener correction takes BR 443's detailed route, where you supply a point
+        thermal transmittance; the approximate route is not offered yet.
       </p>
 
       {linkProblem !== undefined && (
@@ -549,6 +549,7 @@ export function App(): JSX.Element {
               >
                 Reverse layers
               </button>
+              <HelpButton topicId="reverse-layers" label="the reverse layers button" onOpen={openGuide} />
             </div>
             <label className="inline-select" hidden={heroView !== 'section'}>
               Show
@@ -629,7 +630,7 @@ export function App(): JSX.Element {
               How to read this drawing
             </button>
             <button type="button" className="link-button" onClick={() => openGuide('layers-to-scale')}>
-              Guide to every feature
+              Guide to the drawing
             </button>
           </div>
 

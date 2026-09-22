@@ -10,6 +10,7 @@ import {
   GlaserFigure,
   KappaFigure,
   LayersFigure,
+  MonthsFigure,
   PickerFigure,
   ProvenanceFigure,
   ResistanceFigure,
@@ -49,6 +50,202 @@ export interface GuideChapter {
 }
 
 export const CHAPTERS: readonly GuideChapter[] = [
+  /*
+   * Task-shaped walkthroughs first, because the guide opens at the beginning from the
+   * header, and someone arriving there usually has a job in mind rather than a box they
+   * want explained. Each step names the control it uses by the words on screen, so the
+   * reference chapters that follow can be found from it.
+   */
+  {
+    id: 'walkthroughs',
+    title: 'Walkthroughs',
+    blurb: 'Step-by-step routes through the tool for the questions people most often bring to it.',
+    topics: [
+      {
+        id: 'walk-own-buildup',
+        title: 'Model your own wall, roof or floor',
+        figure: <LayersFigure />,
+        body: (
+          <>
+            <p>
+              The quickest way to a build-up of your own is to start from one that is nearly
+              right and change it, rather than from an empty list.
+            </p>
+            <ol>
+              <li>
+                <strong>Start from the nearest example.</strong> The header has a masonry
+                cavity wall, a timber frame wall and a cold roof. Picking one replaces what is
+                on screen.
+              </li>
+              <li>
+                <strong>Say what you are building.</strong> In the Conditions box, choose wall,
+                roof or ceiling, or floor, and give a roof its pitch. Then choose what is on
+                the other side: open air, a loft, a garage, another heated room.
+              </li>
+              <li>
+                <strong>Make the layers match, inside to outside.</strong> Change a
+                layer&rsquo;s material in its picker and type its thickness. Delete anything
+                you do not have, and add what is missing from the materials tray under the
+                drawing, either by dragging a chip to where the layer goes or by clicking it.
+              </li>
+              <li>
+                <strong>Add the timbers.</strong> If insulation sits between studs, joists or
+                rafters, press <em>+ studs or rafters</em> on that layer and give the timber
+                width and spacing. Leaving them out can make the U-value look a fifth better
+                than it is.
+              </li>
+              <li>
+                <strong>Read the strip under the drawing.</strong> Set <em>Judge the U-value
+                as</em> to match your job, then check the U-value against its limit, the
+                inside surface for mould, and the condensation figure.
+              </li>
+              <li>
+                <strong>Check the Result box.</strong> Read anything under Notes and limits,
+                and if screws, ties or brackets pass through the insulation, enter a fastener
+                correction.
+              </li>
+              <li>
+                <strong>Keep it.</strong> <em>Copy share link</em> saves the whole build-up in
+                the link, so bookmark it or send it on.
+              </li>
+            </ol>
+          </>
+        ),
+      },
+      {
+        id: 'walk-internal-insulation',
+        title: 'Will insulating on the inside cause damp?',
+        figure: <DragFigure />,
+        body: (
+          <>
+            <p>
+              Internal insulation makes the wall behind it colder, and a colder wall is where
+              moisture from the room ends up. This is the check to make before lining a solid
+              wall.
+            </p>
+            <ol>
+              <li>
+                <strong>Build the wall as it stands today</strong>, without the new
+                insulation: for a solid wall, usually plaster on brick. Note the U-value.
+              </li>
+              <li>
+                <strong>Set the inside humidity honestly.</strong> A bedroom or kitchen is
+                damper than a living room, and the result depends on it.
+              </li>
+              <li>
+                <strong>Add the lining on the room side.</strong> Drag insulation and a board
+                from the materials tray into the gap next to the room. The U-value improves.
+              </li>
+              <li>
+                <strong>Look for drops on the drawing</strong> and the Condensation figure in
+                the strip. A drop marks a plane where water forms; the notes under the
+                drawing say how much, and whether it clears again.
+              </li>
+              <li>
+                <strong>Open the Moisture tab</strong> to see where it condenses and whether
+                it dries out over a drying season you set.
+              </li>
+              <li>
+                <strong>Try the two fixes.</strong> Add a <em>Vapour control layer</em> from
+                the Membrane group on the warm side of the insulation and watch the
+                condensation fall while the U-value stays put. Then drag the insulation to
+                the outside instead and compare.
+              </li>
+            </ol>
+            <p>
+              <strong>Know what this cannot see.</strong> The moisture calculation moves
+              vapour by diffusion only. A solid wall also takes in rain, and the tool does
+              not model that, so on an exposed wall a clear result here is necessary but not
+              the whole answer. The Location box says how much rain your wall is likely to
+              catch.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'walk-loft',
+        title: 'Topping up loft insulation, and the payback',
+        figure: <GaugeFigure value={0.2} limit={0.16} />,
+        body: (
+          <>
+            <ol>
+              <li>
+                <strong>Load the cold roof example.</strong> It is a ceiling under a
+                ventilated loft: quilt between the joists and a second layer laid across
+                them.
+              </li>
+              <li>
+                <strong>Add the top-up.</strong> Select the top layer of quilt, then click the{' '}
+                <em>Mineral wool</em> chip in the tray: the new layer lands after the selected
+                one, on the loft side. Set its thickness.
+              </li>
+              <li>
+                <strong>Judge it as a renovated element</strong> in the strip, since you are
+                improving an existing roof rather than building a new one.
+              </li>
+              <li>
+                <strong>Open the Retrofit tab and tick the layer you added.</strong> What is
+                left is the loft as it was, so the tool compares the two.
+              </li>
+              <li>
+                <strong>Enter the area and the price.</strong> Quilt comes in rolls rather than
+                boards, so type the roll&rsquo;s width and length in place of a sheet size and
+                its price as the price of one sheet. Add labour if someone else is laying it.
+              </li>
+              <li>
+                <strong>Read the payback</strong>, then the note beneath it on why the real
+                one is usually longer.
+              </li>
+            </ol>
+            <p>
+              Adding insulation above the joists makes the loft itself colder, so it is worth
+              keeping its ventilation clear. That is outside what this tool calculates.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'walk-summer',
+        title: 'Comparing two build-ups for summer heat',
+        figure: <WaveFigure />,
+        body: (
+          <>
+            <p>
+              Two build-ups with the same U-value can behave very differently on a hot day.
+              The summer figures show how.
+            </p>
+            <ol>
+              <li>
+                <strong>Load the first build-up</strong> and note the decrement, the time
+                shift and κ<sub>i</sub> at the end of the strip. Copy its share link.
+              </li>
+              <li>
+                <strong>Load or build the second</strong> and compare. Open the first link in
+                another tab to see both at once.
+              </li>
+              <li>
+                <strong>Read them together.</strong> A lower decrement lets less of the
+                outdoor swing through; a longer time shift moves the peak later into the
+                evening; a higher κ<sub>i</sub> means more heat the room side can soak up in
+                the day and give back at night.
+              </li>
+              <li>
+                <strong>Try moving the mass.</strong> Drag a heavy layer to the room side of
+                the insulation and κ<sub>i</sub> rises. Put the insulation on the inside and
+                it falls, however heavy the wall behind is.
+              </li>
+            </ol>
+            <p>
+              These are properties of the element, not an overheating verdict. Whether a room
+              overheats also depends on its windows, shading, ventilation and use, which this
+              tool does not model.
+            </p>
+          </>
+        ),
+      },
+    ],
+  },
+
   {
     id: 'drawing',
     title: 'The drawing',
@@ -139,8 +336,10 @@ export const CHAPTERS: readonly GuideChapter[] = [
               detailing, and nothing in it feeds the calculation. The U-value comes from
               the layer table either way. Thicknesses are to scale against each other,
               except that the very thinnest get a minimum so a vapour barrier does not
-              vanish. Click a layer or a line in the list to pick it out; the selection
-              carries back to the section. Cross battens are not drawn yet.
+              vanish. A cavity is drawn as the gap it is, so you see through the air to the
+              face behind it, with any battens or dabs standing in the opening. Click a layer,
+              or its row in the layer list, to pick it out; the selection carries back to the
+              section. Cross battens are not drawn yet.
             </p>
           </>
         ),
@@ -167,6 +366,25 @@ export const CHAPTERS: readonly GuideChapter[] = [
               <em>does the insulation go inside or outside?</em> Drag it across and watch the
               temperature line and the condensation verdict change. The U-value will barely
               move; everything else will.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'reverse-layers',
+        title: 'The “Reverse layers” button',
+        figure: <DragFigure />,
+        body: (
+          <>
+            <p>
+              Turns the whole build-up back to front in one go: the layer that faced the room
+              now faces outside, and the other way round. It answers &ldquo;what if this were
+              built the other way round?&rdquo; without dragging every layer across.
+            </p>
+            <p>
+              Only the layers move. The inside and outside conditions, the element type and the
+              surface resistances stay as they were, because they describe the room and the
+              weather rather than the wall. Press it again to put things back.
             </p>
           </>
         ),
@@ -311,14 +529,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              The same wall is held to three different standards depending on the job. A new
-              dwelling's wall may be 0.26; the same wall built into an existing dwelling must
-              reach 0.18; a renovated one has its own figure again.
+              The same wall is held to a different limit depending on the job. In a new
+              dwelling a wall may be up to 0.26; a new or replacement wall in an existing
+              dwelling must reach 0.18; a renovated one has its own figure again. Roofs and
+              floors have their own sets of three.
             </p>
             <p>
               Pick the one that matches your project. Nothing else on the page changes, only
-              what the U-value is being measured against. England and dwellings only; Wales,
-              Scotland and Northern Ireland set their own.
+              the limit the U-value is measured against. The limits are for dwellings in
+              England; Wales, Scotland and Northern Ireland set their own.
             </p>
           </>
         ),
@@ -353,8 +572,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <p>
               <strong>κ</strong> further along the strip is the part a <em>daily</em> cycle can
-              actually reach. A 24-hour swing only penetrates a certain distance into a material
-              of around 100 mm for masonry, so mass buried deeper contributes almost nothing.
+              actually reach. A 24-hour swing only penetrates so far into a material, around
+              100 mm for masonry, so mass buried deeper contributes almost nothing.
               That is why the two numbers can differ by a factor of ten, and why a very thick
               wall is not proportionally better at riding out a hot day.
             </p>
@@ -466,11 +685,38 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <LayersFigure />,
         body: (
           <p>
-            A new layer lands at the outside end and can be dragged wherever you want it. Add a{' '}
+            <strong>+ layer</strong> adds a blank layer at the outside end, ready for a material
+            and a thickness, and it can be dragged wherever you want it. Add a{' '}
             <strong>cavity</strong> instead when the gap is air rather than a product. An air
             layer is handled differently, because air insulates by not moving and stops doing so
-            once it can circulate.
+            once it can circulate. To add a particular material in a particular place in one
+            step, use the materials tray under the drawing instead.
           </p>
+        ),
+      },
+      {
+        id: 'layer-row-buttons',
+        title: 'The buttons on each layer',
+        figure: <LayersFigure highlightIndex={1} />,
+        body: (
+          <>
+            <p>
+              Each layer carries its own name, which you can type over, and a row of buttons
+              along its foot. <strong>↑</strong> and <strong>↓</strong> move it one place
+              inwards or outwards, the same as dragging it by the ⠿ handle.{' '}
+              <strong>insert below</strong> adds a blank layer straight after it, on its
+              outside. <strong>delete</strong> removes it, with no undo, so copy the share link
+              first if you might want it back.
+            </p>
+            <p>
+              <strong>+ cavity behind</strong> adds an air cavity on the outside of the layer
+              and guesses its type from the layers either side of it: a gap between two leaves
+              of masonry is read as a clear cavity, one with only tiles or cladding outside it
+              as ventilated, one just behind a dry lining as a service void. The guess is
+              marked as a guess until you pick a cavity type yourself. A cavity dropped from
+              the materials tray is guessed the same way.
+            </p>
+          </>
         ),
       },
       {
@@ -694,7 +940,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
   {
     id: 'conditions',
     title: 'Conditions',
-    blurb: 'The Conditions box: which way heat flows, and what is on each side.',
+    blurb: 'The Conditions box, which sets which way heat flows and what is on each side, and the Location box.',
     topics: [
       {
         id: 'conditions-direction',
@@ -752,8 +998,15 @@ export const CHAPTERS: readonly GuideChapter[] = [
               the room and the air against it is damper.
             </p>
             <p>
-              Switch to <strong>reduced</strong> to test those spots. It is the setting to use
-              for a mould question, because mould appears exactly where the furniture is.
+              Switch to <strong>reduced</strong> to see how much colder those spots run: the
+              temperature line and the U-value follow the higher surface resistance. The U-value
+              that gives is no longer a BR 443 U-value, and the box says so.
+            </p>
+            <p>
+              <strong>The mould and surface-damp check does not use this setting.</strong>{' '}
+              BS EN ISO 13788 fixes the surface resistance for that check, at a figure that
+              already stands for a poorly ventilated corner, so the verdict is the same
+              whichever option is chosen here.
             </p>
           </>
         ),
@@ -816,92 +1069,6 @@ export const CHAPTERS: readonly GuideChapter[] = [
               where local conditions accentuate the wind, such as an open hillside or a valley
               funnelling it onto the wall, and subtracts one where the wall does not face into the
               prevailing wind. A site-specific calculation to BS 8104 replaces the map outright.
-            </p>
-          </>
-        ),
-      },
-      {
-        id: 'conditions-defaults',
-        title: 'The “common defaults” button',
-        figure: <EnvironmentFigure />,
-        body: (
-          <p>
-            Sets both sides back to ordinary starting values for the environment you have chosen,
-            so you can get back to a sensible baseline after experimenting. It changes only the
-            temperatures and humidities, never your layers.
-          </p>
-        ),
-      },
-      {
-        id: 'conditions-exposure',
-        title: 'The Location box: wind-driven rain',
-        figure: <EnvironmentFigure />,
-        body: (
-          <>
-            <p>
-              Wind-driven rain is graded in four numbered zones, from 1 sheltered to 4 very
-              severe, by how much water a spell of weather throws at a square metre of wall. It
-              has its own box because it is not an inside or an outside condition and it changes
-              no calculated figure. What it changes is which constructions are allowed: a fully
-              filled cavity in the worst zones is a way of bridging rain across to the inner leaf,
-              and the tool says so rather than quietly calculating it.
-            </p>
-            <p>
-              <strong>Read it off the real map by clicking it.</strong> Approved Document C
-              Diagram 12 shades the country in four flat greys, so the answer is already in the
-              figure. Open the document, screenshot Diagram 12, paste or drag it into the box, and
-              click where the building is: the shade under the crosshair settles the zone. The
-              magnifier shows which pixels are being read, a click between two shades or on a
-              coastline is reported as unclear rather than resolved, and you can always pick a
-              band by hand instead.
-            </p>
-            <p>
-              The map is not shipped with this tool, and cannot be: it is Crown copyright, free to
-              download but not free to republish. Your copy stays in your browser, because the
-              whole tool runs there and there is no server to send it to.
-            </p>
-            <p>
-              Two adjustments belong to you rather than to the map. Paragraph 5.16 adds a zone
-              where local conditions accentuate the wind, such as an open hillside or a valley
-              funnelling it onto the wall, and subtracts one where the wall does not face into the
-              prevailing wind. A site-specific calculation to BS 8104 replaces the map outright.
-            </p>
-          </>
-        ),
-      },
-      {
-        id: 'conditions-defaults',
-        title: 'The “common defaults” button',
-        figure: <EnvironmentFigure />,
-        body: (
-          <p>
-            Sets both sides back to ordinary starting values for the environment you have chosen,
-            so you can get back to a sensible baseline after experimenting. It changes only the
-            temperatures and humidities, never your layers.
-          </p>
-        ),
-      },
-      {
-        id: 'conditions-exposure',
-        title: 'The Location box: wind-driven rain',
-        figure: <EnvironmentFigure />,
-        body: (
-          <>
-            <p>
-              Wind-driven rain is graded in four bands, from sheltered to very severe, by how much
-              water a spell of weather throws at a square metre of wall. It has its own box because
-              it is not an inside or an outside condition and it changes no calculated figure.
-              What it changes is which constructions are allowed. A fully filled cavity in the
-              worst band is a way of bridging rain across to the inner leaf, and the tool says so
-              rather than quietly calculating it.
-            </p>
-            <p>
-              Read your band off the map in Approved Document C and match the colour; the four
-              bands here are the same four. The little grid map beside them is <em>not</em> that
-              map. It is a deliberately coarse picture of the general pattern: western coasts and
-              high ground wet, central and eastern England dry. Clicking it suggests a band and
-              says that it guessed. Boundaries are geography, not a table, and a building a mile
-              the wrong side of one deserves better than our redrawing of it.
             </p>
           </>
         ),
@@ -1232,7 +1399,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
       {
         id: 'energy-season',
         title: 'Heat lost over a heating season',
-        figure: <SeasonFigure />,
+        figure: <MonthsFigure />,
         body: (
           <>
             <p>
@@ -1250,39 +1417,143 @@ export const CHAPTERS: readonly GuideChapter[] = [
         ),
       },
       {
+        id: 'energy-inputs',
+        title: 'Where the building is, and how it is heated',
+        figure: <MonthsFigure />,
+        body: (
+          <>
+            <p>
+              <strong>Where the building is</strong> picks one of the SAP climate regions, or
+              the UK average. Each has its own mean temperature for every month, so the same
+              element loses more heat in the north of Scotland than on the south coast.
+            </p>
+            <p>
+              <strong>How it is heated</strong> turns heat into fuel. A boiler burns more than
+              a unit of fuel for each unit of heat, so its efficiency is below 1; a heat pump
+              moves more heat than the electricity it uses, so its seasonal coefficient of
+              performance (CoP) is above 1. Choosing a heating type fills in a typical figure
+              and the note under the controls says what it assumes. Type your own if you
+              know it.
+            </p>
+            <p>
+              <strong>Fuel price</strong> is in pence per kWh of fuel. The starting figures
+              are SAP&rsquo;s, which date from 2021 and are well out of date, so put in what
+              you actually pay.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'energy-months',
+        title: 'The heating base, and month by month',
+        figure: <MonthsFigure />,
+        body: (
+          <>
+            <p>
+              The bars show the heat lost through a square metre in each month. A month only
+              counts as a heating month when its mean outside temperature is below the{' '}
+              <strong>heating base</strong>; the others are greyed out and marked
+              &ldquo;no heating&rdquo;.
+            </p>
+            <p>
+              The base is not a figure from SAP. It stands for the outside temperature below
+              which the house needs its heating on, which depends on how well insulated and
+              airtight the whole house is and how much heat people and appliances give off.
+              15.5 °C is the long-standing UK convention; a very well insulated house might
+              manage with a lower one. Changing it changes which months count, not what each
+              month loses.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'energy-figures',
+        title: 'Fuel, carbon, primary energy and cost',
+        figure: <MonthsFigure />,
+        body: (
+          <>
+            <p>
+              All five figures are for one square metre of the element over a year.{' '}
+              <strong>Heat lost</strong> is what passes through it. <strong>Fuel</strong> is
+              what the heating burns or draws to replace that heat, after its efficiency.{' '}
+              <strong>Carbon</strong> and <strong>primary energy</strong> multiply the fuel
+              by SAP&rsquo;s factors for that fuel; primary energy also counts the energy
+              spent getting the fuel to the house. <strong>Cost</strong> is the fuel at the
+              price you set.
+            </p>
+            <p>
+              Multiply by the area of the element to get a figure for a whole wall or roof.
+              The Retrofit tab does that for you.
+            </p>
+          </>
+        ),
+      },
+      {
         id: 'retrofit',
-        title: 'What the work saves, and what it pays back',
+        title: 'Retrofit: comparing before and after',
         figure: <GaugeFigure />,
         body: (
           <>
             <p>
-              The build-up on the other tabs is the wall <strong>after</strong> the work. Tick the
-              layers the work adds and what is left is the wall as it was, so both sides of the
-              comparison are build-ups this tool has calculated rather than a U-value remembered
-              from somewhere else.
+              The build-up on the other tabs is the element <strong>after</strong> the work.
+              In step 1, tick the layers the work adds, and what is left is the element as it
+              was. Both sides of the comparison are then build-ups this tool has calculated,
+              rather than a U-value remembered from somewhere else.
             </p>
             <p>
-              The difference between the two, over a heating season and through the heating system
-              you choose, is a saving in heat, fuel, carbon and money. The cost divided by the
-              money is a payback in years.
+              The difference between the two, over a heating season and through the heating
+              system you choose, is a saving in heat, fuel, carbon and money. The cost of the
+              work divided by the money saved each year is the payback in years.
             </p>
             <p>
-              <strong>The cost is built from one sheet.</strong> Nobody buys 50 m² of insulation;
-              they buy boards, in whatever size the merchant stocks, and pay for whole ones however
-              much of the last is left over. So this asks for the price of a single sheet, which is
-              a number you can read off a quote, and works out the rest. The drawing shows the
-              count, with the offcut on the last sheet hatched, because that is the part people
-              query. It divides area by sheet and rounds up: cuts at reveals, corners and openings
-              mean a real job needs a few more. Labour, access and fixings are a separate box, and
-              leaving it at zero makes everything below a materials-only figure.
-            </p>
-            <p>
-              Treat that payback as the optimistic end. It assumes today’s fuel price forever,
-              it assumes every kilowatt-hour saved turns into money rather than into a warmer
-              house, and it counts no carbon or cash spent making the insulation in the first
-              place.
+              The region, heating type, efficiency and fuel price sit behind the{' '}
+              <strong>Assumptions</strong> line in step 3, which says in one line what is
+              currently assumed. They are set separately from the Energy tab&rsquo;s, so check
+              them here too.
             </p>
           </>
+        ),
+      },
+      {
+        id: 'retrofit-sheets',
+        title: 'Costing the work by the sheet',
+        figure: <LayersFigure />,
+        body: (
+          <>
+            <p>
+              Nobody buys 50 m² of insulation; they buy boards in whatever size the merchant
+              stocks, and pay for whole ones however much of the last is left over. So step 2
+              asks for the area treated and the price of a single sheet, which is a number you
+              can read off a quote, and works out the rest.
+            </p>
+            <p>
+              Pick a common sheet size or type the width and length. For rolls of quilt, type
+              the roll&rsquo;s width and length and its price. The drawing shows the count,
+              with the unused part of the last sheet hatched, because that is the part people
+              query.
+            </p>
+            <p>
+              The count is area divided by sheet size, rounded up. Cuts at reveals, corners
+              and openings mean a real job needs a few more. <strong>Labour and the
+              rest</strong> covers fitting, access, fixings and anything else; leave it at zero
+              and every figure below is for materials only.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'retrofit-payback',
+        title: 'Why the real payback is usually longer',
+        figure: <GaugeFigure />,
+        body: (
+          <p>
+            Treat the payback as the optimistic end. It assumes today&rsquo;s fuel price
+            forever. It assumes every kilowatt-hour saved turns into money, when people in a
+            house that was hard to heat often take some of the saving as warmth instead. And
+            it counts no carbon or money spent making the insulation in the first place. None
+            of that makes the work less worth doing: a wall that stays warm, dry and free of
+            mould is worth something no payback figure shows.
+          </p>
         ),
       },
     ],
@@ -1350,13 +1621,16 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <CombinedFigure />,
         body: (
           <p>
-            The fastener correction covers the detailed route, where you supply a point
-            thermal transmittance; the approximate route in BS EN ISO 6946 Annex F.3.2 is
-            not implemented, because that annex is not published free and the formula
-            would have to be guessed. Ground-bearing floors need a different standard and
-            are refused rather than approximated. Overheating proper needs solar gain
-            and a room model, so the summer figures here are an input to that, not a substitute.
-            ROADMAP.md in the footer keeps the current list.
+            The fastener correction here takes the detailed route, where you supply a point
+            thermal transmittance. The approximate route in BS EN ISO 6946 Annex F.3.2,
+            which works from the fixing&rsquo;s own dimensions, is not offered yet: its formula
+            was taken from a draft of the standard and still has to be checked against the
+            published text. The inverted-roof correction and crossed battens are not built.
+            Ground-bearing floors need a different standard and are refused rather than
+            approximated. The moisture check runs over two seasons you set, not the twelve
+            months of design weather a formal assessment uses. Overheating proper needs solar
+            gain and a room model, so the summer figures here are an input to that, not a
+            substitute. ROADMAP.md in the footer keeps the current list.
           </p>
         ),
       },

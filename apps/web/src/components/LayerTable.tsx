@@ -329,7 +329,7 @@ export function LayerTable({
     <div className="layer-table">
       <div className="layer-table-head">
         <span>
-          Layer, inside to outside
+          Layers, inside to outside
           <HelpButton topicId="add-layer" label="the layers box" onOpen={onOpenGuide} />
         </span>
         <span className="layer-actions-head">

@@ -340,8 +340,10 @@ export function MoistureTab({
             <p className="footnote">
               Mould does not need condensation, only persistently damp air against a
               surface, which is why it appears in cold corners and behind furniture first.
-              Switching the internal surface to <em>reduced air circulation</em> on the
-              build-up tab is how to test those spots.
+              This check already allows for those spots: BS EN ISO 13788 sets a fixed,
+              higher surface resistance for it that stands for a poorly ventilated corner, so
+              the air-circulation setting on the Build-up and U-value tab does not change
+              it.
             </p>
           </>
         )}

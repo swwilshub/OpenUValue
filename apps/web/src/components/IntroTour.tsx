@@ -476,9 +476,9 @@ const STEPS: readonly Step[] = [
           This is exactly why OpenUValue calls its dew-point check a{' '}
           <strong>screening indicator</strong> rather than a verdict. Being colder than the
           dew point is necessary for condensation but not sufficient. Whether vapour gets
-          there is the other half, and judging that properly is a BS EN ISO 13788 calculation
-          this tool does not yet do. The S<sub>d</sub> figures beside each layer are what you
-          would weigh up by hand in the meantime.
+          there is the other half. The Moisture tab judges that with a BS EN ISO 13788
+          calculation, and the S<sub>d</sub> figure beside each layer shows how much each one
+          holds back.
         </p>
       </>
     ),

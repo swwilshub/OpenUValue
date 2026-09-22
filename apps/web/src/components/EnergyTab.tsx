@@ -86,7 +86,7 @@ export function EnergyTab({
         <p className="verdict verdict-risk">
           This build-up has no U-value, because it is outside the scope of the combined
           method, so there is nothing to put a heating cost against. Fix that on the
-          build-up tab and this fills in.
+          Build-up and U-value tab and this fills in.
         </p>
       </section>
     );
@@ -114,7 +114,10 @@ export function EnergyTab({
         </label>
 
         <label className="field">
-          <span className="field-caption">How it is heated</span>
+          <span className="field-caption">
+            How it is heated
+            <HelpButton topicId="energy-inputs" label="region, heating and fuel price" onOpen={onOpenGuide} />
+          </span>
           <select
             value={presetId}
             onChange={(event) => {
@@ -162,7 +165,10 @@ export function EnergyTab({
         </label>
 
         <label className="field">
-          <span className="field-caption">Heating base, °C</span>
+          <span className="field-caption">
+            Heating base, °C
+            <HelpButton topicId="energy-months" label="the heating base temperature" onOpen={onOpenGuide} />
+          </span>
           <input
             type="number"
             min={5}
@@ -176,6 +182,10 @@ export function EnergyTab({
 
       {preset !== undefined && <p className="footnote">{preset.note}</p>}
 
+      <h3>
+        Per square metre, over a year
+        <HelpButton topicId="energy-figures" label="the energy figures" onOpen={onOpenGuide} />
+      </h3>
       <div className="energy-figures">
         <Figure
           label="Heat lost through this element"
@@ -209,7 +219,10 @@ export function EnergyTab({
         />
       </div>
 
-      <h3>Month by month</h3>
+      <h3>
+        Month by month
+        <HelpButton topicId="energy-months" label="the monthly bars" onOpen={onOpenGuide} />
+      </h3>
       <ul className="month-bars">
         {season.months.map((month) => (
           <li key={month.monthIndex} className={month.isHeatingMonth ? '' : 'is-off-season'}>

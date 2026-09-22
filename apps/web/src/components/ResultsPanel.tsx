@@ -208,7 +208,8 @@ export function ResultsPanel({
                 χ comes from a BS EN ISO 10211 model or from the fixing manufacturer,
                 often in a BBA certificate. It is the one figure here that cannot be
                 worked out from the build-up. The approximate route in BS EN ISO 6946
-                Annex F.3.2 is not implemented; see VERIFY.md.
+                Annex F.3.2, which works from the fixing&rsquo;s dimensions instead, is not
+                offered here yet; see VERIFY.md V24.
               </p>
             </>
           )}
@@ -368,13 +369,14 @@ export function ResultsPanel({
         there at saturation depends on the vapour resistance inboard of it, shown above
         as S<sub>d</sub>. A well-insulated element has most of its thickness below the
         internal dew point by design, so expect interfaces to be listed here that a
-        BS EN ISO 13788 or Glaser calculation would clear. That calculation is Phase 3;
-        see ROADMAP.md. The internal surface above is the one place where the
-        comparison is the real criterion, because nothing impedes vapour reaching it.
+        BS EN ISO 13788 or Glaser calculation would clear. That calculation is on the
+        Moisture tab. The internal surface above is the one place where the comparison
+        is the real criterion, because nothing impedes vapour reaching it.
       </p>
       <p className="footnote">
         Both are assessed on every path through the element and reported as the worst
-        case at each interface, so changing the profile shown below never changes them.
+        case at each interface, so changing the section shown in the drawing never
+        changes them.
       </p>
 
       {profile.warnings.length > 0 && (
