@@ -204,16 +204,18 @@ closed.**
 
 ---
 
-## 5. Out of scope in Phase 1, so not yet a verification item
+## 5. Not built yet, so not yet a verification item
 
 Listed here only so it is clear they are absent rather than assumed. See `ROADMAP.md`.
+Items that were in this list and have since been built (the air-gap correction, both
+fastener routes in the engine, and BS EN ISO 13786 dynamic properties) have their
+verification rows above.
 
-- BS EN ISO 6946 ΔU corrections: air voids, mechanical fasteners, inverted roofs.
-  **BR 443's detailed fastener route is now implemented; its approximate route is not, so a UK U-value from this tool is
-  incomplete wherever insulation is mechanically fixed through.**
+- BS EN ISO 6946 inverted-roof correction ΔU_r.
+- The approximate fastener route in the UI. It exists in the engine (V24) but the Result
+  box offers only the χ route, **so a UK U-value from this tool is incomplete wherever
+  insulation is fixed through and no χ is entered.**
 - BS EN ISO 13788 monthly interstitial condensation and its climate data.
 - DIN 4108-3 Glaser as an alternative method.
-- BS EN ISO 13786 dynamic properties (areal heat capacity kappa, decrement factor,
-  time shift) needed by the SAP 10.3 tool.
 - BS EN ISO 10211 two-dimensional thermal bridges.
 - BS EN ISO 13370 ground floors.

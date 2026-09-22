@@ -4,8 +4,9 @@ Phase 1 (delivered) covers steady-state U-values, inhomogeneous layers by the
 BS EN ISO 6946 combined method, a steady-state temperature profile with a dew-point
 comparison, and a browser UI with a to-scale cross-section.
 
-Everything below is **out of scope in Phase 1** and absent from the tool. Ordered by
-dependency, so each phase is buildable on the one before it.
+The phases below were planned after it, ordered by dependency so each is buildable on
+the one before. Parts of them have since been delivered, and each item says so where it
+has; anything not marked delivered is still absent from the tool.
 
 ---
 
@@ -39,20 +40,21 @@ Without these, a U-value from this tool is not yet a BR 443 U-value.
 
 ## Phase 3 — interstitial condensation
 
-Phase 1 reports the *temperature* condition only: which interfaces are colder than the
-internal air dew point. That is the real criterion at the internal surface, where
+Phase 1 reported the *temperature* condition only: which interfaces are colder than
+the internal air dew point. That is the real criterion at the internal surface, where
 nothing impedes vapour reaching it, but within the element it is a **screening
 indicator** — necessary for condensation, not sufficient. Turning it into an
 assessment needs the vapour side, which is what this phase adds.
 
 **Delivered since:** the Glaser construction itself — the vapour pressure profile
 against the saturation ceiling, the condensation planes and their rates — calculated at
-**one set of conditions**, the ones on screen. See `engine/src/condensation/glaser.ts`
-and `iso13788.ts`, and the diagram in the results.
+the conditions on screen, plus a two-season accumulation and dry-out check over season
+lengths and drying weather the user sets. See `engine/src/condensation/glaser.ts`,
+`iso13788.ts` and `periodAssessment.ts`, and the Moisture tab.
 
 **Still outstanding**, and the reason the above is not a BS EN ISO 13788 *assessment*:
 
-0. **Monthly climate data.** ~~The blocker.~~ **Half solved.** SAP 10.2 Appendix U,
+4. **Monthly climate data.** ~~The blocker.~~ **Half solved.** SAP 10.2 Appendix U,
    Table U1 gives mean monthly external temperature for 21 UK regions plus a UK average,
    free and official, and is now in `engine/src/climate.ts`. The temperature side of the
    annual assessment is therefore available.
@@ -64,26 +66,26 @@ and `iso13788.ts`, and the diagram in the results.
    not run honestly — so the two-season approximation stands, and the accumulation loop
    remains small while the data remains the blocker.
 
-4. **BS EN ISO 13788 monthly (Glaser) interstitial condensation assessment**:
+5. **BS EN ISO 13788 monthly (Glaser) interstitial condensation assessment**:
    monthly climate data, condensation and evaporation over an annual cycle, and the
    drying-reserve question ("does it dry out again by the end of the year?").
-5. **DIN 4108-3 Glaser** as a selectable **alternative** method, not a replacement.
-6. Both plug into `packages/engine/src/condensation/method.ts`, which already exists
+6. **DIN 4108-3 Glaser** as a selectable **alternative** method, not a replacement.
+7. Both plug into `packages/engine/src/condensation/method.ts`, which already exists
    and already specifies the two rules that matter: a method is handed **every**
    section path, and results are reduced to the worst case at each interface, so the
    display mode can never change a verdict.
-7. **BS 5250** guidance and limit values for UK practice.
+8. **BS 5250** guidance and limit values for UK practice.
 
 ## Phase 4 — dynamic properties (needed by the SAP 10.3 calculator)
 
-8. ~~**BS EN ISO 13786 dynamic thermal characteristics**~~ — **DONE.** `engine/src/dynamic.ts`
+9. ~~**BS EN ISO 13786 dynamic thermal characteristics**~~ — **DONE.** `engine/src/dynamic.ts`
    gives the periodic thermal transmittance Y<sub>ie</sub>, the decrement factor, the time
    shift and the areal heat capacity κ on both faces, for any excitation period (24 hours
    by default). The layer transfer matrix is derived from the heat equation rather than
    transcribed, and checked against the massless limit, ρ·c·d/2 for a thin slab and
    ρ·c·δ/√2 for a semi-infinite one. Surfaced in the summary strip and the Summer
    performance panel.
-9. ~~**Summer performance** reporting~~ — **DONE**, same commit.
+10. ~~**Summer performance** reporting~~ — **DONE**, same commit.
 
 Still open in this area:
 
@@ -118,25 +120,26 @@ The 3D layup view says outright that cross battens are not drawn yet, so the gap
 visible to a user rather than silently absent.
 
 
-10. **BS EN ISO 13370 ground floors**, which need perimeter/area ratio and soil
+11. **BS EN ISO 13370 ground floors**, which need perimeter/area ratio and soil
     properties rather than a simple layer stack.
-11. **BS EN ISO 10211 two-dimensional numerical calculation**, for the build-ups the
+12. **BS EN ISO 10211 two-dimensional numerical calculation**, for the build-ups the
     combined method refuses today: steel studs and other metal-bridged elements. The
     engine currently withholds a U-value for these on purpose (`uValueWPerM2K` is
     `null`); this is what would let it give an answer instead.
-12. **Whole-building fabric heat loss**: element areas, ψ-values for junctions,
+13. **Whole-building fabric heat loss**: element areas, ψ-values for junctions,
     thermal bridging allowance (y-value), and the heat loss parameter.
 
 ## Ongoing
 
-13. **Close out `VERIFY.md`.** The single most valuable piece of work available: every
+14. **Close out `VERIFY.md`.** The single most valuable piece of work available: every
     material source, several clause references, and two genuine open method questions
     (the air-layer table basis, and the treatment of slightly ventilated cavities).
-14. **Worked examples from the standards** as regression tests, once printed copies
+15. **Worked examples from the standards** as regression tests, once printed copies
     are to hand.
 
     *The web app now has tests of its own* — `apps/web` runs vitest over the pure
     functions in `state/`, which is where being wrong is silent. Component rendering is
     still uncovered.
-15. **Element library** of common UK build-ups, authored by us.
-16. **Import/export** of build-ups as JSON, alongside the existing URL sharing.
+16. **Element library** of common UK build-ups, authored by us. Three examples ship so
+    far: a filled-cavity masonry wall, a timber frame wall and a cold roof.
+17. **Import/export** of build-ups as JSON, alongside the existing URL sharing.

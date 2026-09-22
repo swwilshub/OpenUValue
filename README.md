@@ -1,38 +1,47 @@
 # OpenUValue
 
 An open-source, browser-based building-envelope calculator. Build a wall, roof or
-floor layer by layer and see its U-value, the steady-state temperature through it,
-and where condensation is a risk.
+floor layer by layer and see its U-value, the temperature through it, whether and
+where condensation forms, how it behaves on a hot day, and what it costs to heat
+through.
 
 MIT licensed. No backend, no accounts, no tracking. Build-ups are shared by URL.
 
-> **Phase 1.** Steady-state U-values and temperature profiles only. See
-> [ROADMAP.md](ROADMAP.md) for what is deliberately absent, and
-> [VERIFY.md](VERIFY.md) for values and clause references that still need checking
-> against printed standards. **Read VERIFY.md before using a result for design
-> work** — in particular, BR 443's mechanical-fastener correction is not yet
-> implemented, and no material value in the seeded database has been attributed to a
-> standard table yet.
+> **Still being checked.** Several material values and clause references have not yet
+> been checked against printed standards. [VERIFY.md](VERIFY.md) lists every one, with
+> what would change if it were wrong, and [ROADMAP.md](ROADMAP.md) lists what is not
+> built yet. **Read VERIFY.md before using a result for design work.**
 
 ## What it does today
 
 - **U-values** to BS EN ISO 6946 with BR 443 conventions: surface resistances by
-  heat-flow direction, unventilated air layers from the tabulated values, and
-  ventilated cavities (well ventilated and slightly ventilated).
-- **Inhomogeneous layers** — timber studs through insulation, and the like — by the
-  ISO 6946 combined method, reporting the upper and lower limits, R_T, U and the error
-  estimate. Where the method does not apply (a ratio above 1.5, or metal bridging),
-  **no U-value is reported** rather than an invalid one.
-- **Temperature profile** through the element at user-set internal and external
-  conditions, with the internal dew point marked. This gives a real **surface
-  condensation** verdict at the internal surface, and a **dew-point screening**
-  indicator at each interface within the element — being colder than the internal dew
-  point is necessary for interstitial condensation but not sufficient, since whether
-  vapour arrives there at saturation depends on the S_d distribution. The fuller
-  BS EN ISO 13788 / Glaser assessment is Phase 3. Both are evaluated on every path
-  through the element and reported as the worst case at each interface, so the display
-  mode never changes a verdict.
-- **A to-scale cross-section** with the temperature line drawn over it.
+  heat-flow direction (including a roof's pitch), unventilated air layers, and
+  slightly and well-ventilated cavities. Cavity types are offered by the construction
+  they are, and a new cavity's type is guessed from the layers either side of it.
+- **Bridged layers**, such as studs through insulation or battens across a cavity, by
+  the ISO 6946 combined method, reporting the upper and lower limits, R_T, U and the
+  error estimate. Where the method does not apply (a ratio above 1.5, or metal
+  bridging), **no U-value is reported** rather than an invalid one.
+- **Corrections** from BR 443 for air gaps in the insulation and for mechanical
+  fasteners, where you supply the fastener's point thermal transmittance χ.
+- **Part L limits** from Approved Document L for a new dwelling, a new element in an
+  existing one, or a renovated element (England, dwellings).
+- **Temperature and moisture.** A temperature profile at the conditions you set, the
+  internal surface checked for mould and condensation, and interstitial condensation
+  by the BS EN ISO 13788 Glaser method, with a two-season check of whether it dries out
+  again. Every path through a bridged element is assessed and the worst case at each
+  interface reported, so what is on display never changes a verdict.
+- **Wind-driven rain exposure** zones from Approved Document C, flagging a fully
+  filled cavity where the zone rules it out.
+- **Summer performance** to BS EN ISO 13786: decrement factor, time shift, areal heat
+  capacity κ and periodic transmittance Y.
+- **Energy and retrofit.** Heat lost over a heating season by SAP climate region, the
+  fuel, carbon, primary energy and cost of replacing it, and a before-and-after
+  comparison of a retrofit with its payback, costed by the sheet.
+- **A to-scale cross-section** you can edit directly: drag layers to reorder them,
+  drag an edge to change a thickness, drop materials in from a palette. A 3D cutaway
+  view, a guided tour of how to read the drawing, and a guide with walkthroughs and an
+  explanation of every box.
 
 ## Layout
 
@@ -48,7 +57,7 @@ Requires Node 20+ and pnpm 10+.
 
 ```sh
 pnpm install
-pnpm test        # engine and materials test suites
+pnpm test        # engine, materials and web app test suites
 pnpm typecheck   # strict TypeScript across the workspace
 pnpm dev         # the web app on http://localhost:5173
 pnpm build       # production build
