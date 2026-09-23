@@ -4968,3 +4968,34 @@ body.is-dragging * {
 .drawing-key figcaption {
   margin-top: 6px;
 }
+
+/* The settings a tab borrows from Conditions, named with a way back to them. */
+.heating-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--ground);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.heating-summary strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.heating-summary .link-button {
+  color: var(--accent);
+  font-size: 12.5px;
+}
+
+.panel-intro {
+  margin: -4px 0 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: 68ch;
+}

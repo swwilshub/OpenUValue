@@ -1430,6 +1430,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
+              These are set once, in the <strong>Climate and heating</strong> box on the
+              Conditions tab, and both the Energy and Retrofit tabs use them.{' '}
               <strong>Where the building is</strong> picks one of the SAP climate regions, or
               the UK average. Each has its own mean temperature for every month, so the same
               element loses more heat in the north of Scotland than on the south coast.
@@ -1513,10 +1515,9 @@ export const CHAPTERS: readonly GuideChapter[] = [
               work divided by the money saved each year is the payback in years.
             </p>
             <p>
-              The region, heating type, efficiency and fuel price sit behind the{' '}
-              <strong>Assumptions</strong> line in step 3, which says in one line what is
-              currently assumed. They are set separately from the Energy tab&rsquo;s, so check
-              them here too.
+              The region, heating type, efficiency and fuel price are the ones set on the
+              Conditions tab, shared with the Energy tab. Step 3 names them in one line, with a
+              link back to change them.
             </p>
           </>
         ),

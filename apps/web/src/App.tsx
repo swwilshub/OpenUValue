@@ -18,6 +18,9 @@ import {
 } from '@openuvalue/engine';
 import { BoundaryPanel } from './components/BoundaryPanel.js';
 import { LocationPanel } from './components/LocationPanel.js';
+import { HeatingPanel } from './components/HeatingPanel.js';
+import { DEFAULT_HEATING_SETTINGS } from './state/heating.js';
+import type { HeatingSettings } from './state/heating.js';
 import { HatchLegend, IntroTour } from './components/IntroTour.js';
 import { MoistureTab } from './components/MoistureTab.js';
 import { EnergyTab } from './components/EnergyTab.js';
@@ -232,6 +235,8 @@ export function App(): JSX.Element {
    * tab and read by the pinned tile, so it is held here where both can see it.
    */
   const [partLContext, setPartLContext] = useState<PartLContext>('new-dwelling');
+  /** Region, heating system and fuel price: asked on Conditions, used by Energy and Retrofit. */
+  const [heating, setHeating] = useState<HeatingSettings>(DEFAULT_HEATING_SETTINGS);
   /*
    * The feature guide. `guideTopic` is what a help button beside a box passes in, so the
    * guide opens at that box rather than at the beginning.
@@ -942,6 +947,7 @@ export function App(): JSX.Element {
                 }
                 layers={state.layers}
               />
+              <HeatingPanel onOpenGuide={openGuide} settings={heating} onChange={setHeating} />
             </div>
           )}
 
@@ -1003,13 +1009,20 @@ export function App(): JSX.Element {
                 onOpenGuide={openGuide}
                 result={result}
                 internalTemperatureC={state.conditions.internalAirTemperatureC}
+                heating={heating}
+                onEditHeating={() => setTab('conditions')}
               />
             </div>
           )}
 
           {tab === 'retrofit' && (
             <div className="tab-panel" role="tabpanel" aria-label="Retrofit">
-              <RetrofitTab onOpenGuide={openGuide} state={state} />
+              <RetrofitTab
+                onOpenGuide={openGuide}
+                state={state}
+                heating={heating}
+                onEditHeating={() => setTab('conditions')}
+              />
             </div>
           )}
         </section>

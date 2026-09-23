@@ -1,14 +1,9 @@
-import { useMemo, useState } from 'react';
-import {
-  CLIMATE_REGIONS,
-  DEFAULT_HEATING_BASE_TEMPERATURE_C,
-  HEAT_SOURCE_PRESETS,
-  costOfHeat,
-  fuel,
-  seasonalHeatLoss,
-} from '@openuvalue/engine';
+import { useMemo } from 'react';
+import { HEAT_SOURCE_PRESETS, costOfHeat, fuel, seasonalHeatLoss } from '@openuvalue/engine';
 import type { UValueResult } from '@openuvalue/engine';
+import type { HeatingSettings } from '../state/heating.js';
 import { HelpButton } from './guide/Guide.js';
+import { HeatingSummary } from './HeatingSummary.js';
 
 /**
  * What one square metre of this element costs to keep warm, where the building is.
@@ -24,6 +19,10 @@ export interface EnergyTabProps {
   readonly onOpenGuide: (topicId: string) => void;
   readonly result: UValueResult;
   readonly internalTemperatureC: number;
+  /** Region, heating system and price, set on the Conditions tab. */
+  readonly heating: HeatingSettings;
+  /** Takes the reader to where those are set. */
+  readonly onEditHeating: () => void;
 }
 
 function Figure({
@@ -52,12 +51,16 @@ export function EnergyTab({
   onOpenGuide,
   result,
   internalTemperatureC,
+  heating,
+  onEditHeating,
 }: EnergyTabProps): JSX.Element {
-  const [regionId, setRegionId] = useState(0);
-  const [presetId, setPresetId] = useState('gas-condensing');
-  const [efficiency, setEfficiency] = useState(0.9);
-  const [pricePerKWh, setPricePerKWh] = useState(7.0);
-  const [baseC, setBaseC] = useState(DEFAULT_HEATING_BASE_TEMPERATURE_C);
+  const {
+    regionId,
+    presetId,
+    efficiency,
+    pricePerKWhPence: pricePerKWh,
+    baseTemperatureC: baseC,
+  } = heating;
 
   const preset = HEAT_SOURCE_PRESETS.find((candidate) => candidate.id === presetId);
   const fuelId = preset?.source.fuelId ?? 'mains-gas';
@@ -101,86 +104,7 @@ export function EnergyTab({
         <HelpButton topicId="energy-season" label="the heating season figures" onOpen={onOpenGuide} />
       </h2>
 
-      <div className="energy-controls">
-        <label className="field">
-          <span className="field-caption">Where the building is</span>
-          <select value={regionId} onChange={(event) => setRegionId(Number(event.target.value))}>
-            {CLIMATE_REGIONS.map((region) => (
-              <option key={region.id} value={region.id}>
-                {region.id === 0 ? region.name : `${region.id}. ${region.name}`}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="field">
-          <span className="field-caption">
-            How it is heated
-            <HelpButton topicId="energy-inputs" label="region, heating and fuel price" onOpen={onOpenGuide} />
-          </span>
-          <select
-            value={presetId}
-            onChange={(event) => {
-              setPresetId(event.target.value);
-              const next = HEAT_SOURCE_PRESETS.find((c) => c.id === event.target.value);
-              if (next !== undefined) {
-                setEfficiency(next.source.efficiency);
-                const f = fuel(next.source.fuelId);
-                if (f !== undefined) {
-                  setPricePerKWh(f.priceP2021PerKWh);
-                }
-              }
-            }}
-          >
-            {HEAT_SOURCE_PRESETS.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="field">
-          <span className="field-caption">
-            {efficiency > 1 ? 'Seasonal CoP' : 'Seasonal efficiency'}
-          </span>
-          <input
-            type="number"
-            min={0.1}
-            step={0.05}
-            value={efficiency}
-            onChange={(event) => setEfficiency(Math.max(0.1, Number(event.target.value)))}
-          />
-        </label>
-
-        <label className="field">
-          <span className="field-caption">Fuel price, p/kWh</span>
-          <input
-            type="number"
-            min={0}
-            step={0.1}
-            value={pricePerKWh}
-            onChange={(event) => setPricePerKWh(Math.max(0, Number(event.target.value)))}
-          />
-        </label>
-
-        <label className="field">
-          <span className="field-caption">
-            Heating base, °C
-            <HelpButton topicId="energy-months" label="the heating base temperature" onOpen={onOpenGuide} />
-          </span>
-          <input
-            type="number"
-            min={5}
-            max={20}
-            step={0.5}
-            value={baseC}
-            onChange={(event) => setBaseC(Number(event.target.value))}
-          />
-        </label>
-      </div>
-
-      {preset !== undefined && <p className="footnote">{preset.note}</p>}
+      <HeatingSummary settings={heating} onEdit={onEditHeating} />
 
       <h3>
         Per square metre, over a year

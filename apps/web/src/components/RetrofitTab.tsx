@@ -1,17 +1,13 @@
 import { useMemo, useState } from 'react';
-import {
-  CLIMATE_REGIONS,
-  DEFAULT_HEATING_BASE_TEMPERATURE_C,
-  HEAT_SOURCE_PRESETS,
-  calculateUValue,
-  fuel,
-} from '@openuvalue/engine';
+import { HEAT_SOURCE_PRESETS, calculateUValue, fuel } from '@openuvalue/engine';
+import type { HeatingSettings } from '../state/heating.js';
 import type { UiState } from '../state/model.js';
 import { toBuildingElement } from '../state/model.js';
 import { assessRetrofit } from '../state/retrofit.js';
 import { DEFAULT_SHEET_SIZE, SHEET_SIZE_PRESETS, sheetsCostGBP, sheetsForArea } from '../state/sheets.js';
 import { SheetDiagram } from './SheetDiagram.js';
 import { HelpButton } from './guide/Guide.js';
+import { HeatingSummary } from './HeatingSummary.js';
 
 /**
  * What the work saves, and how long it takes to pay for itself.
@@ -22,26 +18,38 @@ import { HelpButton } from './guide/Guide.js';
  * actually calculated rather than a remembered U-value.
  *
  * The tab is laid out as three steps rather than one flat page of controls, because the
- * six inputs are not six of a kind. Two of them — the area treated and what the work
- * costs — are the project, and nobody else can supply them. The other four are
- * assumptions with defensible defaults, so they sit behind a disclosure that states in
- * one line what is currently assumed. A reader who disagrees can open it; a reader who
- * does not should not have to read four fields to reach the answer.
+ * inputs are not all of a kind. The area treated and what the work costs are the
+ * project, and nobody else can supply them. The region, heating system and fuel price
+ * are assumptions with defensible defaults, shared with the Energy tab and set on the
+ * Conditions tab, so here they are named in one line with a link back. A reader who
+ * disagrees can change them; a reader who does not should not have to read four fields
+ * to reach the answer.
  */
 
 export interface RetrofitTabProps {
   readonly onOpenGuide: (topicId: string) => void;
   readonly state: UiState;
+  /** Region, heating system and price, set on the Conditions tab. */
+  readonly heating: HeatingSettings;
+  readonly onEditHeating: () => void;
 }
 
 const money = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 });
 
-export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Element {
+export function RetrofitTab({
+  onOpenGuide,
+  state,
+  heating,
+  onEditHeating,
+}: RetrofitTabProps): JSX.Element {
   const [newLayerIds, setNewLayerIds] = useState<readonly string[]>([]);
-  const [regionId, setRegionId] = useState(0);
-  const [presetId, setPresetId] = useState('gas-condensing');
-  const [efficiency, setEfficiency] = useState(0.9);
-  const [pricePerKWh, setPricePerKWh] = useState(7);
+  const {
+    regionId,
+    presetId,
+    efficiency,
+    pricePerKWhPence: pricePerKWh,
+    baseTemperatureC,
+  } = heating;
   const [areaM2, setAreaM2] = useState(50);
   /*
    * A price per sheet rather than a price for the job, because a sheet price is a number
@@ -66,7 +74,6 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
   const preset = HEAT_SOURCE_PRESETS.find((candidate) => candidate.id === presetId);
   const fuelId = preset?.source.fuelId ?? 'mains-gas';
   const factors = fuel(fuelId);
-  const region = CLIMATE_REGIONS.find((candidate) => candidate.id === regionId);
 
   const toggle = (id: string): void =>
     setNewLayerIds((current) =>
@@ -90,7 +97,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
         after,
         regionId,
         internalTemperatureC: state.conditions.internalAirTemperatureC,
-        baseTemperatureC: DEFAULT_HEATING_BASE_TEMPERATURE_C,
+        baseTemperatureC,
         source: { fuelId, efficiency },
         pricePerKWhPence: pricePerKWh,
         areaM2,
@@ -110,7 +117,17 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
     } catch {
       return undefined;
     }
-  }, [state, newLayerIds, regionId, fuelId, efficiency, pricePerKWh, areaM2, costGBP]);
+  }, [
+    state,
+    newLayerIds,
+    regionId,
+    fuelId,
+    efficiency,
+    pricePerKWh,
+    baseTemperatureC,
+    areaM2,
+    costGBP,
+  ]);
 
   const assessment = comparison?.assessment;
   const nothingTicked = newLayerIds.length === 0;
@@ -354,68 +371,7 @@ export function RetrofitTab({ onOpenGuide, state }: RetrofitTabProps): JSX.Eleme
             </>
           )}
 
-          <details className="explain retrofit-assumptions">
-            <summary>
-              Assumptions: {region?.name ?? 'UK average'} weather ·{' '}
-              {preset?.label ?? 'Gas boiler'} · {pricePerKWh} p/kWh
-            </summary>
-            <div className="retrofit-fields">
-              <label className="field">
-                <span className="field-caption">Where the building is</span>
-                <select
-                  value={regionId}
-                  onChange={(event) => setRegionId(Number(event.target.value))}
-                >
-                  {CLIMATE_REGIONS.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.id === 0 ? candidate.name : `${candidate.id}. ${candidate.name}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span className="field-caption">How it is heated</span>
-                <select
-                  value={presetId}
-                  onChange={(event) => {
-                    setPresetId(event.target.value);
-                    const next = HEAT_SOURCE_PRESETS.find((c) => c.id === event.target.value);
-                    if (next !== undefined) {
-                      setEfficiency(next.source.efficiency);
-                    }
-                  }}
-                >
-                  {HEAT_SOURCE_PRESETS.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span className="field-caption">
-                  {efficiency > 1 ? 'Seasonal CoP' : 'Efficiency'}
-                </span>
-                <input
-                  type="number"
-                  min={0.1}
-                  step={0.05}
-                  value={efficiency}
-                  onChange={(event) => setEfficiency(Math.max(0.1, Number(event.target.value)))}
-                />
-              </label>
-              <label className="field">
-                <span className="field-caption">Fuel price, p/kWh</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={pricePerKWh}
-                  onChange={(event) => setPricePerKWh(Math.max(0, Number(event.target.value)))}
-                />
-              </label>
-            </div>
-          </details>
+          <HeatingSummary settings={heating} onEdit={onEditHeating} />
 
           <details className="explain">
             <summary>Why the real payback is longer than this</summary>
