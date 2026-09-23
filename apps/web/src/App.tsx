@@ -807,6 +807,34 @@ export function App(): JSX.Element {
                   onResizeMember={setMemberWidth}
                   condensation={condensation}
                   dryOut={dryOut}
+                  legend={<HatchLegend />}
+                  underDrawing={
+                    /*
+                     * The palette sits straight under the drawing it drops into, which is
+                     * also where a reader's eye already is once they have looked at the
+                     * build-up and found something missing from it.
+                     */
+                    <MaterialPalette
+                      onAdd={(paletteId) => {
+                        /*
+                         * A click has no position, so the layer goes after whichever one is
+                         * selected, or on the outside end when none is. Selecting the new
+                         * layer then makes a second click land after it, which is how a
+                         * build-up gets assembled a layer at a time.
+                         */
+                        const selected = state.layers.findIndex(
+                          (layer) => layer.id === selectedLayerId,
+                        );
+                        insertPalette(selected < 0 ? state.layers.length : selected + 1, paletteId);
+                      }}
+                      onOpenGuide={openGuide}
+                      addPosition={
+                        state.layers.some((layer) => layer.id === selectedLayerId)
+                          ? 'after the selected layer'
+                          : 'on the outside'
+                      }
+                    />
+                  }
                 />
               ) : (
                 <Layup3D
@@ -817,38 +845,6 @@ export function App(): JSX.Element {
                   tiltRadians={layupTiltRadians(state.elementKind, state.roofPitchDegrees)}
                 />
               )}
-
-              {/*
-                The palette sits under the drawing it drops into, which is also where a
-                reader's eye already is once they have looked at the build-up and found
-                something missing from it.
-              */}
-              <div hidden={heroView !== 'section'}>
-                <MaterialPalette
-                  onAdd={(paletteId) => {
-                    /*
-                     * A click has no position, so the layer goes after whichever one is
-                     * selected, or on the outside end when none is. Selecting the new
-                     * layer then makes a second click land after it, which is how a
-                     * build-up gets assembled a layer at a time.
-                     */
-                    const selected = state.layers.findIndex(
-                      (layer) => layer.id === selectedLayerId,
-                    );
-                    insertPalette(selected < 0 ? state.layers.length : selected + 1, paletteId);
-                  }}
-                  onOpenGuide={openGuide}
-                  addPosition={
-                    state.layers.some((layer) => layer.id === selectedLayerId)
-                      ? 'after the selected layer'
-                      : 'on the outside'
-                  }
-                />
-              </div>
-
-              <div className="section-legend" hidden={heroView !== 'section'}>
-                <HatchLegend />
-              </div>
 
               {bridged && state.section === 'combined' && (
                 <p className="footnote">

@@ -1326,10 +1326,6 @@ button.danger:hover {
 }
 
 .interface-note {
-  display: flex;
-  gap: 9px;
-  align-items: flex-start;
-  padding: 8px 10px;
   border-radius: 7px;
   background: var(--ground);
   border-left: 3px solid var(--line);
@@ -1337,6 +1333,42 @@ button.danger:hover {
 
 .interface-note p {
   margin: 0;
+}
+
+.interface-note summary {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 6px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.interface-note summary::-webkit-details-marker {
+  display: none;
+}
+
+.interface-note summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 5px;
+}
+
+.note-more {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.note-more::after {
+  content: '\00a0›';
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+details[open] > summary .note-more::after {
+  transform: rotate(90deg);
 }
 
 .note-glyph {
@@ -1361,8 +1393,9 @@ button.danger:hover {
 }
 
 .note-where {
-  font-size: 12px;
-  font-weight: 650;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -1371,10 +1404,11 @@ button.danger:hover {
 }
 
 .note-what {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-soft);
-  line-height: 1.45;
-  margin-top: 2px !important;
+  line-height: 1.5;
+  padding: 0 12px 9px 35px;
+  max-width: 80ch;
 }
 
 .note-surface-condensation {
@@ -1442,13 +1476,13 @@ button.danger:hover {
 .note-caveat {
   background: transparent;
   border-left-color: var(--line);
-  padding-top: 2px;
-  padding-bottom: 2px;
 }
 
 .note-caveat .note-what {
-  font-style: italic;
+  padding-left: 12px;
 }
+
+
 
 /*
  * The grab area on a member's edge. Invisible until hovered, like the thickness handle:
@@ -4724,6 +4758,40 @@ body.is-dragging * {
   margin-bottom: 9px;
 }
 
+/* Closed: one line, the chips scrolling sideways if the pane is too narrow for them. */
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.palette-row .palette-chips {
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-block: 2px;
+  /* Fades out at the right edge, so a chip cut by the pane reads as "more this way". */
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+
+.palette-row .picker-label,
+.palette-toggle {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.palette-toggle {
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+.palette-head .palette-toggle {
+  margin-left: auto;
+}
+
 .palette-hint {
   flex: 1 1 260px;
   min-width: 0;
@@ -4745,7 +4813,7 @@ body.is-dragging * {
 .palette-group-title {
   display: block;
   margin-bottom: 4px;
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
@@ -4804,4 +4872,20 @@ body.is-dragging * {
 
 .phase-banner > button {
   flex: 0 0 auto;
+}
+
+/* The drawing's key, folded under it. */
+.drawing-key {
+  margin-top: 8px;
+  font-size: 12.5px;
+}
+
+.drawing-key > summary {
+  cursor: pointer;
+  color: var(--accent);
+  width: fit-content;
+}
+
+.drawing-key figcaption {
+  margin-top: 6px;
 }

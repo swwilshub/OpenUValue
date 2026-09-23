@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { MATERIALS } from '@openuvalue/materials';
-import { CAVITY_PALETTE_ID, PALETTE_GROUPS, layerFromPalette, paletteItem } from '../palette.js';
+import {
+  CAVITY_PALETTE_ID,
+  COMMON_PALETTE_IDS,
+  PALETTE_GROUPS,
+  commonPaletteItems,
+  layerFromPalette,
+  paletteItem,
+} from '../palette.js';
 import { layerFromMaterial, withLayerInserted } from '../model.js';
 
 const allItems = PALETTE_GROUPS.flatMap((group) => group.items);
@@ -22,6 +29,11 @@ describe('the palette', () => {
       // A chip has to fit on a chip.
       expect(item.label.length).toBeLessThanOrEqual(22);
     }
+  });
+
+  it('finds every chip in the short row among the full palette', () => {
+    // A renamed material would otherwise drop out of the short row without a sound.
+    expect(commonPaletteItems().map((item) => item.id)).toEqual(COMMON_PALETTE_IDS);
   });
 
   it('has no duplicate ids', () => {

@@ -145,6 +145,32 @@ const BY_ID = new Map(
   PALETTE_GROUPS.flatMap((group) => group.items).map((item) => [item.id, item] as const),
 );
 
+/**
+ * The chips shown before the palette is opened out: the materials most UK walls and
+ * roofs are made of, one of each kind, in roughly the order they are built outwards.
+ * A choice about screen space, not a claim about what is usual; the rest are one click
+ * away.
+ */
+export const COMMON_PALETTE_IDS: readonly string[] = [
+  'gypsum-plasterboard',
+  'aircrete-block',
+  'dense-concrete-block',
+  'mineral-wool-quilt',
+  'pir-board',
+  'softwood-structural',
+  'osb-board',
+  'polyethylene-vcl',
+  CAVITY_PALETTE_ID,
+  'brick-outer-leaf',
+];
+
+export function commonPaletteItems(): readonly PaletteItem[] {
+  return COMMON_PALETTE_IDS.flatMap((id) => {
+    const item = BY_ID.get(id);
+    return item === undefined ? [] : [item];
+  });
+}
+
 export function paletteItem(id: string): PaletteItem | undefined {
   return BY_ID.get(id);
 }

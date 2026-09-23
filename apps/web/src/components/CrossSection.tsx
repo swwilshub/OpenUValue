@@ -360,6 +360,10 @@ export interface CrossSectionProps {
    * doing what a build-up does.
    */
   readonly dryOut?: PeriodAssessment | undefined;
+  /** The hatching key, shown with the rest of the drawing's key under it. */
+  readonly legend?: React.ReactNode;
+  /** Tools that act on the drawing, placed straight under it and above the notes. */
+  readonly underDrawing?: React.ReactNode;
 }
 
 export function CrossSection({
@@ -375,6 +379,8 @@ export function CrossSection({
   onResizeMember,
   condensation,
   dryOut,
+  legend,
+  underDrawing,
 }: CrossSectionProps): JSX.Element {
   /*
    * Which way the build-up runs on screen.
@@ -1872,6 +1878,7 @@ export function CrossSection({
         )}
         </g>
       </svg>
+      {underDrawing}
       {/*
         * What is happening at each marked interface, under the drawing. The markers say
         * where and how much; this says why, which a tooltip cannot - a reader has to
@@ -1881,35 +1888,46 @@ export function CrossSection({
         // Stale while a layer is being dragged: the build-up under the pointer is not
         // the one these were calculated for, and they come back on drop.
         <ul className={`interface-notes${dragging ? ' is-restating' : ''}`}>
+          {/*
+            One line each, the explanation a click away. The line carries the verdict and
+            the figure, which is what a reader scanning the pane needs; the paragraph is
+            for the one they want to understand.
+          */}
           {notes.map((marker) => (
             <li key={marker.boundaryIndex} className={`interface-note note-${marker.condition}`}>
-              <svg viewBox="0 0 16 16" className="note-glyph" aria-hidden="true">
-                {marker.condition === 'surface-condensation' ? (
-                  <path d="M 8 2 L 15 14 L 1 14 Z" className="node-glyph-warning" />
-                ) : marker.condition === 'below-dew-point' ? (
-                  <circle cx={8} cy={8} r={5.4} className="note-ring" />
-                ) : (
-                  <path
-                    d={DROP_PATH}
-                    transform="translate(8 10) scale(5)"
-                    className={
-                      marker.condition === 'evaporating' ? 'note-drop-open' : 'node-glyph-drop'
-                    }
-                  />
-                )}
-              </svg>
-              <div>
-                <p className="note-where">
-                  {marker.label}
-                  <span className="note-headline">
+              <details>
+                <summary>
+                  <svg viewBox="0 0 16 16" className="note-glyph" aria-hidden="true">
+                    {marker.condition === 'surface-condensation' ? (
+                      <path d="M 8 2 L 15 14 L 1 14 Z" className="node-glyph-warning" />
+                    ) : marker.condition === 'below-dew-point' ? (
+                      <circle cx={8} cy={8} r={5.4} className="note-ring" />
+                    ) : (
+                      <path
+                        d={DROP_PATH}
+                        transform="translate(8 10) scale(5)"
+                        className={
+                          marker.condition === 'evaporating' ? 'note-drop-open' : 'node-glyph-drop'
+                        }
+                      />
+                    )}
+                  </svg>
+                  <span className="note-where">
+                    <span className="note-headline">
+                      {CONDITION_HEADLINE[marker.condition]}
+                      {marker.condition === 'condensing' || marker.condition === 'evaporating'
+                        ? `, ${formatRate(marker.ratePerDayGPerM2)}`
+                        : ''}
+                    </span>
                     {' · '}
-                    {CONDITION_HEADLINE[marker.condition]}
+                    {marker.label}
                   </span>
-                </p>
+                  <span className="note-more">Why</span>
+                </summary>
                 <p className="note-what">
                   {explain(marker, marker.boundaryIndex === outermostBoundaryIndex)}
                 </p>
-              </div>
+              </details>
             </li>
           ))}
           {condensation !== undefined && condensation.anyCondensation && dryOut !== undefined && (
@@ -1921,17 +1939,19 @@ export function CrossSection({
             <li
               className={`interface-note ${dryOut.driesOut ? 'note-dries' : 'note-does-not-dry'}`}
             >
-              <svg viewBox="0 0 16 16" className="note-glyph" aria-hidden="true">
-                {dryOut.driesOut ? (
-                  <path d="M 3 8.5 L 6.5 12 L 13 4" className="note-tick" />
-                ) : (
-                  <path d="M 8 2 L 15 14 L 1 14 Z" className="node-glyph-warning" />
-                )}
-              </svg>
-              <div>
-                <p className="note-where">
-                  {dryOut.driesOut ? 'Clears over the year' : 'Does not clear'}
-                  <span className="note-headline">
+              <details>
+                <summary>
+                  <svg viewBox="0 0 16 16" className="note-glyph" aria-hidden="true">
+                    {dryOut.driesOut ? (
+                      <path d="M 3 8.5 L 6.5 12 L 13 4" className="note-tick" />
+                    ) : (
+                      <path d="M 8 2 L 15 14 L 1 14 Z" className="node-glyph-warning" />
+                    )}
+                  </svg>
+                  <span className="note-where">
+                    <span className="note-headline">
+                      {dryOut.driesOut ? 'Clears over the year' : 'Does not clear'}
+                    </span>
                     {' · '}
                     {formatMass(dryOut.totalAccumulatedKgPerM2)} over {dryOut.wettingPeriod.days}{' '}
                     days of wetting
@@ -1942,7 +1962,8 @@ export function CrossSection({
                       : `, ${formatMass(dryOut.totalRemainingKgPerM2)} still there after`}{' '}
                     {dryOut.driesOut ? '' : `${dryOut.dryingPeriod.days} `}days of drying
                   </span>
-                </p>
+                  <span className="note-more">Why</span>
+                </summary>
                 <p className="note-what">
                   {dryOut.driesOut
                     ? 'What a build-up gains in winter it can give back in summer, and ' +
@@ -1956,30 +1977,40 @@ export function CrossSection({
                   climate data we do not ship. Change the seasons in the Moisture tab and
                   this figure follows them.
                 </p>
-              </div>
+              </details>
             </li>
           )}
           {condensation !== undefined && condensation.anyCondensation && (
             <li className="interface-note note-caveat">
-              <div>
+              <details>
+                <summary>
+                  <span className="note-where">What this calculation leaves out</span>
+                  <span className="note-more">Read</span>
+                </summary>
                 <p className="note-what">
-                  <strong>What this calculation leaves out.</strong> The Glaser method
-                  moves vapour by diffusion alone. It does not model rain driven into the
-                  outer leaf, liquid water moving through a material by capillarity, air
-                  carrying moisture through gaps, or the moisture a hygroscopic material
-                  holds and releases. In a masonry outer leaf those dominate. A wall
-                  takes far more water from a day of driving rain than from a season of
-                  this, so a wet plane at the back of a leaf that is built to get wet and
-                  drain is a different proposition from one against insulation or
+                  The Glaser method moves vapour by diffusion alone. It does not model rain
+                  driven into the outer leaf, liquid water moving through a material by
+                  capillarity, air carrying moisture through gaps, or the moisture a
+                  hygroscopic material holds and releases. In a masonry outer leaf those
+                  dominate. A wall takes far more water from a day of driving rain than from a
+                  season of this, so a wet plane at the back of a leaf that is built to get wet
+                  and drain is a different proposition from one against insulation or
                   sheathing, which are not. {/* TODO(verify): the clause in BS EN ISO
                   13788 that lists what the method does not account for. See VERIFY.md
                   row V28. */}
                 </p>
-              </div>
+              </details>
             </li>
           )}
         </ul>
       )}
+      {/*
+        The key to the drawing. Folded away because it is read once; the drawing itself
+        is looked at every time.
+      */}
+      <details className="drawing-key">
+        <summary>About this drawing: scale, hatching and dragging</summary>
+        {legend}
       <figcaption>
         Layer widths are to scale and captioned in millimetres, with the overall
         thickness dimensioned below them and a scale bar under that, so the drawing can
@@ -2018,6 +2049,7 @@ export function CrossSection({
           </>
         )}
       </figcaption>
+      </details>
     </figure>
   );
 }

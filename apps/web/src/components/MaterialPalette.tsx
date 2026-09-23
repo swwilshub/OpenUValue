@@ -1,4 +1,5 @@
-import { PALETTE_GROUPS, PALETTE_DRAG_TYPE } from '../state/palette.js';
+import { useState } from 'react';
+import { PALETTE_GROUPS, PALETTE_DRAG_TYPE, commonPaletteItems } from '../state/palette.js';
 import type { PaletteItem } from '../state/palette.js';
 import { MaterialSwatch } from './hatches.js';
 import { HelpButton } from './guide/Guide.js';
@@ -65,11 +66,50 @@ function Chip({
   );
 }
 
+const ALL_ITEM_COUNT = PALETTE_GROUPS.reduce((total, group) => total + group.items.length, 0);
+
+/**
+ * One row of common materials under the drawing, opening out to every material grouped
+ * by kind. Closed, it costs the drawing pane one line; the hint on how chips work is
+ * shown once the palette is opened, and on hover over any chip.
+ */
 export function MaterialPalette({
   onAdd,
   onOpenGuide,
   addPosition,
 }: MaterialPaletteProps): JSX.Element {
+  const [expanded, setExpanded] = useState(false);
+  const toggle = (
+    <button
+      type="button"
+      className="link-button palette-toggle"
+      aria-expanded={expanded}
+      onClick={() => setExpanded((current) => !current)}
+    >
+      {expanded ? 'Fewer' : `All ${ALL_ITEM_COUNT}`}
+    </button>
+  );
+
+  if (!expanded) {
+    return (
+      <div className="palette palette-row">
+        <span className="picker-label">
+          Materials
+          <HelpButton topicId="palette" label="the materials palette" onOpen={onOpenGuide} />
+        </span>
+        <div
+          className="palette-chips"
+          title={`Drag onto the drawing, or click to add ${addPosition}`}
+        >
+          {commonPaletteItems().map((item) => (
+            <Chip key={item.id} item={item} onAdd={onAdd} />
+          ))}
+        </div>
+        {toggle}
+      </div>
+    );
+  }
+
   return (
     <div className="palette">
       <div className="palette-head">
@@ -81,6 +121,7 @@ export function MaterialPalette({
           Drag one onto the drawing to put it where you want it, or click to add it{' '}
           {addPosition}. Every one lands at a common thickness you can then drag out.
         </span>
+        {toggle}
       </div>
       <div className="palette-groups">
         {PALETTE_GROUPS.map((group) => (
