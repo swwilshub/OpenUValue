@@ -140,6 +140,22 @@ const SECTION_LABELS: Record<ProfileSection, string> = {
   bridged: 'Bridging section',
 };
 
+/** Below this width the panes stack and the drawing turns to run down the page. */
+const NARROW_QUERY = '(max-width: 699px)';
+
+/** Whether a media query matches, following it as the window changes. */
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const onChange = (): void => setMatches(list.matches);
+    onChange();
+    list.addEventListener('change', onChange);
+    return () => list.removeEventListener('change', onChange);
+  }, [query]);
+  return matches;
+}
+
 export function App(): JSX.Element {
   const initial = useMemo(() => decodeState(window.location.hash), []);
   /*
@@ -230,6 +246,29 @@ export function App(): JSX.Element {
   /** Layer picked in either the table or the drawing; the other view follows. */
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<TabId>('layers');
+  const narrow = useMediaQuery(NARROW_QUERY);
+  /*
+   * On a phone the headline figures are pinned to the top of the page, and the editor's
+   * tab bar pins itself just under them, so it needs to know how tall they are. Measured
+   * rather than assumed, because the figures wrap differently on different phones.
+   */
+  const pinnedRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = pinnedRef.current;
+    const root = document.documentElement;
+    if (element === null || !narrow) {
+      root.style.removeProperty('--pinned-height');
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty('--pinned-height', `${element.offsetHeight}px`);
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--pinned-height');
+    };
+  }, [narrow]);
   /**
    * Which Approved Document L limit the U-value is judged against. Chosen on the Results
    * tab and read by the pinned tile, so it is held here where both can see it.
@@ -609,6 +648,19 @@ export function App(): JSX.Element {
     }
   };
 
+  const answerTiles =
+    result !== undefined && profile !== undefined ? (
+      <AnswerTiles
+        onOpenGuide={openGuide}
+        element={element}
+        partLKind={partLKindForElement(state.elementKind)}
+        partLContext={partLContext}
+        result={result}
+        corrections={corrections}
+        conditions={state.conditions}
+      />
+    ) : null;
+
   return (
     <div className="app">
       {/* Mounted once: every material hatch in the page resolves to these. */}
@@ -671,7 +723,7 @@ export function App(): JSX.Element {
             Guide
           </button>
           <button type="button" className="primary" onClick={() => void copyLink()}>
-            {copied ? 'Link copied' : 'Copy share link'}
+            {copied ? 'Link copied' : narrow ? 'Share' : 'Copy share link'}
           </button>
         </div>
       </header>
@@ -725,19 +777,15 @@ export function App(): JSX.Element {
         scrolls on the right, so a change and what it does are on screen together. On a
         narrow screen the two stack.
       */}
+      {narrow && answerTiles !== null && (
+        <div className="pinned-answer" ref={pinnedRef}>
+          {answerTiles}
+        </div>
+      )}
+
       <div className="workbench">
         <section className="pane pane-drawing" aria-label="Drawing and headline figures">
-          {result !== undefined && profile !== undefined && (
-            <AnswerTiles
-              onOpenGuide={openGuide}
-              element={element}
-              partLKind={partLKindForElement(state.elementKind)}
-              partLContext={partLContext}
-              result={result}
-              corrections={corrections}
-              conditions={state.conditions}
-            />
-          )}
+          {!narrow && answerTiles}
 
           {result !== undefined && profile !== undefined ? (
             <div className="drawing-panel">
@@ -813,6 +861,7 @@ export function App(): JSX.Element {
                   condensation={condensation}
                   dryOut={dryOut}
                   legend={<HatchLegend />}
+                  compact={narrow}
                   underDrawing={
                     /*
                      * The palette sits straight under the drawing it drops into, which is

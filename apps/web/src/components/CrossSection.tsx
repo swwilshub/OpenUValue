@@ -220,6 +220,15 @@ const SCALE_BAR_Y = 260 + 18 + 62;
 /** Room one name needs across the stack, with and without its second line. */
 const CALLOUT_SLOT = 12;
 const CALLOUT_SLOT_WITH_DETAIL = 21;
+/**
+ * On a phone the drawing gets a narrower gutter and larger names. The drawing is scaled
+ * to the screen's width, and at the full 224-unit gutter a name came out about 6 px
+ * tall; a narrower gutter makes the scale larger, and the names are set larger again
+ * inside it, trimmed to fit, with the numbered list beside the drawing naming each in
+ * full.
+ */
+const COMPACT_CALLOUT_GUTTER = 128;
+const COMPACT_TEXT_SCALE = 1.3;
 /** Approximate advance width of one character at the callout's 10.5px size. */
 const CALLOUT_CHAR_WIDTH = 5.6;
 /**
@@ -364,6 +373,12 @@ export interface CrossSectionProps {
   readonly legend?: React.ReactNode;
   /** Tools that act on the drawing, placed straight under it and above the notes. */
   readonly underDrawing?: React.ReactNode;
+  /**
+   * Laid out for a narrow screen: a wall runs down the page as a floor does, with the
+   * room at the top, so the build-up uses the height a phone has instead of the width
+   * it lacks.
+   */
+  readonly compact?: boolean;
 }
 
 export function CrossSection({
@@ -381,6 +396,7 @@ export function CrossSection({
   dryOut,
   legend,
   underDrawing,
+  compact = false,
 }: CrossSectionProps): JSX.Element {
   /*
    * Which way the build-up runs on screen.
@@ -397,8 +413,13 @@ export function CrossSection({
    * drawing that would have to be kept in step with the first.
    */
   const orientation: 'wall' | 'roof' | 'floor' =
-    elementKind === 'roof' ? 'roof' : elementKind === 'floor' ? 'floor' : 'wall';
+    elementKind === 'roof' ? 'roof' : elementKind === 'floor' || compact ? 'floor' : 'wall';
   const vertical = orientation !== 'wall';
+  const calloutGutter = compact ? COMPACT_CALLOUT_GUTTER : CALLOUT_GUTTER;
+  const calloutTextScale = compact ? COMPACT_TEXT_SCALE : 1;
+  /** Room for a name in the gutter, and the width of a character at the size it is set. */
+  const calloutMaxWidth = compact ? COMPACT_CALLOUT_GUTTER - 18 : CALLOUT_MAX_WIDTH;
+  const calloutCharWidth = CALLOUT_CHAR_WIDTH * calloutTextScale;
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   /**
@@ -541,7 +562,7 @@ export function CrossSection({
     let stackedAt = Number.NEGATIVE_INFINITY;
     return boxes.map((box) => {
       const bridged = box.layer.bridgedPercent;
-      const text = fitLabel(box.layer.label, CALLOUT_MAX_WIDTH, CALLOUT_CHAR_WIDTH);
+      const text = fitLabel(box.layer.label, calloutMaxWidth, calloutCharWidth);
       const geometry = bridged > 0 ? bridgeGeometry(box.layer) : undefined;
       /*
        * Where the drawn geometry implies a different percentage from the one being
@@ -561,7 +582,7 @@ export function CrossSection({
         geometry !== undefined &&
         geometry.pattern === 'members' &&
         bridged - geometry.geometricPercent > BR443_ADDITIONAL_TIMBER_ALLOWANCE * 100 + 0.5;
-      const detail =
+      const fullDetail =
         bridged > 0
           ? geometry === undefined || geometry.pattern === 'dabs'
             ? `${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
@@ -571,9 +592,13 @@ export function CrossSection({
               : `${geometry.widthMm} @ ${geometry.pitchMm.toFixed(0)} crs · ` +
                 `${bridged.toFixed(1)}% ${box.layer.bridgeLabel}`
           : undefined;
+      const detail =
+        fullDetail === undefined || !compact
+          ? fullDetail
+          : fitLabel(fullDetail, calloutMaxWidth, calloutCharWidth * 0.88);
       const width =
         Math.max(text.length, detail === undefined ? 0 : detail.length * 0.88) *
-        CALLOUT_CHAR_WIDTH;
+        calloutCharWidth;
       const anchorX = drawXOf(box) + box.width / 2;
       /*
        * The layer's place in the build-up, which is what the layer list and the 3D view
@@ -583,7 +608,8 @@ export function CrossSection({
       const number = layers.findIndex((layer) => layer.id === box.layer.id) + 1;
 
       if (vertical) {
-        const slot = detail === undefined ? CALLOUT_SLOT : CALLOUT_SLOT_WITH_DETAIL;
+        const slot =
+          (detail === undefined ? CALLOUT_SLOT : CALLOUT_SLOT_WITH_DETAIL) * calloutTextScale;
         const at = Math.max(anchorX, stackedAt + slot);
         stackedAt = at;
         return { box, text, detail, left: at, width, row: 0, anchorX, number };
@@ -613,7 +639,7 @@ export function CrossSection({
    * coordinate in the drawing being pushed down by a block whose height is not known
    * until the labels have been laid out.
    */
-  const viewBoxMinY = vertical ? -CALLOUT_GUTTER : Math.min(0, calloutTop - 12);
+  const viewBoxMinY = vertical ? -calloutGutter : Math.min(0, calloutTop - 12);
 
   /*
    * SVG has no z-index, so the layer in hand is simply drawn last. Everything else keeps
@@ -984,7 +1010,11 @@ export function CrossSection({
         ref={svgRef}
         viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
         className={
-          [vertical ? 'is-vertical' : '', drag?.moved === true ? 'is-dragging' : '']
+          [
+            vertical ? 'is-vertical' : '',
+            compact ? 'is-compact' : '',
+            drag?.moved === true ? 'is-dragging' : '',
+          ]
             .filter((name) => name !== '')
             .join(' ') || undefined
         }
@@ -1411,7 +1441,7 @@ export function CrossSection({
              * than below the first — which after the turn comes to the same thing.
              */
             if (vertical) {
-              const detailOffset = orientation === 'roof' ? -9 : 9;
+              const detailOffset = (orientation === 'roof' ? -9 : 9) * calloutTextScale;
               return (
                 <g key={callout.box.layer.id}>
                   <line

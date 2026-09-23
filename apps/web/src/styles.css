@@ -260,13 +260,23 @@ button.icon-button svg {
 }
 
 /* The note after a change that replaced a lot at once, with the way back beside it. */
+/*
+ * Spans the viewport and centres the note inside it, so the note takes the width it
+ * needs rather than the half-viewport a translated box would be squeezed into.
+ */
 .toast-region {
   position: fixed;
-  left: 50%;
+  left: 16px;
+  right: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
   z-index: 40;
-  max-width: calc(100vw - 32px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.toast-region > * {
+  pointer-events: auto;
 }
 
 .toast {
@@ -4998,4 +5008,145 @@ body.is-dragging * {
   font-size: 13px;
   color: var(--ink-soft);
   max-width: 68ch;
+}
+
+/* ------------------------------------------------------------------ phones ---- */
+
+/*
+ * The compact drawing: full width, as tall as its content, names set larger so they
+ * read at the scale a phone draws them.
+ */
+.cross-section > svg.is-compact {
+  width: 100%;
+  height: auto;
+  max-height: none;
+}
+
+.is-compact .callout-name {
+  font-size: 13.5px;
+}
+
+.is-compact .callout-detail {
+  font-size: 11.5px;
+}
+
+.is-compact .callout-number {
+  font-size: 10px;
+}
+
+/*
+ * On a phone the headline figures are pinned under nothing but the status bar, so the
+ * answer is never more than a glance away, and the editor's tabs stop just under them.
+ */
+.pinned-answer {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 8;
+  margin: 10px -20px 0;
+  padding: 0 12px;
+  background: var(--ground);
+}
+
+@media (max-width: 699px) {
+  .app {
+    padding-inline: 12px;
+  }
+
+  .pinned-answer {
+    margin-inline: -12px;
+    padding: 6px 12px;
+    box-shadow: 0 6px 12px -10px rgb(29 35 33 / 0.35);
+  }
+
+  .pinned-answer .answer-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Thickness waits on the Results tab; three verdicts are what a phone has room for. */
+  .pinned-answer .answer-tile:nth-child(4),
+  .pinned-answer .answer-sub,
+  .pinned-answer .help-button {
+    display: none;
+  }
+
+  .pinned-answer .answer-tile {
+    padding: 6px 8px 8px;
+    gap: 2px;
+  }
+
+  .pinned-answer .answer-tile:nth-child(3) {
+    border-left: 1px solid var(--line);
+  }
+
+  .pinned-answer .answer-tile:nth-child(n + 3) {
+    border-top: 0;
+  }
+
+  .pinned-answer .answer-label {
+    font-size: 11.5px;
+  }
+
+  .pinned-answer .answer-value,
+  .pinned-answer .answer-tile-lead .answer-value {
+    font-size: 19px;
+  }
+
+  .pinned-answer .answer-unit {
+    font-size: 10.5px;
+    margin-left: 2px;
+  }
+
+  .pinned-answer .answer-chip {
+    font-size: 11px;
+    padding: 0 6px;
+  }
+
+  .tab-bar {
+    top: calc(env(safe-area-inset-top, 0px) + var(--pinned-height, 0px));
+  }
+
+  .app-bar {
+    gap: 8px;
+  }
+
+  .app-bar-title {
+    flex-basis: 100%;
+  }
+
+  .header-actions {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .header-actions > .primary {
+    margin-left: auto;
+  }
+
+  .drawing-panel {
+    padding: 10px;
+  }
+
+  .drawing-tools-end {
+    margin-left: 0;
+  }
+
+  /* A phone row keeps what identifies the layer; λ, μ and R are one tap away. */
+  .layer-columns,
+  .layer-line {
+    grid-template-columns: 16px 24px minmax(0, 1fr) 52px;
+  }
+
+  .layer-columns > :nth-child(n + 5),
+  .layer-line > :nth-child(n + 5) {
+    display: none;
+  }
+
+  .layer-table-head {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .layer-actions-head button {
+    white-space: nowrap;
+  }
 }
