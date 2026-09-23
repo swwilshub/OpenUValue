@@ -147,6 +147,64 @@ h1 {
   flex-wrap: wrap;
 }
 
+button.icon-button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  padding-inline: 8px;
+}
+
+button.icon-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The note after a change that replaced a lot at once, with the way back beside it. */
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: calc(100vw - 32px);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+}
+
+.toast button {
+  background: transparent;
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.5);
+}
+
+.toast button:hover:not(:disabled) {
+  color: #fff;
+  border-color: #fff;
+}
+
+.toast .link-button {
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  padding-inline: 6px;
+  text-decoration: none;
+}
+
 .phase-banner {
   margin: 16px 0 0;
   padding: 10px 14px;

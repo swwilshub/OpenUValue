@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SetStateAction } from 'react';
 import type {
   AirGapLevel,
   EnvironmentConditions,
@@ -32,6 +33,15 @@ import { DynamicPanel } from './components/DynamicPanel.js';
 import { Layup3D } from './components/Layup3D.js';
 import { MaterialPalette } from './components/MaterialPalette.js';
 import { layerFromPalette } from './state/palette.js';
+import {
+  canRedo,
+  canUndo,
+  initialHistory,
+  record,
+  redo as redoHistory,
+  undo as undoHistory,
+} from './state/history.js';
+import type { RecordOptions } from './state/history.js';
 import { Guide, HelpButton } from './components/guide/Guide.js';
 import { LayerTable } from './components/LayerTable.js';
 import { ResultsPanel } from './components/ResultsPanel.js';
@@ -99,7 +109,89 @@ const SECTION_LABELS: Record<ProfileSection, string> = {
 
 export function App(): JSX.Element {
   const initial = useMemo(() => decodeState(window.location.hash), []);
-  const [state, setState] = useState<UiState>(initial.state);
+  /*
+   * The build-up with its undo history. `setState` keeps React's own signature, so every
+   * caller below is unchanged; what it adds is that each change is recorded, folded into
+   * the step before it when it follows closely (a drag, a burst of typing), or kept apart
+   * when the caller says it is a step of its own.
+   */
+  const [history, setHistory] = useState(() => initialHistory<UiState>(initial.state));
+  const state = history.present;
+  const setState = useCallback(
+    (update: SetStateAction<UiState>, options?: RecordOptions): void => {
+      // The clock is read once, outside the updater, so a double-invoked updater in
+      // development records the same step both times.
+      const now = performance.now();
+      setHistory((current) =>
+        record(
+          current,
+          typeof update === 'function' ? update(current.present) : update,
+          now,
+          options,
+        ),
+      );
+    },
+    [],
+  );
+  /**
+   * A short note after a change that replaces a lot at once, with the undo right beside
+   * it. Undo is only a safety net if people know it is there at the moment they need it.
+   */
+  const [notice, setNotice] = useState<string | undefined>(undefined);
+  const undo = useCallback(() => {
+    setHistory((current) => undoHistory(current));
+    setNotice(undefined);
+  }, []);
+  const redo = useCallback(() => {
+    setHistory((current) => redoHistory(current));
+    setNotice(undefined);
+  }, []);
+  const replaceAll = useCallback(
+    (next: UiState, message: string) => {
+      setState(next, { separate: true });
+      setNotice(message);
+    },
+    [setState],
+  );
+  useEffect(() => {
+    if (notice === undefined) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(undefined), 7000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  /*
+   * Ctrl+Z and Ctrl+Shift+Z (Cmd on a Mac), and Ctrl+Y. Left alone while a text field has
+   * focus, so a field's own undo still works on what is being typed into it.
+   */
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) {
+        return;
+      }
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target instanceof HTMLTextAreaElement ||
+          (target instanceof HTMLInputElement &&
+            !['checkbox', 'radio', 'range', 'button'].includes(target.type)))
+      ) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+      } else if ((key === 'z' && event.shiftKey) || key === 'y') {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
   const [linkProblem, setLinkProblem] = useState<string | undefined>(initial.problem);
   const [copied, setCopied] = useState(false);
   /** Layer picked in either the table or the drawing; the other view follows. */
@@ -165,12 +257,12 @@ export function App(): JSX.Element {
         return;
       }
       const decoded = decodeState(window.location.hash);
-      setState(decoded.state);
+      replaceAll(decoded.state, 'Opened the build-up from the link.');
       setLinkProblem(decoded.problem);
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+  }, [replaceAll]);
 
   const element = useMemo(() => toBuildingElement(state), [state]);
 
@@ -221,12 +313,15 @@ export function App(): JSX.Element {
     if (layer === undefined) {
       return;
     }
-    setState((current) => ({
-      ...current,
-      layers: withLayerInserted(current.layers, index, layer),
-    }));
+    setState(
+      (current) => ({
+        ...current,
+        layers: withLayerInserted(current.layers, index, layer),
+      }),
+      { separate: true },
+    );
     setSelectedLayerId(layer.id);
-  }, []);
+  }, [setState]);
 
   const setElement = useCallback((elementKind: UiElementKind, roofPitchDegrees: number) => {
     setState((current) => {
@@ -300,8 +395,11 @@ export function App(): JSX.Element {
    * whole model around the new orientation and changing two things at once.
    */
   const reverseLayers = useCallback(() => {
-    setState((current) => ({ ...current, layers: [...current.layers].reverse() }));
-  }, []);
+    setState((current) => ({ ...current, layers: [...current.layers].reverse() }), {
+      separate: true,
+    });
+    setNotice('Reversed the layers.');
+  }, [setState]);
 
   const setLayerThickness = useCallback((index: number, thicknessMm: number) => {
     setState((current) => {
@@ -473,13 +571,48 @@ export function App(): JSX.Element {
           <button type="button" onClick={() => openGuide()}>
             Guide and walkthroughs
           </button>
-          <button type="button" onClick={() => setState(defaultState())}>
+          <button
+            type="button"
+            onClick={() => undo()}
+            disabled={!canUndo(history)}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo"
+            className="icon-button"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M5.5 4L2.5 7l3 3" />
+              <path d="M2.5 7h7a4 4 0 010 8h-2" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => redo()}
+            disabled={!canRedo(history)}
+            title="Redo (Ctrl+Shift+Z)"
+            aria-label="Redo"
+            className="icon-button"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M10.5 4l3 3-3 3" />
+              <path d="M13.5 7h-7a4 4 0 000 8h2" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => replaceAll(defaultState(), 'Loaded the masonry example.')}
+          >
             Masonry example
           </button>
-          <button type="button" onClick={() => setState(timberFrameExample())}>
+          <button
+            type="button"
+            onClick={() => replaceAll(timberFrameExample(), 'Loaded the timber frame example.')}
+          >
             Timber frame example
           </button>
-          <button type="button" onClick={() => setState(coldRoofExample())}>
+          <button
+            type="button"
+            onClick={() => replaceAll(coldRoofExample(), 'Loaded the cold roof example.')}
+          >
             Cold roof example
           </button>
           <button type="button" className="primary" onClick={() => void copyLink()}>
@@ -504,6 +637,25 @@ export function App(): JSX.Element {
           </button>
         </p>
       )}
+
+      <div className="toast-region" role="status" aria-live="polite">
+        {notice !== undefined && (
+          <div className="toast">
+            <span>{notice}</span>
+            <button type="button" onClick={() => undo()}>
+              Undo
+            </button>
+            <button
+              type="button"
+              className="link-button"
+              aria-label="Dismiss"
+              onClick={() => setNotice(undefined)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </div>
 
       {result !== undefined && profile !== undefined && (
         <section className="panel hero-panel">
