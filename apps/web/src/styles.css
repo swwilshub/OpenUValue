@@ -359,6 +359,105 @@ button.icon-button svg {
   }
 }
 
+/*
+ * The four pinned figures: one bar, four cells, the U-value first and largest. Verdicts
+ * arrive as a chip under the figure, coloured only where something published gives one.
+ */
+.answer-tiles {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.answer-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 14px 12px;
+  min-width: 0;
+}
+
+.answer-tile + .answer-tile {
+  border-left: 1px solid var(--line);
+}
+
+.answer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.answer-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  /* Figures change as layers are dragged; tabular numerals stop the tile twitching. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.answer-tile-lead .answer-value {
+  font-size: 32px;
+}
+
+.answer-unit {
+  margin-left: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  letter-spacing: 0;
+}
+
+.answer-chip {
+  max-width: 100%;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.chip-ok {
+  background: #e6f1e9;
+  color: var(--ok);
+}
+
+.chip-risk {
+  background: var(--risk-soft);
+  color: var(--risk);
+}
+
+.answer-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 560px) {
+  .answer-tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .answer-tile:nth-child(3) {
+    border-left: 0;
+  }
+
+  .answer-tile:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  .answer-value,
+  .answer-tile-lead .answer-value {
+    font-size: 22px;
+  }
+}
+
 .drawing-panel {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -386,6 +485,11 @@ button.icon-button svg {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.tab-panel > * {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .panel {

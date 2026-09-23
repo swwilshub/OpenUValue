@@ -95,9 +95,9 @@ export const CHAPTERS: readonly GuideChapter[] = [
                 than it is.
               </li>
               <li>
-                <strong>Read the strip under the drawing.</strong> Set <em>Judge the U-value
-                as</em> to match your job, then check the U-value against its limit, the
-                inside surface for mould, and the condensation figure.
+                <strong>Read the four figures above the drawing.</strong> Set <em>Judge the
+                U-value as</em> on the Results tab to match your job, then check the U-value
+                against its limit, the inside surface for mould, and the condensation figure.
               </li>
               <li>
                 <strong>Check the Result box.</strong> Read anything under Notes and limits,
@@ -137,8 +137,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
                 from the materials tray into the gap next to the room. The U-value improves.
               </li>
               <li>
-                <strong>Look for drops on the drawing</strong> and the Condensation figure in
-                the strip. A drop marks a plane where water forms; the notes under the
+                <strong>Look for drops on the drawing</strong> and the Condensation figure
+                above it. A drop marks a plane where water forms; the notes under the
                 drawing say how much, and whether it clears again.
               </li>
               <li>
@@ -180,7 +180,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
                 one, on the loft side. Set its thickness.
               </li>
               <li>
-                <strong>Judge it as a renovated element</strong> in the strip, since you are
+                <strong>Judge it as a renovated element</strong> on the Results tab, since you are
                 improving an existing roof rather than building a new one.
               </li>
               <li>
@@ -217,7 +217,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
             <ol>
               <li>
                 <strong>Load the first build-up</strong> and note the decrement, the time
-                shift and κ<sub>i</sub> at the end of the strip. Copy its share link.
+                shift and κ<sub>i</sub> on the Results tab. Copy its share link.
               </li>
               <li>
                 <strong>Load or build the second</strong> and compare. Open the first link in
@@ -500,8 +500,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
 
   {
     id: 'strip',
-    title: 'The summary strip',
-    blurb: 'The row of figures under the drawing, which stays put whichever tab you are on.',
+    title: 'The headline figures',
+    blurb: 'The four figures above the drawing, which stay put whichever tab you are on, and the rest on the Results tab.',
     topics: [
       {
         id: 'strip-u-value',
@@ -515,8 +515,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
               it is what building control asks for.
             </p>
             <p>
-              The note underneath is the limiting value from Approved Document L, and the card
-              turns green or red against it. That limit is a <em>maximum to clear</em>, not a
+              The note underneath is the limiting value from Approved Document L, and it turns
+              green or red against it. Which limit is chosen on the Results tab. That limit is a <em>maximum to clear</em>, not a
               target to aim at, and the document says so itself.
             </p>
           </>
@@ -571,7 +571,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
               warmed every part of it through: simply ρ × c × d added up.
             </p>
             <p>
-              <strong>κ</strong> further along the strip is the part a <em>daily</em> cycle can
+              <strong>κ</strong>, beside it on the Results tab, is the part a <em>daily</em> cycle can
               actually reach. A 24-hour swing only penetrates so far into a material, around
               100 mm for masonry, so mass buried deeper contributes almost nothing.
               That is why the two numbers can differ by a factor of ten, and why a very thick
@@ -952,8 +952,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
               Heat rises, so the direction it travels changes the surface resistances and the
               behaviour of any cavity. Say what you are building and the direction follows:
               a wall is horizontal, a floor is downward, and a roof depends on how steep it is.
-              The choice also decides which Approved Document L limit the summary strip measures
-              you against, and it tilts the 3D layup to match.
+              The choice also decides which Approved Document L limit the U-value is measured
+              against, and it tilts the 3D layup to match.
             </p>
             <p>
               <strong>The pitch rule catches people out, this tool included.</strong> BS EN ISO

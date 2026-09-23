@@ -5,6 +5,7 @@ import type {
   EnvironmentConditions,
   ExternalEnvironmentKind,
   InternalSurfaceCondition,
+  PartLContext,
   ProfileSection,
 } from '@openuvalue/engine';
 import {
@@ -28,7 +29,7 @@ import {
 } from './state/drying.js';
 import { HatchDefs } from './components/hatches.js';
 import { CrossSection } from './components/CrossSection.js';
-import { SummaryStrip } from './components/SummaryStrip.js';
+import { AnswerTiles, SummaryStrip } from './components/SummaryStrip.js';
 import { DynamicPanel } from './components/DynamicPanel.js';
 import { Layup3D } from './components/Layup3D.js';
 import { MaterialPalette } from './components/MaterialPalette.js';
@@ -226,6 +227,11 @@ export function App(): JSX.Element {
   /** Layer picked in either the table or the drawing; the other view follows. */
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<TabId>('layers');
+  /**
+   * Which Approved Document L limit the U-value is judged against. Chosen on the Results
+   * tab and read by the pinned tile, so it is held here where both can see it.
+   */
+  const [partLContext, setPartLContext] = useState<PartLContext>('new-dwelling');
   /*
    * The feature guide. `guideTopic` is what a help button beside a box passes in, so the
    * guide opens at that box rather than at the beginning.
@@ -717,14 +723,14 @@ export function App(): JSX.Element {
       <div className="workbench">
         <section className="pane pane-drawing" aria-label="Drawing and headline figures">
           {result !== undefined && profile !== undefined && (
-            <SummaryStrip
+            <AnswerTiles
               onOpenGuide={openGuide}
               element={element}
               partLKind={partLKindForElement(state.elementKind)}
+              partLContext={partLContext}
               result={result}
               corrections={corrections}
               conditions={state.conditions}
-              dynamic={dynamic}
             />
           )}
 
@@ -944,6 +950,19 @@ export function App(): JSX.Element {
 
           {tab === 'results' && (
             <div className="tab-panel" role="tabpanel" aria-label="Results">
+              {result !== undefined && profile !== undefined && (
+                <SummaryStrip
+                  onOpenGuide={openGuide}
+                  element={element}
+                  partLKind={partLKindForElement(state.elementKind)}
+                  partLContext={partLContext}
+                  onPartLContextChange={setPartLContext}
+                  result={result}
+                  corrections={corrections}
+                  conditions={state.conditions}
+                  dynamic={dynamic}
+                />
+              )}
               {result !== undefined && profile !== undefined ? (
                 <ResultsPanel
                   onOpenGuide={openGuide}

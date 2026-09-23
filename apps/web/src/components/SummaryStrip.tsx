@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type {
   BuildingElement,
   CorrectionResult,
@@ -20,8 +20,10 @@ import {
 import { HelpButton } from './guide/Guide.js';
 
 /**
- * The whole build-up in one line of figures, kept on screen under the drawing so the
- * headline numbers move as layers are dragged about.
+ * The build-up's figures, in two places. Four answer the questions people come with —
+ * does it meet the limit, will the room face grow mould, does it condense, how thick is
+ * it — and are pinned above the drawing so they move as layers are dragged about. The
+ * rest are on the Results tab.
  *
  * **There is no quality rating on any of these.** That is a deliberate choice, not an
  * omission. Two of the figures can be judged against something published — the U-value
@@ -32,14 +34,23 @@ import { HelpButton } from './guide/Guide.js';
  * most prominent place on the page, drawn in the same style as the two real ones, would
  * be the single most misleading thing this tool could do. See VERIFY.md C6.
  *
- * What is missing from here and why is in the note at the end of the strip, so the gaps
- * are visible rather than simply absent.
+ * What is missing from here and why is in the note at the end of the Results tab's
+ * figures, so the gaps are visible rather than simply absent.
  */
 
-const PART_L_CONTEXTS: readonly { readonly id: PartLContext; readonly label: string }[] = [
-  { id: 'new-dwelling', label: 'New dwelling' },
-  { id: 'new-element-in-existing-dwelling', label: 'New element, existing dwelling' },
-  { id: 'renovated-element', label: 'Renovated element' },
+export const PART_L_CONTEXTS: readonly {
+  readonly id: PartLContext;
+  readonly label: string;
+  /** How the pinned U-value tile names the context, after the limit it quotes. */
+  readonly short: string;
+}[] = [
+  { id: 'new-dwelling', label: 'New dwelling', short: 'new dwelling' },
+  {
+    id: 'new-element-in-existing-dwelling',
+    label: 'New element, existing dwelling',
+    short: 'new element',
+  },
+  { id: 'renovated-element', label: 'Renovated element', short: 'renovated' },
 ];
 
 type Verdict = 'ok' | 'risk' | 'none';
@@ -66,9 +77,7 @@ function Metric({ label, value, unit, note, verdict = 'none', title }: MetricPro
   );
 }
 
-export interface SummaryStripProps {
-  /** Opens the feature guide at a topic. */
-  readonly onOpenGuide: (topicId: string) => void;
+interface FigureInputs {
   readonly element: BuildingElement;
   /**
    * The Approved Document L category. Passed in rather than derived from the heat flow
@@ -79,29 +88,27 @@ export interface SummaryStripProps {
   readonly result: UValueResult;
   readonly corrections: CorrectionResult | undefined;
   readonly conditions: EnvironmentConditions;
-  /** BS EN ISO 13786 figures, absent when the dynamic calculation could not run. */
-  readonly dynamic: DynamicResult | undefined;
+  /** Which Approved Document L limit the U-value is judged against. */
+  readonly partLContext: PartLContext;
 }
 
-export function SummaryStrip({
+/** Every figure both views show, worked out once per view from the same inputs. */
+function useFigures({
   element,
   partLKind,
   result,
   corrections,
   conditions,
-  dynamic,
-  onOpenGuide,
-}: SummaryStripProps): JSX.Element {
-  const [partLContext, setPartLContext] = useState<PartLContext>('new-dwelling');
-
+  partLContext,
+}: FigureInputs) {
   const areal = useMemo(() => arealQuantities(element), [element]);
 
   const condensation = useMemo(() => {
     try {
       return assessInterstitialCondensation(element, conditions);
     } catch {
-      // The strip is a summary, not the moisture tab: if the vapour calculation cannot
-      // run, the thermal figures beside it are still worth showing.
+      // A summary, not the moisture tab: if the vapour calculation cannot run, the
+      // thermal figures beside it are still worth showing.
       return undefined;
     }
   }, [element, conditions]);
@@ -131,13 +138,152 @@ export function SummaryStrip({
       return undefined;
     }
   }, [element, conditions]);
-  const surfaceHumidity = surface?.surfaceRelativeHumidityPercent;
-  const mouldRisk = surface?.mouldRisk ?? false;
 
   const condensationRateGPerM2Day =
     condensation === undefined
       ? undefined
       : ratePerDayGPerM2(condensation.totalCondensationRateKgPerM2S);
+
+  return { areal, condensation, displayedU, partLCheck, surface, condensationRateGPerM2Day };
+}
+
+export interface AnswerTilesProps extends FigureInputs {
+  readonly onOpenGuide: (topicId: string) => void;
+}
+
+/**
+ * The four figures pinned above the drawing. Three carry a verdict because something
+ * published gives one — Approved Document L's limit, BS EN ISO 13788's 80 % surface
+ * humidity, and whether its method finds condensation at all. Thickness carries none.
+ */
+export function AnswerTiles(props: AnswerTilesProps): JSX.Element {
+  const { onOpenGuide, partLContext } = props;
+  const { areal, condensation, displayedU, partLCheck, surface, condensationRateGPerM2Day } =
+    useFigures(props);
+  const contextShort =
+    PART_L_CONTEXTS.find((entry) => entry.id === partLContext)?.short ?? '';
+  const condenses = condensation?.condenses === true;
+  const incompleteMass = areal.layersMissingDensity.length;
+
+  return (
+    <section className="answer-tiles" aria-label="Headline figures">
+      <div className="answer-tile answer-tile-lead" title={partLCheck?.citation}>
+        <span className="answer-label">
+          U-value
+          <HelpButton topicId="strip-u-value" label="the headline figures" onOpen={onOpenGuide} />
+        </span>
+        <span className="answer-value">
+          {displayedU === null ? '—' : displayedU.toFixed(2)}
+          <span className="answer-unit">W/(m²·K)</span>
+        </span>
+        {displayedU === null ? (
+          <>
+            <span className="answer-chip chip-risk">Outside the method</span>
+            <span className="answer-sub">see the Results tab</span>
+          </>
+        ) : (
+          partLCheck !== undefined && (
+            <>
+              <span className={`answer-chip ${partLCheck.meetsLimit ? 'chip-ok' : 'chip-risk'}`}>
+                {partLCheck.meetsLimit ? 'Meets' : 'Over'}{' '}
+                {partLCheck.maximumUValueWPerM2K.toFixed(2)}
+              </span>
+              <span className="answer-sub">limit, {contextShort}</span>
+            </>
+          )
+        )}
+      </div>
+
+      <div
+        className="answer-tile"
+        title={
+          surface === undefined
+            ? undefined
+            : `Assessed at the Rsi of ${surface.rsiM2KPerW} m²K/W that BS EN ISO 13788 §4.4.1 ` +
+              `requires for damp and mould, a colder surface than the U-value's ` +
+              `${surface.uValueRsiM2KPerW} m²K/W gives, so it is deliberately not the figure ` +
+              `on the temperature line. Mould grows from about ` +
+              `${MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT} % surface humidity.`
+        }
+      >
+        <span className="answer-label">Inside surface</span>
+        <span className="answer-value">
+          {surface === undefined ? '—' : surface.temperatureC.toFixed(1)}
+          <span className="answer-unit">°C</span>
+        </span>
+        {surface !== undefined && (
+          <>
+            <span className={`answer-chip ${surface.mouldRisk ? 'chip-risk' : 'chip-ok'}`}>
+              {surface.mouldRisk ? 'Mould risk' : 'No mould risk'}
+            </span>
+            <span className="answer-sub">
+              {surface.surfaceRelativeHumidityPercent.toFixed(0)} % RH
+            </span>
+          </>
+        )}
+      </div>
+
+      <div
+        className="answer-tile"
+        title="Interstitial condensation rate under the conditions set on the Conditions tab, by the BS EN ISO 13788 method."
+      >
+        <span className="answer-label">Condensation</span>
+        <span className="answer-value">
+          {condensationRateGPerM2Day === undefined
+            ? '—'
+            : condenses
+              ? condensationRateGPerM2Day.toFixed(1)
+              : 'None'}
+          {condenses && <span className="answer-unit">g/(m²·day)</span>}
+        </span>
+        {condensationRateGPerM2Day !== undefined && (
+          <>
+            <span className={`answer-chip ${condenses ? 'chip-risk' : 'chip-ok'}`}>
+              {condenses ? 'Condenses' : 'Stays dry'}
+            </span>
+            <span className="answer-sub">
+              {condenses ? 'inside the build-up' : 'vapour below saturation'}
+            </span>
+          </>
+        )}
+      </div>
+
+      <div className="answer-tile">
+        <span className="answer-label">Thickness</span>
+        <span className="answer-value">
+          {(areal.totalThicknessM * 1000).toFixed(0)}
+          <span className="answer-unit">mm</span>
+        </span>
+        <span
+          className="answer-sub"
+          title={
+            incompleteMass === 0
+              ? 'Dry mass of the specified materials, excluding fixings and finishes.'
+              : 'Dry mass, excluding layers with no density in the catalogue, so this is an under-estimate.'
+          }
+        >
+          {areal.massPerAreaKgPerM2.toFixed(0)} kg/m²{incompleteMass === 0 ? '' : ' or more'}
+        </span>
+      </div>
+    </section>
+  );
+}
+
+export interface SummaryStripProps extends FigureInputs {
+  /** Opens the feature guide at a topic. */
+  readonly onOpenGuide: (topicId: string) => void;
+  /** BS EN ISO 13786 figures, absent when the dynamic calculation could not run. */
+  readonly dynamic: DynamicResult | undefined;
+  readonly onPartLContextChange: (context: PartLContext) => void;
+}
+
+/**
+ * The figures that are not pinned, with the choice of which limit the pinned U-value is
+ * judged against. Lives on the Results tab.
+ */
+export function SummaryStrip(props: SummaryStripProps): JSX.Element {
+  const { dynamic, onOpenGuide, partLContext, onPartLContextChange } = props;
+  const { areal, partLCheck } = useFigures(props);
 
   const incompleteMass = areal.layersMissingDensity.length;
   const incompleteMu = areal.layersMissingMu.length;
@@ -145,31 +291,10 @@ export function SummaryStrip({
   return (
     <section className="summary-strip" aria-label="Build-up summary">
       <p className="strip-title">
-        At a glance
-        <HelpButton topicId="strip-u-value" label="the summary strip" onOpen={onOpenGuide} />
+        More figures
+        <HelpButton topicId="strip-u-value" label="the figures" onOpen={onOpenGuide} />
       </p>
       <div className="metric-row">
-        <Metric
-          label="U-value"
-          value={displayedU === null ? '—' : displayedU.toFixed(2)}
-          unit="W/(m²·K)"
-          verdict={partLCheck === undefined ? 'none' : partLCheck.meetsLimit ? 'ok' : 'risk'}
-          note={
-            displayedU === null
-              ? 'outside the method'
-              : partLCheck === undefined
-                ? undefined
-                : `limit ${partLCheck.maximumUValueWPerM2K.toFixed(2)}`
-          }
-          title={partLCheck?.citation}
-        />
-
-        <Metric
-          label="Thickness"
-          value={(areal.totalThicknessM * 1000).toFixed(0)}
-          unit="mm"
-        />
-
         <Metric
           label="Mass"
           value={areal.massPerAreaKgPerM2.toFixed(0)}
@@ -194,7 +319,7 @@ export function SummaryStrip({
           title={
             'The sum of ρ × c × d over the layers: all the heat the build-up could hold if ' +
             'warmed right through. This is not the areal heat capacity κ of BS EN ISO 13786, ' +
-            'which counts only what a daily cycle reaches and is shown further along the strip.'
+            'which counts only what a daily cycle reaches and is shown alongside.'
           }
         />
 
@@ -209,40 +334,6 @@ export function SummaryStrip({
           }
           title="Equivalent air layer thickness of the whole build-up: the depth of still air that would resist vapour as much as this does."
         />
-
-        {surfaceHumidity !== undefined && surface !== undefined && (
-          <Metric
-            label="Inside surface"
-            value={surface.temperatureC.toFixed(1)}
-            unit="°C"
-            verdict={mouldRisk ? 'risk' : 'ok'}
-            note={`${surfaceHumidity.toFixed(0)} % RH at the surface`}
-            title={
-              `Mould grows from about ${MOULD_CRITICAL_SURFACE_HUMIDITY_PERCENT} % surface ` +
-              `humidity, per BS EN ISO 13788. Assessed at the Rsi of ` +
-              `${surface.rsiM2KPerW} m²K/W that §4.4.1 requires for damp and mould, which ` +
-              `is a colder surface than the U-value's ${surface.uValueRsiM2KPerW} m²K/W ` +
-              `gives. This figure is deliberately not the one on the temperature line.`
-            }
-          />
-        )}
-
-        {condensationRateGPerM2Day !== undefined && (
-          <Metric
-            label="Condensation"
-            value={
-              condensation?.condenses === true ? condensationRateGPerM2Day.toFixed(1) : 'None'
-            }
-            unit={condensation?.condenses === true ? 'g/(m²·day)' : undefined}
-            verdict={condensation?.condenses === true ? 'risk' : 'ok'}
-            note={
-              condensation?.condenses === true
-                ? 'inside the build-up'
-                : 'vapour stays below saturation'
-            }
-            title="Interstitial condensation rate under the conditions set on the Conditions tab, by the BS EN ISO 13788 method."
-          />
-        )}
 
         {/*
           BS EN ISO 13786. Neutral like the rest: the standard publishes no scale saying
@@ -289,7 +380,7 @@ export function SummaryStrip({
           />
           <select
             value={partLContext}
-            onChange={(event) => setPartLContext(event.target.value as PartLContext)}
+            onChange={(event) => onPartLContextChange(event.target.value as PartLContext)}
           >
             {PART_L_CONTEXTS.map((entry) => (
               <option key={entry.id} value={entry.id}>
