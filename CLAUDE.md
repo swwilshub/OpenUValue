@@ -5,8 +5,8 @@ Working conventions for this repository. These are binding on every change.
 ## What this project is
 
 A browser-based building-envelope calculator: build a wall, roof or floor layer by
-layer and see its U-value, temperature profile, condensation risk and (later) summer
-performance. Homeowners and designers, UK first.
+layer and see its U-value, temperature profile, condensation risk, summer (dynamic)
+performance, heating energy and retrofit payback. Homeowners and designers, UK first.
 
 ## Clean-room rule
 
@@ -52,8 +52,8 @@ deliverable, not a leftovers list.
 2. **BR 443** *Conventions for U-value calculations* — UK conventions layered on top
    of ISO 6946. Where they differ, BR 443 wins for UK output, and the difference is
    noted in a comment.
-3. **BS EN ISO 13788** — surface humidity and interstitial condensation. Phase 1 uses
-   only its Annex E psychrometric equations.
+3. **BS EN ISO 13788** — surface humidity and interstitial condensation, by its Glaser
+   vapour-pressure construction, plus the Annex E psychrometric equations.
 4. **BS EN ISO 10456** — declared/design thermal values for materials.
 5. **DIN 4108-3** (Glaser) — an *alternative* method to be addable later. Condensation
    must therefore sit behind the `CondensationMethod` interface in
@@ -155,7 +155,7 @@ No intermediate rounding inside a chain of resistances.
 
 ## Testing
 
-- Vitest, in `packages/engine` (and `packages/materials`).
+- Vitest, in `packages/engine`, `packages/materials` and `apps/web`.
 - Every calculation test states its expected value as a **hand calculation worked out
   in a comment**, showing the arithmetic — not a number copied from a previous run.
   A test whose expectation came from running the code proves nothing.
