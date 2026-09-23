@@ -6,7 +6,12 @@
 :root {
   --ink: #1d2321;
   --ink-soft: #55605c;
-  --ink-faint: #8a9691;
+  /*
+   * The faintest text colour still has to be read: 4.53:1 on the page ground and 4.98:1
+   * on white, over the 4.5:1 WCAG AA asks for body text. It was #8a9691, 2.79:1 on the
+   * ground, and it carries every footnote, caption and hint in the tool.
+   */
+  --ink-faint: #68726e;
   --ground: #f6f4f0;
   --surface: #ffffff;
   --line: #dcd8d0;
@@ -222,13 +227,18 @@ h1 {
 
 /* ---------------------------------------------------------------- inputs ---- */
 
+/*
+ * Field labels are sentence case, and nothing that names a quantity may be uppercased.
+ * A label here carries its unit, and units are case-sensitive: uppercasing turned
+ * W/(m·K) into W/(M·K) — metre into mega — λ into Λ, κ into something that reads as K,
+ * and Pa into PA. Headings can keep their capitals because they never carry a unit.
+ */
 label {
   display: flex;
   flex-direction: column;
   gap: 3px;
   font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
   min-width: 0;
 }
@@ -333,8 +343,7 @@ button.danger:hover {
   align-items: center;
   gap: 10px;
   font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
   margin-bottom: 8px;
 }
@@ -442,7 +451,6 @@ button.danger:hover {
 
 .resistance-label {
   font-size: 11px;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -542,8 +550,7 @@ button.danger:hover {
 
 .result-grid dt {
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -571,8 +578,7 @@ button.danger:hover {
 .combined-detail summary {
   cursor: pointer;
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-soft);
   margin-bottom: 10px;
 }
@@ -639,8 +645,7 @@ button.danger:hover {
 
 .warning strong {
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
 }
 
 .warning-combined-method-ratio-exceeds-limit,
@@ -710,7 +715,6 @@ button.danger:hover {
 .axis-title {
   font-size: 10px;
   fill: var(--ink-faint);
-  text-transform: uppercase;
 }
 
 .layer-caption {
@@ -1240,8 +1244,7 @@ button.danger:hover {
   flex-direction: column;
   gap: 4px;
   font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -1331,8 +1334,7 @@ button.danger:hover {
 .choice-group legend {
   padding: 0;
   font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -1631,8 +1633,7 @@ button.danger:hover {
 
 .picker-label {
   font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -1714,8 +1715,7 @@ button.danger:hover {
   gap: 6px;
   padding: 6px 10px 3px;
   font-size: 10.5px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -2505,8 +2505,7 @@ button.danger:hover {
 
 .balance-label {
   font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -2605,8 +2604,7 @@ a:hover {
 
 .metric-label {
   font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -2683,8 +2681,7 @@ a:hover {
 
 .dynamic-grid dt {
   font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -2730,8 +2727,7 @@ a:hover {
 .dynamic-table thead th {
   color: var(--ink-faint);
   font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
 }
 
 /*
@@ -3800,8 +3796,7 @@ body.is-dragging * {
 .energy-figure-label {
   display: block;
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
@@ -4058,8 +4053,7 @@ body.is-dragging * {
 .retrofit-answer-label {
   display: block;
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   color: var(--ink-soft);
 }
 
@@ -4443,8 +4437,7 @@ body.is-dragging * {
   display: block;
   margin-bottom: 4px;
   font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   color: var(--ink-faint);
 }
 
