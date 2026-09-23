@@ -664,6 +664,85 @@ button.danger:hover {
   background: var(--surface);
 }
 
+/*
+ * The compact list: one line per layer, the selected one opened out into the editor.
+ * The column header and every line share one grid, so the numbers stack in columns.
+ */
+.layer-columns,
+.layer-line {
+  display: grid;
+  grid-template-columns: 16px 24px minmax(0, 1fr) 52px 52px 40px 50px;
+  gap: 8px;
+  align-items: center;
+}
+
+.layer-columns {
+  padding: 0 11px 4px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.layer-line {
+  min-height: 44px;
+  margin: 0 0 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.layer-line:hover {
+  border-color: var(--accent);
+}
+
+.layer-line:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.layer-line-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.layer-line-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-line-tag {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11.5px;
+}
+
+.layer-line .material-swatch {
+  flex: 0 0 auto;
+}
+
+.layer-close {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 .layer-row-disregarded {
   background: repeating-linear-gradient(
     135deg,

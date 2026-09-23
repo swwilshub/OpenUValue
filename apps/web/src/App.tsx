@@ -891,6 +891,7 @@ export function App(): JSX.Element {
                     result={result}
                     onChange={setLayers}
                     selectedLayerId={selectedLayerId}
+                    outsideFirst={state.elementKind === 'roof'}
                     toolbar={
                       <>
                         <button

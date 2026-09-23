@@ -27,9 +27,11 @@ import {
   withLayerInserted,
   blankSolidLayer,
   bridgedPercentFromDimensions,
+  layerDrawCategory,
 } from '../state/model.js';
 import { HelpButton } from './guide/Guide.js';
 import { CavityPicker } from './CavityPicker.js';
+import { MaterialSwatch } from './hatches.js';
 import type { HeatFlowDirection } from '@openuvalue/engine';
 
 export interface LayerTableProps {
@@ -45,6 +47,13 @@ export interface LayerTableProps {
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
   /** Whole-build-up actions the caller owns, shown with the add buttons. */
   readonly toolbar?: React.ReactNode;
+  /**
+   * List the outside layer first. A roof is drawn outside at the top, so its list runs
+   * the same way and the row under the pointer is the layer beside it in the drawing.
+   * Only the order on screen changes: numbers, the stored order and every calculation
+   * still run inside to outside.
+   */
+  readonly outsideFirst?: boolean;
 }
 
 
@@ -78,6 +87,7 @@ export function LayerTable({
   onSelectLayer,
   onOpenGuide,
   toolbar,
+  outsideFirst = false,
 }: LayerTableProps): JSX.Element {
   /** Index being dragged, and the gap it would drop into. Null when not dragging. */
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -310,10 +320,12 @@ export function LayerTable({
     onChange(layers.filter((_layer, i) => i !== index));
   };
 
+  /** Adding a layer opens it, since the next thing anyone does is set it up. */
   const insert = (index: number, layer: UiLayer): void => {
     const next = [...layers];
     next.splice(index, 0, layer);
     onChange(next);
+    onSelectLayer?.(layer.id);
   };
 
   /**
@@ -325,14 +337,80 @@ export function LayerTable({
    * would look at whatever used to be next to it.
    */
   const insertCavityBehind = (index: number): void => {
-    onChange(withLayerInserted(layers, index + 1, blankAirLayer()));
+    const cavity = blankAirLayer();
+    onChange(withLayerInserted(layers, index + 1, cavity));
+    onSelectLayer?.(cavity.id);
   };
+
+  /*
+   * Where a row sits on screen and where it sits in the build-up differ when the list is
+   * shown outside first. Everything that says "above" or "below" goes through these, so
+   * the arrows, "insert below" and a drop all mean what they look like they mean.
+   */
+  /** The build-up position just above this row on screen. */
+  const positionAbove = (index: number): number => (outsideFirst ? index + 1 : index);
+  /** The build-up position just below this row on screen. */
+  const positionBelow = (index: number): number => (outsideFirst ? index : index + 1);
+  /** Index of the neighbour one row up (-1) or down (+1) on screen. */
+  const screenNeighbour = (index: number, step: -1 | 1): number =>
+    outsideFirst ? index - step : index + step;
+
+  const dropHandlers = (index: number) => ({
+    onDragOver: (event: React.DragEvent<HTMLElement>): void => {
+      if (dragIndex === null) {
+        return;
+      }
+      // Without preventDefault the browser refuses the drop outright.
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      // Drop above or below this layer depending on which half is hovered, so the last
+      // position in the list stays reachable.
+      const box = event.currentTarget.getBoundingClientRect();
+      const lowerHalf = event.clientY > box.top + box.height / 2;
+      setDropIndex(lowerHalf ? positionBelow(index) : positionAbove(index));
+    },
+    onDrop: (event: React.DragEvent<HTMLElement>): void => {
+      event.preventDefault();
+      if (dragIndex !== null && dropIndex !== null) {
+        reorder(dragIndex, dropIndex);
+      }
+      endDrag();
+    },
+  });
+
+  const dragHandle = (index: number, layer: UiLayer): JSX.Element => (
+    <span
+      className="drag-handle"
+      draggable
+      role="button"
+      tabIndex={-1}
+      aria-hidden="true"
+      title="Drag to reorder"
+      onPointerDown={guardSelection}
+      onClick={(event) => event.stopPropagation()}
+      onDragStart={(event) => {
+        beginDrag(index);
+        event.dataTransfer.effectAllowed = 'move';
+        // Firefox ignores a drag that carries no data.
+        event.dataTransfer.setData('text/plain', layer.id);
+      }}
+      onDragEnd={endDrag}
+    >
+      ⠿
+    </span>
+  );
+
+  /** Rows in screen order, each with its index in the build-up. */
+  const screenOrder = layers.map((layer, index) => ({ layer, index }));
+  if (outsideFirst) {
+    screenOrder.reverse();
+  }
 
   return (
     <div className="layer-table">
       <div className="layer-table-head">
         <span>
-          Layers, inside to outside
+          {outsideFirst ? 'Outside at the top' : 'Inside to outside'}
           <HelpButton topicId="add-layer" label="the layers box" onOpen={onOpenGuide} />
         </span>
         <span className="layer-actions-head">
@@ -350,7 +428,19 @@ export function LayerTable({
         <p className="empty-note">No layers yet. Add one to start.</p>
       )}
 
-      {layers.map((layer, index) => {
+      {layers.length > 0 && (
+        <div className="layer-columns" aria-hidden="true">
+          <span />
+          <span>#</span>
+          <span>Material</span>
+          <span className="num">mm</span>
+          <span className="num">λ</span>
+          <span className="num">μ</span>
+          <span className="num">R</span>
+        </div>
+      )}
+
+      {screenOrder.map(({ layer, index }, screenIndex) => {
         const reported = result.layers[index];
         const isDisregarded = reported !== undefined && !reported.includedInCalculation;
         const classes = ['layer-row'];
@@ -363,57 +453,70 @@ export function LayerTable({
         if (layer.id === selectedLayerId) {
           classes.push('layer-row-selected');
         }
-        // The gap this layer would drop into: above it, or below the last one.
-        if (dropIndex === index) {
+        // The gap this layer would drop into: above it on screen, or below the last row.
+        if (dropIndex !== null && dropIndex === positionAbove(index)) {
           classes.push('layer-row-drop-before');
-        } else if (dropIndex === layers.length && index === layers.length - 1) {
+        } else if (
+          dropIndex !== null &&
+          screenIndex === layers.length - 1 &&
+          dropIndex === positionBelow(index)
+        ) {
           classes.push('layer-row-drop-after');
         }
-        return (
-          <fieldset
-            key={layer.id}
-            className={classes.join(' ')}
-            onClick={() => onSelectLayer?.(layer.id)}
-            onDragOver={(event) => {
-              if (dragIndex === null) {
-                return;
-              }
-              // Without preventDefault the browser refuses the drop outright.
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'move';
-              // Drop above or below this layer depending on which half is hovered, so
-              // the last position in the list stays reachable.
-              const box = event.currentTarget.getBoundingClientRect();
-              const below = event.clientY > box.top + box.height / 2;
-              setDropIndex(below ? index + 1 : index);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              if (dragIndex !== null && dropIndex !== null) {
-                reorder(dragIndex, dropIndex);
-              }
-              endDrag();
-            }}
-          >
-            <legend>
-              <span
-                className="drag-handle"
-                draggable
-                role="button"
-                tabIndex={-1}
-                aria-hidden="true"
-                title="Drag to reorder"
-                onPointerDown={guardSelection}
-                onDragStart={(event) => {
-                  beginDrag(index);
-                  event.dataTransfer.effectAllowed = 'move';
-                  // Firefox ignores a drag that carries no data.
-                  event.dataTransfer.setData('text/plain', layer.id);
-                }}
-                onDragEnd={endDrag}
-              >
-                ⠿
+
+        /*
+         * Every layer but the selected one is a single line: what it is and the four
+         * numbers that matter. Picking it, here or in the drawing, opens the editor.
+         */
+        if (layer.id !== selectedLayerId) {
+          const resistance =
+            reported === undefined
+              ? '—'
+              : roundResistanceForReporting(reported.combinedResistanceM2KPerW).toFixed(3);
+          return (
+            <div
+              key={layer.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Layer ${index + 1}, ${layer.label}, ${layer.thicknessMm} mm. Edit.`}
+              className={[...classes, 'layer-line'].join(' ')}
+              onClick={() => onSelectLayer?.(layer.id)}
+              onKeyDown={(event) => {
+                if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault();
+                  onSelectLayer?.(layer.id);
+                }
+              }}
+              {...dropHandlers(index)}
+            >
+              {dragHandle(index, layer)}
+              <span className="layer-index">{index + 1}</span>
+              <span className="layer-line-name">
+                <MaterialSwatch category={layerDrawCategory(layer.materialId, layer.kind)} size={16} />
+                <span className="layer-line-label">{layer.label}</span>
+                {layer.bridgedPercent > 0 && (
+                  <span className="layer-line-tag">
+                    {layer.bridgeLabel} {layer.bridgedPercent.toFixed(1)}%
+                  </span>
+                )}
+                {isDisregarded && <span className="badge">disregarded</span>}
               </span>
+              <span className="num">{layer.thicknessMm}</span>
+              <span className="num">
+                {layer.kind === 'solid' ? layer.lambdaWPerMK : '—'}
+              </span>
+              <span className="num">
+                {layer.kind === 'solid' ? layer.vapourResistanceFactorMu : '—'}
+              </span>
+              <span className="num">{resistance}</span>
+            </div>
+          );
+        }
+
+        return (
+          <fieldset key={layer.id} className={classes.join(' ')} {...dropHandlers(index)}>
+            <legend>
+              {dragHandle(index, layer)}
               <span className="layer-index">{index + 1}</span>
               <input
                 type="text"
@@ -423,6 +526,13 @@ export function LayerTable({
                 onChange={(event) => update(index, { label: event.target.value })}
               />
               {isDisregarded && <span className="badge">disregarded</span>}
+              <button
+                type="button"
+                className="layer-close"
+                onClick={() => onSelectLayer?.(undefined)}
+              >
+                Done
+              </button>
             </legend>
 
             <div className="layer-grid">
@@ -855,17 +965,23 @@ export function LayerTable({
             )}
 
             <div className="layer-actions">
-              <button type="button" onClick={() => move(index, -1)} disabled={index === 0}>
+              <button
+                type="button"
+                aria-label="Move up"
+                onClick={() => move(index, screenNeighbour(index, -1) - index)}
+                disabled={screenIndex === 0}
+              >
                 ↑
               </button>
               <button
                 type="button"
-                onClick={() => move(index, 1)}
-                disabled={index === layers.length - 1}
+                aria-label="Move down"
+                onClick={() => move(index, screenNeighbour(index, 1) - index)}
+                disabled={screenIndex === layers.length - 1}
               >
                 ↓
               </button>
-              <button type="button" onClick={() => insert(index + 1, blankSolidLayer())}>
+              <button type="button" onClick={() => insert(positionBelow(index), blankSolidLayer())}>
                 insert below
               </button>
               {layer.kind !== 'air' && (

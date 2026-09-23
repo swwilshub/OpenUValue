@@ -685,8 +685,8 @@ export const CHAPTERS: readonly GuideChapter[] = [
         figure: <LayersFigure />,
         body: (
           <p>
-            <strong>+ layer</strong> adds a blank layer at the outside end, ready for a material
-            and a thickness, and it can be dragged wherever you want it. Add a{' '}
+            <strong>+ layer</strong> adds a blank layer at the outside end and opens it, ready
+            for a material and a thickness, and it can be dragged wherever you want it. Add a{' '}
             <strong>cavity</strong> instead when the gap is air rather than a product. An air
             layer is handled differently, because air insulates by not moving and stops doing so
             once it can circulate. To add a particular material in a particular place in one
@@ -701,12 +701,19 @@ export const CHAPTERS: readonly GuideChapter[] = [
         body: (
           <>
             <p>
-              Each layer carries its own name, which you can type over, and a row of buttons
-              along its foot. <strong>↑</strong> and <strong>↓</strong> move it one place
-              inwards or outwards, the same as dragging it by the ⠿ handle.{' '}
-              <strong>insert below</strong> adds a blank layer straight after it, on its
-              outside. <strong>delete</strong> removes it, with no undo, so copy the share link
-              first if you might want it back.
+              Each layer is one line in the list: its number, material, thickness, λ, μ and
+              resistance. Click it, or click it in the drawing, and it opens to show every
+              field; <strong>Done</strong> folds it again. An open layer carries its own
+              name, which you can type over, and a row of buttons along its foot.{' '}
+              <strong>↑</strong> and <strong>↓</strong> move it one place up or down the
+              list, the same as dragging it by the ⠿ handle. <strong>insert below</strong>{' '}
+              adds a blank layer straight under it. <strong>delete</strong> removes it, and
+              Undo (Ctrl+Z) brings it back.
+            </p>
+            <p>
+              On a roof the list runs the way the drawing does, outside at the top, so the
+              first line is the outermost layer. The numbers still count from the inside,
+              matching the numbered discs on the drawing.
             </p>
             <p>
               <strong>+ cavity behind</strong> adds an air cavity on the outside of the layer
