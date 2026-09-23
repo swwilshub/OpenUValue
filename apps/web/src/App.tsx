@@ -32,6 +32,8 @@ import { SummaryStrip } from './components/SummaryStrip.js';
 import { DynamicPanel } from './components/DynamicPanel.js';
 import { Layup3D } from './components/Layup3D.js';
 import { MaterialPalette } from './components/MaterialPalette.js';
+import { StartFromMenu } from './components/StartFromMenu.js';
+import type { StartingPoint } from './components/StartFromMenu.js';
 import { layerFromPalette } from './state/palette.js';
 import {
   canRedo,
@@ -73,12 +75,15 @@ const REPOSITORY_URL = 'https://github.com/swwilshub/OpenUValue';
 
 /** Marks the walkthrough as seen, so it opens once rather than on every visit. */
 const TOUR_SEEN_KEY = 'openuvalue.tour.seen';
+/** Marks the "still being checked" note as read; the footer keeps saying it. */
+const BANNER_SEEN_KEY = 'openuvalue.banner.seen';
 
 /**
- * The cross-section stays above the tabs, because it is the thing being worked on
- * whichever analysis is open. The tabs switch what is said *about* it.
+ * The editor's tabs. The drawing sits beside them rather than above, because it is the
+ * thing being worked on whichever of these is open; the tabs switch what is edited or
+ * said *about* it.
  */
-type TabId = 'buildup' | 'moisture' | 'energy' | 'retrofit';
+type TabId = 'layers' | 'conditions' | 'results' | 'moisture' | 'energy' | 'retrofit';
 
 /**
  * How far to lay the 3D model back from upright, in radians.
@@ -95,10 +100,34 @@ function layupTiltRadians(kind: UiElementKind, roofPitchDegrees: number): number
 }
 
 const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
-  { id: 'buildup', label: 'Build-up and U-value' },
+  { id: 'layers', label: 'Layers' },
+  { id: 'conditions', label: 'Conditions' },
+  { id: 'results', label: 'Results' },
   { id: 'moisture', label: 'Moisture' },
-  { id: 'energy', label: 'Energy and carbon' },
+  { id: 'energy', label: 'Energy' },
   { id: 'retrofit', label: 'Retrofit' },
+];
+
+/** The examples, in the order the Start from menu lists them. */
+const STARTING_POINTS: readonly (StartingPoint & { readonly build: () => UiState })[] = [
+  {
+    id: 'masonry',
+    label: 'Masonry',
+    detail: 'Aircrete inner leaf, full-fill mineral wool, brick',
+    build: defaultState,
+  },
+  {
+    id: 'timber',
+    label: 'Timber frame',
+    detail: 'Studs filled with mineral wool, OSB, brick outer leaf',
+    build: timberFrameExample,
+  },
+  {
+    id: 'cold-roof',
+    label: 'Cold roof',
+    detail: 'Insulated at ceiling level, ventilated loft above',
+    build: coldRoofExample,
+  },
 ];
 
 const SECTION_LABELS: Record<ProfileSection, string> = {
@@ -196,7 +225,7 @@ export function App(): JSX.Element {
   const [copied, setCopied] = useState(false);
   /** Layer picked in either the table or the drawing; the other view follows. */
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<TabId>('buildup');
+  const [tab, setTab] = useState<TabId>('layers');
   /*
    * The feature guide. `guideTopic` is what a help button beside a box passes in, so the
    * guide opens at that box rather than at the beginning.
@@ -233,6 +262,26 @@ export function App(): JSX.Element {
       window.localStorage.setItem(TOUR_SEEN_KEY, '1');
     } catch {
       // Nothing to do: the tour is dismissed for this visit either way.
+    }
+  }, []);
+  /*
+   * The "still being checked" note shows until it is dismissed, then lives in the footer.
+   * Storage can throw, so a failure to read means show it and a failure to write means it
+   * comes back next visit.
+   */
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(BANNER_SEEN_KEY) !== null;
+    } catch {
+      return false;
+    }
+  });
+  const dismissBanner = useCallback(() => {
+    setBannerDismissed(true);
+    try {
+      window.localStorage.setItem(BANNER_SEEN_KEY, '1');
+    } catch {
+      // Dismissed for this visit either way.
     }
   }, []);
   /** The hash this component last wrote, so an incoming change can be told apart. */
@@ -556,64 +605,59 @@ export function App(): JSX.Element {
       <IntroTour open={tourOpen} onClose={closeTour} />
       <Guide open={guideOpen} topicId={guideTopic} onClose={() => setGuideOpen(false)} />
 
-      <header className="app-header">
-        <div>
+      <header className="app-bar">
+        <div className="app-bar-title">
           <h1>OpenUValue</h1>
-          <p className="tagline">
-            U-value, temperature, condensation and summer performance of a wall, roof or
-            floor, with U-values to BS EN ISO 6946 and BR 443 conventions.
-          </p>
+          <input
+            type="text"
+            aria-label="Element name"
+            className="element-name"
+            value={state.name}
+            onChange={(event) =>
+              setState((current) => ({ ...current, name: event.target.value }))
+            }
+          />
         </div>
         <div className="header-actions">
-          <button type="button" onClick={() => setTourOpen(true)}>
-            How to read the drawing
-          </button>
+          <StartFromMenu
+            options={STARTING_POINTS}
+            onPick={(id) => {
+              const start = STARTING_POINTS.find((entry) => entry.id === id);
+              if (start !== undefined) {
+                replaceAll(start.build(), `Loaded the ${start.label.toLowerCase()} example.`);
+              }
+            }}
+          />
+          <span className="header-group">
+            <button
+              type="button"
+              onClick={() => undo()}
+              disabled={!canUndo(history)}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+              className="icon-button"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M5.5 4L2.5 7l3 3" />
+                <path d="M2.5 7h7a4 4 0 010 8h-2" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => redo()}
+              disabled={!canRedo(history)}
+              title="Redo (Ctrl+Shift+Z)"
+              aria-label="Redo"
+              className="icon-button"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M10.5 4l3 3-3 3" />
+                <path d="M13.5 7h-7a4 4 0 000 8h2" />
+              </svg>
+            </button>
+          </span>
           <button type="button" onClick={() => openGuide()}>
-            Guide and walkthroughs
-          </button>
-          <button
-            type="button"
-            onClick={() => undo()}
-            disabled={!canUndo(history)}
-            title="Undo (Ctrl+Z)"
-            aria-label="Undo"
-            className="icon-button"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M5.5 4L2.5 7l3 3" />
-              <path d="M2.5 7h7a4 4 0 010 8h-2" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => redo()}
-            disabled={!canRedo(history)}
-            title="Redo (Ctrl+Shift+Z)"
-            aria-label="Redo"
-            className="icon-button"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M10.5 4l3 3-3 3" />
-              <path d="M13.5 7h-7a4 4 0 000 8h2" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => replaceAll(defaultState(), 'Loaded the masonry example.')}
-          >
-            Masonry example
-          </button>
-          <button
-            type="button"
-            onClick={() => replaceAll(timberFrameExample(), 'Loaded the timber frame example.')}
-          >
-            Timber frame example
-          </button>
-          <button
-            type="button"
-            onClick={() => replaceAll(coldRoofExample(), 'Loaded the cold roof example.')}
-          >
-            Cold roof example
+            Guide
           </button>
           <button type="button" className="primary" onClick={() => void copyLink()}>
             {copied ? 'Link copied' : 'Copy share link'}
@@ -621,13 +665,21 @@ export function App(): JSX.Element {
         </div>
       </header>
 
-      <p className="phase-banner">
-        <strong>Still being checked.</strong> Several material values and clause
-        references have not yet been checked against printed standards; see{' '}
-        <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. The mechanical
-        fastener correction takes BR 443's detailed route, where you supply a point
-        thermal transmittance; the approximate route is not offered yet.
-      </p>
+      {!bannerDismissed && (
+        <p className="phase-banner">
+          <span>
+            <strong>Still being checked.</strong> Material values and several clause
+            references still need checking against printed standards; see{' '}
+            <a href={`${REPOSITORY_URL}/blob/HEAD/VERIFY.md`}>VERIFY.md</a>. The mechanical
+            fastener correction covers BR 443&rsquo;s detailed route, where you supply a point
+            thermal transmittance; its approximate route is not implemented. The same note
+            stays in the footer.
+          </span>
+          <button type="button" onClick={dismissBanner}>
+            Got it
+          </button>
+        </p>
+      )}
 
       {linkProblem !== undefined && (
         <p className="link-problem">
@@ -657,281 +709,302 @@ export function App(): JSX.Element {
         )}
       </div>
 
-      {result !== undefined && profile !== undefined && (
-        <section className="panel hero-panel">
-          <div className="section-header">
-            <h2>
-              Cross-section and temperature
-              <HelpButton
-                topicId="layers-to-scale"
-                label="the cross-section drawing"
-                onOpen={openGuide}
-              />
-            </h2>
-            <div className="view-toggle" role="group" aria-label="Drawing">
-              <button
-                type="button"
-                className={heroView === 'section' ? 'is-current' : ''}
-                aria-pressed={heroView === 'section'}
-                onClick={() => setHeroView('section')}
-              >
-                Section
-              </button>
-              <button
-                type="button"
-                className={heroView === 'layup' ? 'is-current' : ''}
-                aria-pressed={heroView === 'layup'}
-                onClick={() => setHeroView('layup')}
-              >
-                3D layup
-              </button>
-              <HelpButton topicId="layup-3d" label="the 3D layup view" onOpen={openGuide} />
-            </div>
-            <div className="view-toggle">
-              {/*
-                * A build-up operation rather than a view one, so it sits with the view
-                * controls only because that is where both drawings can see it — it
-                * changes the model, and the drawings follow.
-                */}
-              <button
-                type="button"
-                onClick={reverseLayers}
-                disabled={state.layers.length < 2}
-                title="Turn the build-up back to front: the inside face becomes the outside one. The conditions and heat flow direction stay as they are."
-              >
-                Reverse layers
-              </button>
-              <HelpButton topicId="reverse-layers" label="the reverse layers button" onOpen={openGuide} />
-            </div>
-            <label className="inline-select" hidden={heroView !== 'section'}>
-              Show
-              <HelpButton topicId="section-selector" label="the section selector" onOpen={openGuide} />
-              <select
-                value={state.section}
-                disabled={!bridged}
-                onChange={(event) =>
-                  setState((current) => ({
-                    ...current,
-                    section: event.target.value as ProfileSection,
-                  }))
-                }
-              >
-                {(Object.keys(SECTION_LABELS) as ProfileSection[]).map((section) => (
-                  <option key={section} value={section}>
-                    {SECTION_LABELS[section]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {heroView === 'section' ? (
-            <CrossSection
-              layers={state.layers}
-              elementKind={state.elementKind}
-              onInsertPalette={insertPalette}
-              result={result}
-              profile={profile}
-              section={state.section}
-              selectedLayerId={selectedLayerId}
-              onSelectLayer={setSelectedLayerId}
-              onReorder={reorderLayers}
-              onResizeLayer={setLayerThickness}
-              onResizeMember={setMemberWidth}
-              condensation={condensation}
-              dryOut={dryOut}
-            />
-          ) : (
-            <Layup3D
-              layers={state.layers}
-              included={result.layers.map((layer) => layer.includedInCalculation)}
-              selectedLayerId={selectedLayerId}
-              onSelectLayer={setSelectedLayerId}
-              tiltRadians={layupTiltRadians(state.elementKind, state.roofPitchDegrees)}
-            />
-          )}
-
-          {/*
-            The palette sits under the drawing it drops into, which is also where a
-            reader's eye already is once they have looked at the build-up and found
-            something missing from it.
-          */}
-          <div hidden={heroView !== 'section'}>
-            <MaterialPalette
-              onAdd={(paletteId) => {
-                /*
-                 * A click has no position, so the layer goes after whichever one is
-                 * selected, or on the outside end when none is. Selecting the new layer
-                 * then makes a second click land after it, which is how a build-up gets
-                 * assembled a layer at a time.
-                 */
-                const selected = state.layers.findIndex((layer) => layer.id === selectedLayerId);
-                insertPalette(selected < 0 ? state.layers.length : selected + 1, paletteId);
-              }}
-              onOpenGuide={openGuide}
-              addPosition={
-                state.layers.some((layer) => layer.id === selectedLayerId)
-                  ? 'after the selected layer'
-                  : 'on the outside'
-              }
-            />
-          </div>
-
-          <div className="section-legend" hidden={heroView !== 'section'}>
-            <HatchLegend />
-            <button type="button" className="link-button" onClick={() => setTourOpen(true)}>
-              How to read this drawing
-            </button>
-            <button type="button" className="link-button" onClick={() => openGuide('layers-to-scale')}>
-              Guide to the drawing
-            </button>
-          </div>
-
-          {bridged && state.section === 'combined' && (
-            <p className="footnote">
-              The combined profile is an OpenUValue convention, not a method from
-              BS EN ISO 6946, which defines no temperature profile through a bridged
-              element. The area-weighted layer resistances are scaled by{' '}
-              k = {(profile.combinedScalingFactor ?? 1).toFixed(4)} so the profile sums
-              to the reported R<sub>T</sub> rather than to the lower limit R″
-              <sub>T</sub>. Vapour thicknesses follow the unbridged path.
-            </p>
-              )}
-        </section>
-      )}
-
       {/*
-        Outside the tab panels on purpose: these are the figures you want in view
-        whichever tab you are reading, and they move as layers are dragged.
+        Two panes. The drawing and the answer stay in view on the left while the editor
+        scrolls on the right, so a change and what it does are on screen together. On a
+        narrow screen the two stack.
       */}
-      {result !== undefined && profile !== undefined && (
-        <SummaryStrip
-          onOpenGuide={openGuide}
-          element={element}
-          partLKind={partLKindForElement(state.elementKind)}
-          result={result}
-          corrections={corrections}
-          conditions={state.conditions}
-          dynamic={dynamic}
-        />
-      )}
-
-      <nav className="tab-bar" role="tablist" aria-label="Analysis">
-        {TABS.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === entry.id}
-            className={tab === entry.id ? 'tab is-current' : 'tab'}
-            onClick={() => setTab(entry.id)}
-          >
-            {entry.label}
-          </button>
-        ))}
-      </nav>
-
-      {tab === 'energy' && result !== undefined && (
-        <EnergyTab
-          onOpenGuide={openGuide}
-          result={result}
-          internalTemperatureC={state.conditions.internalAirTemperatureC}
-        />
-      )}
-
-      {tab === 'retrofit' && <RetrofitTab onOpenGuide={openGuide} state={state} />}
-
-      {tab === 'moisture' && result !== undefined && profile !== undefined && (
-        <MoistureTab
-          onOpenGuide={openGuide}
-          element={element}
-          layers={state.layers}
-          conditions={state.conditions}
-          profile={profile}
-          dryingSettings={dryingSettings}
-          onChangeDryingSettings={setDryingSettings}
-        />
-      )}
-
-      <main className="layout" hidden={tab !== 'buildup'}>
-        <div className="column-left">
-          <section className="panel">
-            <h2>
-              <input
-                type="text"
-                aria-label="Element name"
-                className="element-name"
-                value={state.name}
-                onChange={(event) =>
-                  setState((current) => ({ ...current, name: event.target.value }))
-                }
-              />
-            </h2>
-            {result === undefined ? (
-              <p className="engine-error">{engineError}</p>
-            ) : (
-              <LayerTable
-                onOpenGuide={openGuide}
-                heatFlowDirection={state.heatFlowDirection}
-                layers={state.layers}
-                result={result}
-                onChange={setLayers}
-                selectedLayerId={selectedLayerId}
-                onSelectLayer={setSelectedLayerId}
-              />
-            )}
-          </section>
-
-          {result !== undefined && (
-            <BoundaryPanel
+      <div className="workbench">
+        <section className="pane pane-drawing" aria-label="Drawing and headline figures">
+          {result !== undefined && profile !== undefined && (
+            <SummaryStrip
               onOpenGuide={openGuide}
-              heatFlowDirection={state.heatFlowDirection}
-              elementKind={state.elementKind}
-              roofPitchDegrees={state.roofPitchDegrees}
-              conditions={state.conditions}
-              internalSurfaceCondition={state.internalSurfaceCondition}
-              externalEnvironmentKind={state.externalEnvironment}
+              element={element}
+              partLKind={partLKindForElement(state.elementKind)}
               result={result}
-              onElementChange={setElement}
-              onConditionsChange={setConditions}
-              onInternalSurfaceConditionChange={setInternalSurfaceCondition}
-              onExternalEnvironmentChange={setExternalEnvironment}
-            />
-          )}
-
-          <LocationPanel
-            onOpenGuide={openGuide}
-            zoneId={state.exposureZoneId}
-            onChange={(exposureZoneId) =>
-              setState((current) => ({ ...current, exposureZoneId }))
-            }
-            layers={state.layers}
-          />
-        </div>
-
-        <div className="column-right">
-          {result !== undefined && profile !== undefined ? (
-            <ResultsPanel
-              onOpenGuide={openGuide}
-              result={result}
-              profile={profile}
               corrections={corrections}
-              airGapLevel={state.airGapLevel}
-              onAirGapLevelChange={setAirGapLevel}
-              fasteners={state.fasteners}
-              onFastenersChange={setFasteners}
+              conditions={state.conditions}
+              dynamic={dynamic}
             />
-          ) : (
-            <section className="panel">
-              <h2>Result</h2>
-              <p className="engine-error">{engineError}</p>
-            </section>
           )}
 
-          {dynamic !== undefined && <DynamicPanel dynamic={dynamic} onOpenGuide={openGuide} />}
-        </div>
-      </main>
+          {result !== undefined && profile !== undefined ? (
+            <div className="drawing-panel">
+              <div className="drawing-tools">
+                <div className="view-toggle" role="group" aria-label="Drawing">
+                  <button
+                    type="button"
+                    className={heroView === 'section' ? 'is-current' : ''}
+                    aria-pressed={heroView === 'section'}
+                    onClick={() => setHeroView('section')}
+                  >
+                    Section
+                  </button>
+                  <button
+                    type="button"
+                    className={heroView === 'layup' ? 'is-current' : ''}
+                    aria-pressed={heroView === 'layup'}
+                    onClick={() => setHeroView('layup')}
+                  >
+                    3D
+                  </button>
+                  <HelpButton topicId="layup-3d" label="the 3D layup view" onOpen={openGuide} />
+                </div>
+                <label className="inline-select" hidden={heroView !== 'section'}>
+                  Show
+                  <HelpButton
+                    topicId="section-selector"
+                    label="the section selector"
+                    onOpen={openGuide}
+                  />
+                  <select
+                    value={state.section}
+                    disabled={!bridged}
+                    onChange={(event) =>
+                      setState((current) => ({
+                        ...current,
+                        section: event.target.value as ProfileSection,
+                      }))
+                    }
+                  >
+                    {(Object.keys(SECTION_LABELS) as ProfileSection[]).map((section) => (
+                      <option key={section} value={section}>
+                        {SECTION_LABELS[section]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <span className="drawing-tools-end">
+                  <button type="button" className="link-button" onClick={() => setTourOpen(true)}>
+                    How to read this
+                  </button>
+                  <HelpButton
+                    topicId="layers-to-scale"
+                    label="the cross-section drawing"
+                    onOpen={openGuide}
+                  />
+                </span>
+              </div>
+
+              {heroView === 'section' ? (
+                <CrossSection
+                  layers={state.layers}
+                  elementKind={state.elementKind}
+                  onInsertPalette={insertPalette}
+                  result={result}
+                  profile={profile}
+                  section={state.section}
+                  selectedLayerId={selectedLayerId}
+                  onSelectLayer={setSelectedLayerId}
+                  onReorder={reorderLayers}
+                  onResizeLayer={setLayerThickness}
+                  onResizeMember={setMemberWidth}
+                  condensation={condensation}
+                  dryOut={dryOut}
+                />
+              ) : (
+                <Layup3D
+                  layers={state.layers}
+                  included={result.layers.map((layer) => layer.includedInCalculation)}
+                  selectedLayerId={selectedLayerId}
+                  onSelectLayer={setSelectedLayerId}
+                  tiltRadians={layupTiltRadians(state.elementKind, state.roofPitchDegrees)}
+                />
+              )}
+
+              {/*
+                The palette sits under the drawing it drops into, which is also where a
+                reader's eye already is once they have looked at the build-up and found
+                something missing from it.
+              */}
+              <div hidden={heroView !== 'section'}>
+                <MaterialPalette
+                  onAdd={(paletteId) => {
+                    /*
+                     * A click has no position, so the layer goes after whichever one is
+                     * selected, or on the outside end when none is. Selecting the new
+                     * layer then makes a second click land after it, which is how a
+                     * build-up gets assembled a layer at a time.
+                     */
+                    const selected = state.layers.findIndex(
+                      (layer) => layer.id === selectedLayerId,
+                    );
+                    insertPalette(selected < 0 ? state.layers.length : selected + 1, paletteId);
+                  }}
+                  onOpenGuide={openGuide}
+                  addPosition={
+                    state.layers.some((layer) => layer.id === selectedLayerId)
+                      ? 'after the selected layer'
+                      : 'on the outside'
+                  }
+                />
+              </div>
+
+              <div className="section-legend" hidden={heroView !== 'section'}>
+                <HatchLegend />
+              </div>
+
+              {bridged && state.section === 'combined' && (
+                <p className="footnote">
+                  The combined profile is an OpenUValue convention, not a method from
+                  BS EN ISO 6946, which defines no temperature profile through a bridged
+                  element. The area-weighted layer resistances are scaled by{' '}
+                  k = {(profile.combinedScalingFactor ?? 1).toFixed(4)} so the profile sums
+                  to the reported R<sub>T</sub> rather than to the lower limit R″
+                  <sub>T</sub>. Vapour thicknesses follow the unbridged path.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="engine-error">{engineError}</p>
+          )}
+        </section>
+
+        <section className="pane pane-editor" aria-label="Editor">
+          <nav className="tab-bar" role="tablist" aria-label="Editor">
+            {TABS.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === entry.id}
+                className={tab === entry.id ? 'tab is-current' : 'tab'}
+                onClick={() => setTab(entry.id)}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </nav>
+
+          {tab === 'layers' && (
+            <div className="tab-panel" role="tabpanel" aria-label="Layers">
+              <section className="panel">
+                {result === undefined ? (
+                  <p className="engine-error">{engineError}</p>
+                ) : (
+                  <LayerTable
+                    onOpenGuide={openGuide}
+                    heatFlowDirection={state.heatFlowDirection}
+                    layers={state.layers}
+                    result={result}
+                    onChange={setLayers}
+                    selectedLayerId={selectedLayerId}
+                    toolbar={
+                      <>
+                        <button
+                          type="button"
+                          onClick={reverseLayers}
+                          disabled={state.layers.length < 2}
+                          title="Turn the build-up back to front: the inside face becomes the outside one. The conditions and heat flow direction stay as they are."
+                        >
+                          Reverse
+                        </button>
+                        <HelpButton
+                          topicId="reverse-layers"
+                          label="the reverse button"
+                          onOpen={openGuide}
+                        />
+                      </>
+                    }
+                    onSelectLayer={setSelectedLayerId}
+                  />
+                )}
+              </section>
+            </div>
+          )}
+
+          {tab === 'conditions' && (
+            <div className="tab-panel" role="tabpanel" aria-label="Conditions">
+              {result !== undefined && (
+                <BoundaryPanel
+                  onOpenGuide={openGuide}
+                  heatFlowDirection={state.heatFlowDirection}
+                  elementKind={state.elementKind}
+                  roofPitchDegrees={state.roofPitchDegrees}
+                  conditions={state.conditions}
+                  internalSurfaceCondition={state.internalSurfaceCondition}
+                  externalEnvironmentKind={state.externalEnvironment}
+                  result={result}
+                  onElementChange={setElement}
+                  onConditionsChange={setConditions}
+                  onInternalSurfaceConditionChange={setInternalSurfaceCondition}
+                  onExternalEnvironmentChange={setExternalEnvironment}
+                />
+              )}
+              <LocationPanel
+                onOpenGuide={openGuide}
+                zoneId={state.exposureZoneId}
+                onChange={(exposureZoneId) =>
+                  setState((current) => ({ ...current, exposureZoneId }))
+                }
+                layers={state.layers}
+              />
+            </div>
+          )}
+
+          {tab === 'results' && (
+            <div className="tab-panel" role="tabpanel" aria-label="Results">
+              {result !== undefined && profile !== undefined ? (
+                <ResultsPanel
+                  onOpenGuide={openGuide}
+                  result={result}
+                  profile={profile}
+                  corrections={corrections}
+                  airGapLevel={state.airGapLevel}
+                  onAirGapLevelChange={setAirGapLevel}
+                  fasteners={state.fasteners}
+                  onFastenersChange={setFasteners}
+                />
+              ) : (
+                <section className="panel">
+                  <h2>Result</h2>
+                  <p className="engine-error">{engineError}</p>
+                </section>
+              )}
+              {dynamic !== undefined && (
+                <DynamicPanel dynamic={dynamic} onOpenGuide={openGuide} />
+              )}
+            </div>
+          )}
+
+          {tab === 'moisture' && result !== undefined && profile !== undefined && (
+            <div className="tab-panel" role="tabpanel" aria-label="Moisture">
+              <MoistureTab
+                onOpenGuide={openGuide}
+                element={element}
+                layers={state.layers}
+                conditions={state.conditions}
+                profile={profile}
+                dryingSettings={dryingSettings}
+                onChangeDryingSettings={setDryingSettings}
+              />
+            </div>
+          )}
+
+          {tab === 'energy' && result !== undefined && (
+            <div className="tab-panel" role="tabpanel" aria-label="Energy">
+              <EnergyTab
+                onOpenGuide={openGuide}
+                result={result}
+                internalTemperatureC={state.conditions.internalAirTemperatureC}
+              />
+            </div>
+          )}
+
+          {tab === 'retrofit' && (
+            <div className="tab-panel" role="tabpanel" aria-label="Retrofit">
+              <RetrofitTab onOpenGuide={openGuide} state={state} />
+            </div>
+          )}
+        </section>
+      </div>
 
       <footer className="app-footer">
+        <p>
+          U-value, temperature profile and condensation, to BS EN ISO 6946 with BR 443
+          conventions and BS EN ISO 13788. Still being checked: material values and several
+          clause references need checking against printed standards.
+        </p>
         <p>
           Open source, MIT licensed. Runs entirely in your browser. The build-up is
           encoded in the address bar and nothing is sent anywhere.

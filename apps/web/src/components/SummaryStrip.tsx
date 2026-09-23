@@ -240,7 +240,7 @@ export function SummaryStrip({
                 ? 'inside the build-up'
                 : 'vapour stays below saturation'
             }
-            title="Interstitial condensation rate under the conditions set on the build-up tab, by the BS EN ISO 13788 method."
+            title="Interstitial condensation rate under the conditions set on the Conditions tab, by the BS EN ISO 13788 method."
           />
         )}
 

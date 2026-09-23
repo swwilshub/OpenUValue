@@ -73,12 +73,12 @@ export const CHAPTERS: readonly GuideChapter[] = [
             </p>
             <ol>
               <li>
-                <strong>Start from the nearest example.</strong> The header has a masonry
-                cavity wall, a timber frame wall and a cold roof. Picking one replaces what is
-                on screen.
+                <strong>Start from the nearest example.</strong> The <em>Start from</em> menu at
+                the top has a masonry cavity wall, a timber frame wall and a cold roof. Picking
+                one replaces what is on screen, and Undo brings it back.
               </li>
               <li>
-                <strong>Say what you are building.</strong> In the Conditions box, choose wall,
+                <strong>Say what you are building.</strong> On the Conditions tab, choose wall,
                 roof or ceiling, or floor, and give a roof its pitch. Then choose what is on
                 the other side: open air, a loft, a garage, another heated room.
               </li>
@@ -372,7 +372,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
       },
       {
         id: 'reverse-layers',
-        title: 'The “Reverse layers” button',
+        title: 'The “Reverse” button',
         figure: <DragFigure />,
         body: (
           <>
@@ -677,7 +677,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
   {
     id: 'layers',
     title: 'Building the layers',
-    blurb: 'The Layers box on the Build-up tab: every field, and what it changes.',
+    blurb: 'The Layers tab: every field, and what it changes.',
     topics: [
       {
         id: 'add-layer',
@@ -1584,7 +1584,7 @@ export const CHAPTERS: readonly GuideChapter[] = [
       },
       {
         id: 'examples',
-        title: 'The example buttons',
+        title: 'The Start from menu',
         figure: <LayersFigure />,
         body: (
           <p>

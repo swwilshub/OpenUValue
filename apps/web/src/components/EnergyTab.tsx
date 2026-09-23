@@ -86,7 +86,7 @@ export function EnergyTab({
         <p className="verdict verdict-risk">
           This build-up has no U-value, because it is outside the scope of the combined
           method, so there is nothing to put a heating cost against. Fix that on the
-          Build-up and U-value tab and this fills in.
+          Layers tab and this fills in.
         </p>
       </section>
     );

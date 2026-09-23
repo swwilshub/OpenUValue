@@ -165,7 +165,7 @@ export function MoistureTab({
         <p className="footnote">
           Water that collects over a winter is only a problem if it does not leave again.
           Set how long each season lasts and what the weather does in the drying one; the
-          wetting season uses the conditions on the build-up tab.
+          wetting season uses the conditions on the Conditions tab.
         </p>
 
         <div className="period-grid">
@@ -342,7 +342,7 @@ export function MoistureTab({
               surface, which is why it appears in cold corners and behind furniture first.
               This check already allows for those spots: BS EN ISO 13788 sets a fixed,
               higher surface resistance for it that stands for a poorly ventilated corner, so
-              the air-circulation setting on the Build-up and U-value tab does not change
+              the air-circulation setting on the Conditions tab does not change
               it.
             </p>
           </>

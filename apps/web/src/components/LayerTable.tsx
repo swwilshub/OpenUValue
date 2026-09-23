@@ -43,6 +43,8 @@ export interface LayerTableProps {
   readonly heatFlowDirection: HeatFlowDirection;
   readonly selectedLayerId?: string | undefined;
   readonly onSelectLayer?: ((layerId: string | undefined) => void) | undefined;
+  /** Whole-build-up actions the caller owns, shown with the add buttons. */
+  readonly toolbar?: React.ReactNode;
 }
 
 
@@ -75,6 +77,7 @@ export function LayerTable({
   selectedLayerId,
   onSelectLayer,
   onOpenGuide,
+  toolbar,
 }: LayerTableProps): JSX.Element {
   /** Index being dragged, and the gap it would drop into. Null when not dragging. */
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -339,6 +342,7 @@ export function LayerTable({
           <button type="button" onClick={() => insert(layers.length, blankAirLayer())}>
             + cavity
           </button>
+          {toolbar}
         </span>
       </div>
 
